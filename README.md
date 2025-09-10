@@ -46,8 +46,8 @@ AllesTeurer/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Xcode 15.0+**
-- **iOS 17.0+** (target deployment)
+- **Xcode 26.0+**
+- **iOS 26.0+** (target deployment)
 - **Apple Developer Account** (for device testing)
 
 ### Installation
@@ -184,7 +184,7 @@ swiftformat .
 
 ## 📱 System Requirements
 
-- **iOS 17.0** or later
+- **iOS 26.0** or later
 - **iPhone** (optimized for all sizes)
 - **Camera** required for receipt scanning
 - **50MB** storage space
@@ -197,7 +197,7 @@ swiftformat .
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+TBD
 
 ## 🙏 Acknowledgments
 
