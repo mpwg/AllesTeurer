@@ -18,7 +18,7 @@ kotlin = "2.2.20"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.6.1"
 kotlinx-serialization = "1.8.0"
-sqldelight = "2.0.2"
+sqldelight = "2.1.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
