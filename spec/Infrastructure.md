@@ -6,6 +6,7 @@ Configure a complete monorepo setup using Turborepo for managing iOS, Android, a
 
 Directory Structure
 
+```
 Code
 alles-teuer/
 ├── .github/
@@ -38,11 +39,14 @@ alles-teuer/
 ├── turbo.json
 ├── package.json
 └── pnpm-workspace.yaml
+```
+
+
 Configuration Files
 
 Root package.json
 
-JSON
+```JSON
 {
   "name": "alles-teuer",
   "private": true,
@@ -68,9 +72,10 @@ JSON
     "@typescript-eslint/eslint-plugin": "^6.0.0"
   }
 }
+```
 Turbo Configuration (turbo.json)
 
-JSON
+`
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
@@ -96,9 +101,10 @@ JSON
     }
   }
 }
+```
 Docker Compose for Local Development
 
-YAML
+``` YAML
 version: '3.8'
 
 services:
@@ -156,11 +162,12 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+```
 Development Setup Scripts
 
 setup.sh
 
-bash
+```bash
 #!/bin/bash
 
 echo "🚀 Setting up Alles Teuer development environment..."
@@ -197,11 +204,13 @@ echo "🌱 Seeding database..."
 pnpm run db:seed
 
 echo "✅ Setup complete! Run 'pnpm dev' to start development servers."
+```
+
 GitHub Actions CI/CD
 
 CI Workflow (.github/workflows/ci.yml)
 
-YAML
+``` YAML
 name: CI
 
 on:
@@ -286,16 +295,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - run: cd apps/android && ./gradlew build
+```
 Implementation Tasks
 
- Initialize monorepo with Turborepo
- Setup pnpm workspaces
- Configure TypeScript paths and aliases
- Setup ESLint and Prettier
- Configure Husky and lint-staged
- Create Docker development environment
- Setup CI/CD pipelines
- Configure environment variables management
- Setup database migrations system
- Create development setup scripts
- Document development workflow
+ - Initialize monorepo with Turborepo
+ - Setup pnpm workspaces
+ - Configure TypeScript paths and aliases
+ - Setup ESLint and Prettier
+ - Configure Husky and lint-staged
+ - Create Docker development environment
+ - Setup CI/CD pipelines
+ - Configure environment variables management
+ - Setup database migrations system
+ - Create development setup scripts
+ - Document development workflow
