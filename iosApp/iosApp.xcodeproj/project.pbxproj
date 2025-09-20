@@ -6,7 +6,12 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		401409812E7F29D300AB2314 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 401409802E7F29D300AB2314 /* libsqlite3.tbd */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		401409802E7F29D300AB2314 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk/usr/lib/libsqlite3.tbd; sourceTree = DEVELOPER_DIR; };
 		8F5521D50E85B6E4C800046B /* AllesTeurer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AllesTeurer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -40,16 +45,26 @@
 		667729EBE9A666867EAFFA19 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				401409812E7F29D300AB2314 /* libsqlite3.tbd in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4014097F2E7F29D300AB2314 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				401409802E7F29D300AB2314 /* libsqlite3.tbd */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		E15F768C0440546FFC4679F0 = {
 			isa = PBXGroup;
 			children = (
 				609FC40264020CE79D7E0173 /* Configuration */,
 				67CC88F0204CF7D9FC001630 /* iosApp */,
+				4014097F2E7F29D300AB2314 /* Frameworks */,
 				ECABB4E01CE39CF2DCFAA406 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -140,6 +155,7 @@
 				"cd \"$SRCROOT/..\"",
 				"./gradlew :composeApp:embedAndSignAppleFrameworkForXcode",
 				"",
+				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -221,6 +237,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = PZV43D6HWT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -318,6 +335,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
+				DEVELOPMENT_TEAM = PZV43D6HWT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
