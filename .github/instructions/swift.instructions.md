@@ -1,12 +1,62 @@
 # GitHub Copilot Instructions
 
-These instructions define how GitHub Copilot should assist with this project. The goal is to ensure consistent, high-quality code generation aligned with our conventions, stack, and best practices.
+These instructions d- Use enums with associated values to manage### 🚫 Patterns to Avoid
+
+- Don't use force unwraps (`!`) unless you're certain the value is non-nil.
+- Avoid putting business logic directly inside views.
+- Don't mix UIKit and SwiftUI unnecessarily.
+- Avoid deeply nested views or view models—break them into modules.
+- Don't expose internal state directly—use access control (`private`, `internal`, `public`).
+- Avoid hardcoding strings or magic numbers—use constants or localization.
+- **DO NOT use Core Data** - this project uses Swift Data exclusively.view state.
+- Prefer Swift's `Codable` for JSON encoding/decoding.
+
+## 💾 Data Persistence
+
+**IMPORTANT**: This app uses **Swift Data**, NOT Core Data.
+
+### Swift Data Guidelines
+
+- Use `@Model` macro to define data models instead of Core Data's `NSManagedObject`.
+- Use `ModelContainer` for data storage configuration.
+- Use `@Query` property wrapper in SwiftUI views to fetch data reactively.
+- Use `ModelContext` for data operations (insert, delete, save).
+- Leverage Swift Data's automatic relationship management.
+- Use `@Attribute` for custom property configurations (unique constraints, etc.).
+
+### Example Swift Data Usage
+
+````swift
+import SwiftData
+
+@Model
+class Item {
+    var name: String
+    var timestamp: Date
+
+    init(name: String, timestamp: Date = Date()) {
+        self.name = name
+        self.timestamp = timestamp
+    }
+}
+
+// In SwiftUI View
+struct ContentView: View {
+    @Query private var items: [Item]
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        // UI code here
+    }
+}
+```ine how GitHub Copilot should assist with this project. The goal is to ensure consistent, high-quality code generation aligned with our conventions, stack, and best practices.
 
 ## 🧠 Context
 
 - **Project Type**: iOS App / macOS App / CLI Tool / Swift Package
 - **Language**: Swift
 - **Framework / Libraries**: SwiftUI / UIKit / Combine / Foundation / Vapor / Alamofire
+- **Data Persistence**: Swift Data (NOT Core Data)
 - **Architecture**: MVVM / Clean Architecture / VIPER / Modular
 
 ## 🔧 General Guidelines
@@ -36,7 +86,7 @@ Tests/
   Unit/
   Integration/
 Resources/
-```
+````
 
 ## 🧶 Patterns
 
@@ -75,6 +125,8 @@ Resources/
 - `Copilot, implement a Combine publisher that fetches data from a URL and decodes JSON.`
 - `Copilot, write unit tests for the LoginViewModel using a mock AuthService.`
 - `Copilot, define an enum for authentication state with associated values for success and error.`
+- `Copilot, create a Swift Data model for a User with @Model macro and relationships.`
+- `Copilot, implement a SwiftUI view that uses @Query to display Swift Data objects.`
 
 ## 🔁 Iteration & Review
 
@@ -87,6 +139,7 @@ Resources/
 
 - [The Swift Programming Language Book](https://swift.org/documentation/#the-swift-programming-language)
 - [Apple SwiftUI Documentation](https://developer.apple.com/documentation/swiftui)
+- [Apple Swift Data Documentation](https://developer.apple.com/documentation/swiftdata)
 - [Swift.org API Guidelines](https://swift.org/documentation/api-design-guidelines/)
 - [Combine Framework Guide](https://developer.apple.com/documentation/combine)
 - [SwiftLint (Linter)](https://realm.github.io/SwiftLint/)
