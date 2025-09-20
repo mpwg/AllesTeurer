@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-AllesTeurer is a privacy-first multiplatform app that tracks product price inflation through receipt scanning and local analytics. The app uses Kotlin Multiplatform Mobile (KMP) with Compose Multiplatform for shared business logic and UI, platform-specific OCR implementations (Vision Framework for iOS, ML Kit for Android), and SQLDelight for persistence, maintaining strict on-device processing.
+AllesTeurer is a privacy-first mobile app that tracks product price inflation through receipt scanning and local analytics. The app uses Kotlin Multiplatform Mobile (KMP) with Compose Multiplatform for shared business logic and UI, platform-specific OCR implementations (Vision Framework for iOS, ML Kit for Android), and SQLDelight for persistence, maintaining strict on-device processing.
 
-**Architecture**: Multiplatform-first development using KMP and Compose Multiplatform with optional backend services.
+**Architecture**: Mobile-first development using KMP and Compose Multiplatform targeting iOS and Android.
 
 ## KMM Project Structure
 
@@ -29,11 +29,10 @@ alles-teurer/
 │       │   │   └── kotlin/
 │       │   │       ├── ocr/         # Vision Framework OCR
 │       │   │       └── platform/   # iOS-specific utilities
-│       │   └── desktopMain/ # Desktop-specific (optional)
 │       ├── androidApp/      # Android app wrapper
 │       └── iosApp/         # iOS app wrapper (Xcode project)
 ├── shared/                 # Additional shared modules (if needed)
-├── backend/               # Optional backend services (Ktor)
+├── server/                # Backend services (Ktor) - excluded from mobile build
 ├── spec/                  # Requirements and architecture docs
 ├── tools/                 # Development tooling and scripts
 ├── gradle.properties      # Gradle configuration
