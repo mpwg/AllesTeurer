@@ -17,12 +17,13 @@ AllesTeurer is a privacy-focused multiplatform application that helps users trac
 
 ### 2.1 High-Level Architecture
 
-````mermaid
+```mermaid
 graph TB
     subgraph "Client Layer"
         UI[Web UI - SvelteKit]
         PWA[Progressive Web App]
     end
+```
 ## 2. System Architecture Overview
 
 ### 2.1 Kotlin Multiplatform Architecture
