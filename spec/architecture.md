@@ -128,7 +128,7 @@ graph TB
 
 - **OCR**: Vision Framework via expect/actual
 - **Camera**: AVFoundation via Compose integration
-- **Local Storage**: SQLDelight with SQLite.swift
+- **Local Storage**: SQLDelight with native SQLite driver
 - **Navigation**: Native iOS navigation patterns
 
 #### Android
@@ -158,7 +158,7 @@ graph TB
 
 ### 6.2 Data Security
 
-- **Core Data Encryption**: Automatic encryption at rest
+- **SQLDelight Encryption**: Database encryption at rest
 - **CloudKit Security**: End-to-end encryption for sync
 - **Secure Keychain**: Sensitive settings stored securely
 - **App Sandbox**: iOS app sandboxing for security
@@ -417,13 +417,14 @@ extension CloudKitService {
 
 ## Conclusion
 
-This iOS-first architecture provides:
+This Kotlin Multiplatform architecture provides:
 
 - **Privacy-First**: All data processing happens locally on user's device
-- **Performance**: Native iOS performance with optimized Core Data
+- **Cross-Platform Efficiency**: 85%+ code sharing between iOS and Android
+- **Native Performance**: Direct compilation to platform-native code
 - **Extensibility**: Clean architecture supporting future backend integration
-- **Accessibility**: Full WCAG compliance with iOS accessibility features
-- **Security**: Apple's built-in security with CloudKit encryption
-- **User Experience**: Native iOS patterns and seamless iCloud integration
+- **Accessibility**: Full WCAG compliance with platform accessibility features
+- **Security**: Platform-specific security with optional cloud sync encryption
+- **User Experience**: Native platform patterns with shared business logic
 
-The architecture is designed to deliver a complete, functional app that can launch independently while maintaining the flexibility to evolve into a full-stack solution as the product grows.
+The architecture is designed to deliver complete, functional apps that can launch simultaneously on both platforms while maintaining the flexibility to evolve into a full-stack solution as the product grows.

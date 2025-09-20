@@ -1,55 +1,71 @@
-## Executive Summary - AllesTeurer iOS-First
+## Executive Summary - AllesTeurer Kotlin Multiplatform
 
-**Alles Teuer** startet als privacy-erste iOS-Anwendung zur intelligenten Preisüberwachung durch lokales Receipt-Scanning. Die App nutzt Apple's Vision Framework für OCR-Verarbeitung, baut eine persönliche Preisdatenbank auf und bietet lokale Analytik - alles ohne Backend-Abhängigkeiten.
+**AllesTeurer** ist eine datenschutzfokussierte Kotlin Multiplatform Mobile (KMP) Anwendung zur intelligenten Preisüberwachung durch lokales Receipt-Scanning. Die App nutzt plattformspezifische OCR-Implementierungen (Vision Framework für iOS, ML Kit für Android), baut eine persönliche Preisdatenbank mit SQLDelight auf und bietet lokale Analytik - alles ohne Backend-Abhängigkeiten bei maximaler Code-Wiederverwendung.
 
-## 🎯 iOS-First Strategie
+## 🎯 Multiplatform-First Strategie
 
-### Phase 1: iOS Launch (3 Monate)
+### Phase 1: KMP Foundation (3 Monate)
 
-- **Vollständig lokale App** ohne Server-Abhängigkeiten
-- **Privacy-First**: Alle Daten bleiben auf dem Gerät
-- **Apple Intelligence**: Vision Framework + Natural Language
-- **CloudKit Sync**: Optional für Geräte-übergreifende Synchronisation
+- **Geteilte Geschäftslogik**: 85%+ Code-Sharing zwischen iOS und Android
+- **Privacy-First**: Alle Daten bleiben auf dem Gerät (SQLDelight lokal)
+- **Platform-spezifische OCR**: Vision Framework (iOS) / ML Kit (Android) via expect/actual
+- **Compose Multiplatform**: Geteiltes UI mit nativen Adaptionen
 
-### Phase 2: Evolution (nach Marktvalidierung)
+### Phase 2: Platform Extensions (nach Marktvalidierung)
 
-- **Optional Backend**: Für erweiterte Features
-- **Multi-Platform**: Android und Web als Ergänzung
+- **Optional Backend**: Ktor server für erweiterte Features
+- **Desktop Platform**: Compose Desktop support
+- **Web Platform**: Kotlin/JS mit Compose for Web
 - **Community Features**: Wenn gewünscht von Nutzern
 
-## 🏗️ iOS-Native Architecture
+## 🏗️ Kotlin Multiplatform Architecture
 
 ```mermaid
 graph TB
-    subgraph "iOS App (SwiftUI)"
-        UI[User Interface]
+    subgraph "Compose Multiplatform UI"
+        UI[Shared UI Components]
+        NAV[Navigation]
+        THEME[Material Design 3]
+    end
+
+    subgraph "Shared Business Logic (commonMain)"
         VM[ViewModels - MVVM]
-        SERV[Service Layer]
+        REPOS[Repositories]
+        DOMAIN[Domain Logic & Use Cases]
+        MODELS[Data Models @Serializable]
     end
 
-    subgraph "Apple Frameworks"
-        VISION[Vision Framework<br/>Local OCR]
-        COREDATA[Core Data<br/>Local Storage]
-        CLOUDKIT[CloudKit<br/>Device Sync]
-        CHARTS[Swift Charts<br/>Analytics]
+    subgraph "Platform-Specific (expect/actual)"
+        subgraph "iOS (iosMain)"
+            VISION[Vision Framework<br/>OCR]
+            IOS_CAM[AVFoundation<br/>Camera]
+            CLOUDKIT[CloudKit Sync<br/>Optional]
+        end
+
+        subgraph "Android (androidMain)"
+            MLKIT[ML Kit<br/>OCR]
+            AND_CAM[CameraX<br/>Camera]
+            GDRIVE[Google Drive<br/>Backup Optional]
+        end
     end
 
-    subgraph "Local Processing"
-        OCR[Receipt Processing]
-        MATCH[Product Matching]
-        ANALYTICS[Price Analytics]
+    subgraph "Local Storage (SQLDelight)"
+        DB[(Local SQLite<br/>Cross-Platform)]
+        MIGRATIONS[Schema Migrations]
     end
 
     UI --> VM
-    VM --> SERV
-    SERV --> VISION
-    SERV --> COREDATA
-    SERV --> CLOUDKIT
-    SERV --> CHARTS
+    VM --> REPOS
+    REPOS --> DOMAIN
+    DOMAIN --> MODELS
 
-    VISION --> OCR
-    OCR --> MATCH
-    MATCH --> ANALYTICS
+    VM --> VISION
+    VM --> MLKIT
+    REPOS --> DB
+
+    VISION --> IOS_CAM
+    MLKIT --> AND_CAM
+    DB --> MIGRATIONS
 ```
 
 ## 🔒 Privacy & Local-First Vorteile
@@ -59,96 +75,104 @@ graph TB
 - **Komplette Datenkontrolle**: Alle Receipts und Preise bleiben lokal
 - **Keine Tracking-Sorgen**: Zero third-party Analytics
 - **Offline-Funktionalität**: Vollständige Features ohne Internet
-- **Apple-Ökosystem**: Nahtlose Integration mit iCloud/CloudKit
+- **Cross-Platform**: Gleiche Funktionen auf iOS und Android
+- **Native Performance**: Direkte Kompilierung zu nativem Code
 
 ### Für Business
 
-- **Schnellerer Launch**: 3 Monate statt 6-8 Monate
+- **Schnellerer Launch**: 3 Monate für beide Plattformen
 - **Niedrigere Kosten**: Keine Server/Backend-Infrastruktur initial
-- **Bessere App Store Performance**: Native iOS-Performance
-- **Market Validation**: Testen der Core-Features vor Backend-Investition
+- **Code-Effizienz**: 85%+ geteilte Geschäftslogik reduziert Entwicklungszeit
+- **Market Validation**: Testen der Core-Features auf beiden Plattformen parallel
 
-## 📱 Core Features (iOS-First)
+## 📱 Core Features (Multiplatform)
 
 ### Receipt Scanning Engine
 
-- **Apple Vision Framework**: State-of-the-art OCR für deutsche Receipts
+- **Platform-spezifische OCR**: Vision Framework (iOS) / ML Kit (Android) für deutsche Receipts
 - **Automatische Extraktion**: Produktnamen, Preise, Store-Info, Datum
 - **Smart Correction**: Benutzer kann OCR-Fehler einfach korrigieren
 - **Local Processing**: Kein Upload von Receipt-Bildern nötig
+- **Shared Business Logic**: Receipt-Parsing-Algorithmen in commonMain
 
-### Lokale Preisdatenbank
+### Lokale Preisdatenbank (SQLDelight)
 
-- **Intelligentes Matching**: Fuzzy-Logic für ähnliche Produkte
-- **Automatische Kategorisierung**: Mit Natural Language Framework
+- **Type-Safe Queries**: SQLDelight für alle Plattformen
+- **Intelligentes Matching**: Fuzzy-Logic für ähnliche Produkte (shared)
+- **Automatische Kategorisierung**: Shared business logic
 - **Preisverlauf-Tracking**: Lokale Speicherung aller Preisdaten
-- **Swift Charts Integration**: Native iOS Charts für Visualisierung
+- **Schema Migrations**: Versionierte Datenbankentwicklung
 
-### Privacy-First Analytics
+### Privacy-First Analytics (Shared)
 
-- **Persönliche Inflation-Raten**: Berechnet aus eigenen Receipts
+- **Persönliche Inflation-Raten**: Berechnet aus eigenen Receipts (Kotlin shared code)
 - **Ausgaben-Trends**: Monatliche/kategorische Übersichten
-- **No-Cloud Analytics**: Alle Berechnungen lokal auf dem Gerät
+- **Cross-Platform Charts**: Compose Multiplatform Visualisierung
 - **Datenexport**: CSV/PDF für eigene Analysen
 
 ## 🚀 Go-to-Market Strategie
 
 ### Target Market Deutschland
 
-- **Primary**: Bewusste Konsumenten (25-45 Jahre)
-- **Secondary**: Familien mit Budget-Fokus
+- **Primary**: Bewusste Konsumenten (25-45 Jahre) auf iOS und Android
+- **Secondary**: Familien mit Budget-Fokus (beide Plattformen)
 - **Tertiary**: Studenten und junge Berufstätige
+- **Market Advantage**: Simultaner Launch auf beiden major Plattformen
 
 ### App Store Positioning
 
-- **Kategorie**: Finance / Shopping
-- **Keywords**: "Receipt Scanner", "Preis Tracker", "Inflation", "Budget"
-- **USP**: "Privacy-first receipt tracking - all data stays on your device"
+- **iOS Kategorie**: Finance / Shopping (Apple App Store)
+- **Android Kategorie**: Finance / Shopping (Google Play Store)
+- **Keywords**: "Receipt Scanner", "Preis Tracker", "Inflation", "Budget", "Privacy"
+- **USP**: "Cross-platform privacy-first receipt tracking - all data stays on your device"
 
-### Pricing Strategy (Empfehlung)
+### Pricing Strategy (Multiplatform)
 
-- **Launch**: Kostenlos (für Market Validation)
-- **Premium**: €2.99/Monat für erweiterte Analytics
-- **One-Time**: €19.99 für alle Features (App Store bevorzugt)
+- **Launch**: Kostenlos (für Market Validation auf beiden Plattformen)
+- **Premium**: €2.99/Monat für erweiterte Analytics (iOS + Android)
+- **One-Time**: €19.99 für alle Features (beide App Stores)
 
 ## 🛣️ Roadmap & Evolution
 
-### Immediate (0-3 Monate): iOS Foundation
+### Immediate (0-3 Monate): KMP Foundation
 
-```swift
-✅ Receipt Scanning (Vision Framework)
-✅ Local Data Storage (Core Data)
-✅ Basic Analytics (Swift Charts)
-✅ CloudKit Sync (Optional)
-✅ App Store Launch
+```kotlin
+✅ Receipt Scanning (Vision Framework iOS / ML Kit Android)
+✅ Local Data Storage (SQLDelight cross-platform)
+✅ Shared Business Logic (Kotlin Multiplatform)
+✅ Basic Analytics (Compose Multiplatform Charts)
+✅ Cross-Platform UI (Compose Multiplatform)
+✅ App Store Launch (iOS + Android parallel)
 ```
 
-### Short-term (3-6 Monate): Enhancement
+### Short-term (3-6 Monate): Platform-Specific Enhancement
 
-```swift
-⏳ Advanced Analytics Features
-⏳ iOS Shortcuts Integration
-⏳ Widget Support
-⏳ Share Extensions
-⏳ Spotlight Integration
+```kotlin
+⏳ iOS Features: Shortcuts, Spotlight, Widgets, Share Extensions
+⏳ Android Features: App Shortcuts, Widgets, Material You, Share Intents
+⏳ Advanced Analytics (shared business logic)
+⏳ Platform-specific sync (CloudKit iOS / Google Drive Android)
+⏳ Accessibility improvements (both platforms)
 ```
 
-### Medium-term (6-12 Monate): Expansion
+### Medium-term (6-12 Monate): Backend & Desktop Expansion
 
-```javascript
-🔮 Backend Services (wenn benötigt)
-🔮 Real-time Price Comparison
-🔮 Android App
-🔮 Web Dashboard
-🔮 API für Third-Parties
+```kotlin
+🔮 Optional Backend Services (Ktor multiplatform server)
+🔮 Desktop App (Compose Desktop)
+🔮 Web App (Kotlin/JS + Compose for Web)
+🔮 Real-time Price Comparison APIs
+🔮 Community Features (if requested)
 ```
 
 ## 📊 Technical Specifications
 
-### iOS Requirements
+### Multiplatform Requirements
 
-- **Minimum iOS**: 17.0+ (für Vision Framework Features)
-- **Devices**: iPhone 12+ empfohlen (für optimale Camera/OCR Performance)
+- **iOS**: iOS 15.0+ (für Compose Multiplatform compatibility)
+- **Android**: Android API 24+ (Android 7.0+) für ML Kit
+- **Devices**: Mid-range+ empfohlen (für optimale OCR Performance)
+- **Storage**: 100MB für app + lokale Datenbank
 - **Storage**: ~50MB App + variable Daten (Receipt-Bilder)
 - **Permissions**: Camera (für Receipt Scanning), CloudKit (optional)
 
@@ -184,169 +208,221 @@ graph TB
 
 ## 💼 Business Case
 
-### Entwicklungskosten (iOS-First)
+### Entwicklungskosten (KMP-First)
 
-- **Development**: 3 Monate (1 iOS Developer)
-- **Design**: 0.5 Monate (UI/UX)
-- **Testing**: 0.5 Monate (QA)
-- **Total**: ~€40,000 (vs €120,000 für Full-Stack)
+- **Development**: 4 Monate (1 KMP Developer + 1 UI/UX)
+- **Platform Specialists**: 0.5 Monate je iOS/Android (platform-specific features)
+- **Testing**: 1 Monat (beide Plattformen parallel)
+- **Total**: ~€60,000 (vs €120,000 für separate native Apps)
 
-### Break-Even Analysis
+### Code-Effizienz Vorteile
 
-- **Freemium**: 5,000 Premium-Nutzer (€2.99/Monat)
-- **One-Time**: 2,000 Verkäufe (€19.99)
-- **Expected Break-Even**: 6-8 Monate nach Launch
+- **Shared Business Logic**: 85%+ Code-Wiederverwendung zwischen Plattformen
+- **Maintenance Reduction**: Single codebase für Core-Features
+- **Bug Fix Efficiency**: Fix once, deploy everywhere
+- **Feature Parity**: Automatisch synchrone Feature-Releases
 
-### Market Opportunity
+### Break-Even Analysis (Multiplatform)
 
-- **TAM**: 83 Millionen iPhone-Nutzer Deutschland
-- **SAM**: 8 Millionen bewusste Konsumenten
-- **SOM**: 100,000 potentielle Early Adopters
-- **Revenue Potential**: €2-20 Millionen (bei verschiedenen Penetration-Raten)
+- **Freemium**: 3,000 Premium-Nutzer (€2.99/Monat) - both platforms combined
+- **One-Time**: 3,000 Verkäufe (€19.99) - iOS + Android
+- **Expected Break-Even**: 4-6 Monate nach Launch (faster due to parallel platform launch)
 
-## 🔄 Migration zu Multi-Platform
+### Market Opportunity (Expanded)
 
-### Backend Integration (wenn nötig)
+- **TAM**: 83 Mio iPhone + 65 Mio Android Deutschland = 148 Mio devices
+- **SAM**: 15 Millionen bewusste Konsumenten (both platforms)
+- **SOM**: 200,000 potentielle Early Adopters (doubled addressable market)
+- **Revenue Potential**: €5-40 Millionen (higher penetration through platform diversity)
 
-Die iOS-First Architecture unterstützt nahtlose Backend-Integration:
+## 🔄 Platform Evolution Strategy
 
-```swift
-// Aktuell: Local-Only Service
-class LocalPriceService {
-    func savePrice(_ price: PriceRecord) {
-        dataManager.save(price) // Core Data
+### KMP-First Benefits
+
+Die Kotlin Multiplatform-First Architecture bietet:
+
+```kotlin
+// Shared Business Logic (85%+ code sharing)
+class ReceiptProcessor(
+    private val ocrService: OCRService, // expect/actual
+    private val repository: ReceiptRepository // SQLDelight
+) {
+    suspend fun processReceipt(imageData: ByteArray): Result<Receipt> {
+        return try {
+            val ocrText = ocrService.extractText(imageData)
+            val parsedReceipt = parseReceiptText(ocrText) // shared logic
+            repository.saveReceipt(parsedReceipt) // cross-platform storage
+            Result.success(parsedReceipt)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // This business logic runs identical on iOS and Android
+    private fun parseReceiptText(text: String): Receipt {
+        // Complex parsing logic shared across platforms
+        // German receipt format handling
+        // Price extraction algorithms
+        // Product name normalization
+    }
+}
+```
+
+### Future Backend Integration
+
+Optional Ktor multiplatform backend can be added seamlessly:
+
+```kotlin
+// Current: Local-Only Repository (commonMain)
+class LocalReceiptRepository(private val database: Database) : ReceiptRepository {
+    override suspend fun saveReceipt(receipt: Receipt) {
+        database.receiptQueries.insert(receipt.toEntity())
     }
 }
 
-// Zukunft: Hybrid Service
-class HybridPriceService: LocalPriceService {
-    override func savePrice(_ price: PriceRecord) {
-        super.savePrice(price) // Lokal speichern
+// Future: Hybrid Repository with optional sync
+class HybridReceiptRepository(
+    private val localRepo: LocalReceiptRepository,
+    private val remoteService: RemoteService // Ktor client
+) : ReceiptRepository {
+    override suspend fun saveReceipt(receipt: Receipt) {
+        localRepo.saveReceipt(receipt) // Always save locally first
 
-        if NetworkService.isAvailable {
-            Task { await syncWithBackend(price) } // Optional sync
+        if (networkAvailable()) {
+            try {
+                remoteService.syncReceipt(receipt) // Optional cloud backup
+            } catch (e: Exception) {
+                // Graceful fallback to local-only
+            }
         }
     }
 }
 ```
 
-### Platform Expansion Strategy
+### Long-term Expansion Strategy
 
-1. **iOS perfektionieren** (3-6 Monate)
-2. **Backend optional hinzufügen** (wenn Feature-Nachfrage)
-3. **Android parallel entwickeln** (3 Monate nach iOS)
-4. **Web Dashboard** (für Power-User)
+1. **Perfect multiplatform core** (3-6 Monate)
+2. **Add platform-specific enhancements** (iOS Shortcuts, Android Widgets)
+3. **Optional backend services** (wenn Feature-Nachfrage entsteht)
+4. **Desktop expansion** (Compose Desktop)
+5. **Web dashboard** (Kotlin/JS + Compose for Web)
 
 ## 🎉 Conclusion
 
-**AllesTeurer iOS-First Strategie** maximiert:
+**AllesTeurer Kotlin Multiplatform Strategie** maximiert:
 
-- **Time-to-Market**: 3 Monate vs 6+ Monate
-- **User Privacy**: Keine Server-seitige Datenverarbeitung
-- **Development ROI**: Niedrigere Initial-Kosten
-- **Market Validation**: Testen der Core-Features ohne komplexe Infrastruktur
-- **Apple Platform Integration**: Native Performance und Features
+- **Cross-Platform Efficiency**: 85%+ Code-Sharing reduziert Entwicklungszeit drastisch
+- **Simultaner Launch**: iOS + Android parallel, doppelte Marktreichweite
+- **User Privacy**: Lokale Datenverarbeitung ohne Backend-Abhängigkeiten
+- **Development ROI**: Niedrigere Gesamtkosten durch geteilte Geschäftslogik
+- **Market Validation**: Testen der Core-Features auf beiden major Plattformen
+- **Native Performance**: Direct-to-native compilation auf allen Zielplattformen
+- **Future-Proof**: Modulare Architektur für einfache Platform-Erweiterung
 
-Diese Strategie ermöglicht einen schnellen, kostengünstigen Launch mit maximaler Privacy für Nutzer, während die Architektur flexibel für zukünftige Erweiterungen bleibt.
+**Competitive Advantages:**
 
-## 🎨 System-Architektur
+- **Time-to-Market**: 4 Monate für beide Plattformen vs 8+ Monate separate Entwicklung
+- **Code Maintainability**: Single source of truth für business logic
+- **Feature Consistency**: Automatische Feature-Parity zwischen Plattformen
+- **Quality Assurance**: Shared tests für Core-Funktionalität
 
-### High-Level Architecture
+Diese KMP-First Strategie ermöglicht einen effizienten, kostengünstigen Launch mit maximaler Privacy für Nutzer bei optimaler Marktabdeckung, während die Architektur flexibel für zukünftige Erweiterungen (Backend, Desktop, Web) bleibt.
+
+## 🎨 KMP System-Architecture
+
+### Kotlin Multiplatform Architecture
 
 ```mermaid
 graph TB
-    subgraph "Client Layer"
-        iOS[iOS App<br/>Swift/SwiftUI]
-        Android[Android App<br/>Kotlin/Jetpack]
-        Web[Web App<br/>React/TypeScript]
+    subgraph "Compose Multiplatform UI"
+        UI[Shared UI Components]
+        NAV[Navigation]
+        THEME[Material Design 3]
     end
 
-    subgraph "API Gateway"
-        Gateway[API Gateway<br/>GraphQL]
+    subgraph "Shared Business Logic (commonMain)"
+        VM[ViewModels - MVVM]
+        REPOS[Repositories]
+        DOMAIN[Domain Logic & Use Cases]
+        MODELS[Data Models @Serializable]
     end
 
-    subgraph "Backend Services"
-        Auth[Auth Service]
-        Product[Product Service]
-        Price[Price Service]
-        OCR[OCR Service]
-        Optimizer[Optimizer Service]
+    subgraph "Platform-Specific (expect/actual)"
+        subgraph "iOS (iosMain)"
+            VISION[Vision Framework<br/>OCR]
+            IOS_CAM[AVFoundation<br/>Camera]
+            CLOUDKIT[CloudKit Sync<br/>Optional]
+        end
+
+        subgraph "Android (androidMain)"
+            MLKIT[ML Kit<br/>OCR]
+            AND_CAM[CameraX<br/>Camera]
+            GDRIVE[Google Drive<br/>Backup Optional]
+        end
     end
 
-    subgraph "Data Layer"
-        PG[(PostgreSQL<br/>Main DB)]
-        Redis[(Redis<br/>Cache)]
-        S3[S3<br/>Images]
+    subgraph "Local Storage (SQLDelight)"
+        DB[(Local SQLite<br/>Cross-Platform)]
+        MIGRATIONS[Schema Migrations]
     end
 
-    subgraph "External APIs"
-        Apple[Apple Intelligence]
-        Shops[Shop APIs]
-        ML[ML Services]
-    end
+    UI --> VM
+    VM --> REPOS
+    REPOS --> DOMAIN
+    DOMAIN --> MODELS
 
-    iOS --> Gateway
-    Android --> Gateway
-    Web --> Gateway
-    Gateway --> Auth
-    Gateway --> Product
-    Gateway --> Price
-    Gateway --> OCR
-    Gateway --> Optimizer
+    VM --> VISION
+    VM --> MLKIT
+    REPOS --> DB
 
-    Product --> PG
-    Price --> PG
-    Auth --> PG
-    Product --> Redis
-    Price --> Redis
-
-    OCR --> S3
-    OCR --> Apple
-    Price --> Shops
-    Optimizer --> ML
+    VISION --> IOS_CAM
+    MLKIT --> AND_CAM
+    DB --> MIGRATIONS
 ```
 
 ## 📦 Technologie-Stack
 
-### Backend
+### Shared (commonMain)
 
-- **Runtime**: Node.js 20+ mit TypeScript
-- **Framework**: NestJS (modular, enterprise-ready)
-- **API**: GraphQL mit Apollo Server
-- **Database**: PostgreSQL 15+ mit Prisma ORM
-- **Cache**: Redis für Session & Query Cache
-- **Queue**: Bull/Redis für Background Jobs
-- **Storage**: AWS S3 oder MinIO für Bilder
+- **Language**: Kotlin 2.2.20+ mit K2 compiler
+- **UI Framework**: Compose Multiplatform
+- **Architecture**: MVVM mit Repository pattern
+- **Database**: SQLDelight für type-safe cross-platform SQL
+- **Concurrency**: Kotlin Coroutines + Flow
+- **Serialization**: kotlinx.serialization
+- **Testing**: Kotlin Test für shared business logic
 
-### Frontend Shared
+### iOS Specific (iosMain)
 
-- **State Management**: Redux Toolkit
-- **API Client**: Apollo Client (GraphQL)
-- **Validation**: Zod
-- **Testing**: Jest + React Testing Library
+- **OCR**: Vision Framework via expect/actual
+- **Camera**: AVFoundation integration
+- **Local Storage**: SQLDelight mit native SQLite driver
+- **Sync**: CloudKit für optionale Device-Synchronisation
+- **Navigation**: Compose Navigation + iOS-spezifische Adaptionen
 
-### iOS Specific
+### Android Specific (androidMain)
 
-- **Language**: Swift 5.9+
-- **UI**: SwiftUI
-- **Persistence**: Core Data + CloudKit
-- **OCR**: Vision Framework
-- **ML**: Core ML + Apple Intelligence
+- **OCR**: ML Kit via expect/actual declarations
+- **Camera**: CameraX integration
+- **Local Storage**: SQLDelight mit Android SQLite
+- **Sync**: Google Drive für optionale Cloud-Backup
+- **Material Design**: Material You dynamic colors (Android 12+)
 
-### Android Specific
+### Development Tools
 
-- **Language**: Kotlin
-- **UI**: Jetpack Compose
-- **Persistence**: Room Database
-- **OCR**: ML Kit
-- **Architecture**: MVVM mit Hilt
+- **Build System**: Gradle 9.0+ mit Kotlin DSL
+- **IDE**: IntelliJ IDEA / Android Studio / Xcode (platform-specific)
+- **CI/CD**: GitHub Actions für automated builds
+- **Code Quality**: ktlint, detekt für Kotlin code analysis
+- **Version Control**: Gradle version catalogs für dependency management
 
-### Web Specific
+### Future Backend (Optional - Phase 2)
 
-- **Framework**: Next.js 14 (App Router)
-- **UI**: React 18 + Tailwind CSS
-- **Components**: shadcn/ui
-- **PWA**: Service Worker für Offline
+- **Server**: Ktor multiplatform server
+- **Database**: PostgreSQL für cloud sync
+- **Authentication**: OAuth 2.0 / JWT
+- **Storage**: MinIO für cloud image backup
+- **API**: GraphQL mit Ktor GraphQL plugin
 
 ## 🔧 Core Features - Detaillierte Spezifikation
 
