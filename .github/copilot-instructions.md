@@ -32,7 +32,6 @@ alles-teurer/
 │       ├── androidApp/      # Android app wrapper
 │       └── iosApp/         # iOS app wrapper (Xcode project)
 ├── shared/                 # Additional shared modules (if needed)
-├── server/                # Backend services (Ktor) - excluded from mobile build
 ├── spec/                  # Requirements and architecture docs
 ├── tools/                 # Development tooling and scripts
 ├── gradle.properties      # Gradle configuration
@@ -238,21 +237,7 @@ open apps/composeApp/iosApp/iosApp.xcodeproj
 ./gradlew :apps:composeApp:iosSimulatorArm64Test    # iOS
 
 # Run on specific platforms
-./gradlew :apps:composeApp:installDebug             # Android
-./gradlew :apps:composeApp:runDistributable         # Desktop
-```
-
-### Docker Development Environment
-
-```bash
-# Start local infrastructure (PostgreSQL, Redis, etc. if backend used)
-docker-compose up -d
-
-# Stop infrastructure
-docker-compose down
-
-# View service logs
-docker-compose logs -f [service-name]
+./gradlew :composeApp:installDebug             # Android
 ```
 
 ### Feature Development Approach
