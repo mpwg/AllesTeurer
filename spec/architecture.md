@@ -1,15 +1,16 @@
-# AllesTeurer - iOS-First System Architecture
+# AllesTeurer - Kotlin Multiplatform System Architecture
 
 ## 1. Executive Summary
 
-AllesTeurer is a privacy-focused iOS application that helps users track product prices through local receipt scanning and price analysis. The system uses Apple's Vision Framework for OCR processing, Core Data for local storage, and CloudKit for device synchronization, ensuring all data remains under user control while providing powerful analytics and insights.
+AllesTeurer is a privacy-focused multiplatform application that helps users track product prices through local receipt scanning and price analysis. The system uses Kotlin Multiplatform Mobile (KMM) with Compose Multiplatform for shared business logic and UI, platform-specific OCR implementations (Vision Framework for iOS, ML Kit for Android), and SQLDelight for local storage, ensuring all data remains under user control while providing powerful analytics and insights.
 
 ### Key Architectural Principles
 
 - **Privacy-First**: All data processing happens on-device
 - **Local-First**: Full functionality without internet connectivity
+- **Multiplatform-Native**: Single codebase with platform-specific optimizations
 - **Accessibility**: WCAG 2.2 Level AA compliant
-- **Performance**: Fast, responsive user experience with native iOS features
+- **Performance**: Native performance with zero-overhead abstractions
 - **Extensible**: Clean architecture supporting future backend integration
 
 ## 2. System Architecture Overview
@@ -24,22 +25,35 @@ graph TB
     end
 ## 2. System Architecture Overview
 
-### 2.1 iOS-First Architecture
+### 2.1 Kotlin Multiplatform Architecture
 
 ```mermaid
 graph TB
-    subgraph "iOS App Layer"
-        UI[SwiftUI Views]
-        VM[ViewModels - MVVM]
-        SERV[Service Layer]
+    subgraph "Compose Multiplatform UI"
+        UI[Compose UI]
+        NAV[Navigation]
+        THEME[Theming]
     end
 
-    subgraph "Apple Frameworks"
-        VISION[Vision Framework<br/>OCR Processing]
-        COREDATA[Core Data<br/>Local Storage]
-        CLOUDKIT[CloudKit<br/>Device Sync]
-        CHARTS[Swift Charts<br/>Analytics]
-        CAMERA[AVFoundation<br/>Camera]
+    subgraph "Shared Business Logic (KMP)"
+        VM[ViewModels]
+        REPOS[Repositories]
+        DOMAIN[Domain Logic]
+        MODELS[Data Models]
+    end
+
+    subgraph "Platform-Specific Implementations"
+        subgraph "iOS"
+            VISION[Vision Framework<br/>OCR]
+            IOS_DB[SQLDelight iOS]
+            IOS_CAM[Camera iOS]
+        end
+
+        subgraph "Android"
+            MLKIT[ML Kit<br/>OCR]
+            AND_DB[SQLDelight Android]
+            AND_CAM[Camera Android]
+        end
     end
 
     subgraph "Local Processing"
@@ -56,73 +70,77 @@ graph TB
     end
 
     UI --> VM
-    VM --> SERV
-    SERV --> VISION
-    SERV --> COREDATA
-    SERV --> CLOUDKIT
-    SERV --> CHARTS
-    SERV --> CAMERA
+    VM --> REPOS
+    REPOS --> DOMAIN
+    DOMAIN --> MODELS
+
+    VM --> VISION
+    VM --> MLKIT
+    REPOS --> IOS_DB
+    REPOS --> AND_DB
 
     VISION --> OCR
+    MLKIT --> OCR
     OCR --> PARSER
     PARSER --> MATCHER
     MATCHER --> ANALYTICS
-
-    COREDATA --> LOCAL
-    CLOUDKIT --> CLOUD
-    SERV --> IMAGES
-````
+```
 
 ### 2.2 Core Components
 
-#### 2.2.1 Data Layer (Core Data + CloudKit)
+#### 2.2.1 Shared Data Layer (SQLDelight)
 
-- **Local Storage**: Core Data for offline-first functionality
-- **Device Sync**: CloudKit for seamless sync across user's devices
-- **Privacy**: All data stays within user's Apple ecosystem
-- **Backup**: Automatic CloudKit backup with user control
+- **Local Storage**: SQLDelight for type-safe, multiplatform SQL queries
+- **Data Models**: Kotlin data classes with @Serializable annotations
+- **Privacy**: All data stays on device, no cloud dependencies by default
+- **Migrations**: Version-controlled schema evolution
 
-#### 2.2.2 Processing Layer (Apple Intelligence)
+#### 2.2.2 Platform-Specific Processing Layer
 
-- **OCR Engine**: Vision Framework for receipt text extraction
-- **Natural Language**: Product name and category recognition
-- **Image Processing**: Receipt enhancement and preprocessing
-- **Local Analytics**: Price trend analysis without cloud dependency
+- **iOS OCR Engine**: Vision Framework for receipt text extraction
+- **Android OCR Engine**: ML Kit for receipt text extraction
+- **Image Processing**: Platform-specific receipt enhancement
+- **Shared Analytics**: Kotlin algorithms for price trend analysis
 
-#### 2.2.3 User Interface Layer (SwiftUI)
+#### 2.2.3 Compose Multiplatform UI Layer
 
-- **Native Performance**: Full Swift/SwiftUI implementation
-- **Accessibility**: VoiceOver, Dynamic Type, high contrast support
-- **Responsive Design**: Adaptive layouts for all iPhone sizes
-- **Intuitive UX**: iOS design patterns and conventions
+- **Cross-Platform**: Single UI codebase for iOS and Android
+- **Native Feel**: Platform-specific adaptations and theming
+- **Accessibility**: Built-in accessibility support across platforms
+- **Performance**: Native compilation with zero overhead
 
-## 3. iOS Technology Stack
+## 3. Kotlin Multiplatform Technology Stack
 
-### 3.1 Core iOS Technologies
+### 3.1 Core KMP Technologies
 
-- **Language**: Swift 6.0+ with strict concurrency
-- **UI Framework**: SwiftUI with iOS 17+ features
-- **Architecture**: MVVM + Coordinator pattern
-- **Concurrency**: async/await + Combine
-- **Storage**: Core Data + CloudKit
-- **AI/ML**: Vision Framework + Natural Language
+- **Language**: Kotlin 2.2.20+ with K2 compiler
+- **UI Framework**: Compose Multiplatform
+- **Architecture**: MVVM with Repository pattern
+- **Concurrency**: Kotlin Coroutines + Flow
+- **Storage**: SQLDelight
+- **Serialization**: kotlinx.serialization
 
-### 3.2 Apple Frameworks Integration
+### 3.2 Platform-Specific Integrations
 
-- **Vision**: Receipt OCR and text recognition
-- **Core Data**: Local persistent storage
-- **CloudKit**: Private cloud synchronization
-- **AVFoundation**: Camera capture functionality
-- **Swift Charts**: Data visualization
-- **NaturalLanguage**: Text processing and categorization
+#### iOS
+- **OCR**: Vision Framework via expect/actual
+- **Camera**: AVFoundation via Compose integration
+- **Local Storage**: SQLDelight with SQLite.swift
+- **Navigation**: Native iOS navigation patterns
+
+#### Android
+- **OCR**: ML Kit via expect/actual declarations
+- **Camera**: CameraX via Compose integration
+- **Local Storage**: SQLDelight with Android SQLite
+- **Navigation**: Compose Navigation
 
 ### 3.3 Development Tools
 
-- **IDE**: Xcode 15+
-- **CI/CD**: Xcode Cloud + GitHub Actions
-- **Testing**: XCTest + XCUITest
-- **Analytics**: os_log for debugging
-- **Performance**: Instruments profiling
+- **IDE**: IntelliJ IDEA / Android Studio
+- **Build**: Gradle 9+ with Kotlin DSL
+- **CI/CD**: GitHub Actions with KMP
+- **Testing**: Kotlin Test + Compose UI Testing
+- **Performance**: Profiler plugins for each platform
 
 ## 6. Privacy & Security Architecture
 
@@ -130,9 +148,9 @@ graph TB
 
 - **Local Processing**: All OCR and analytics happen on-device
 - **No User Tracking**: Zero third-party analytics or tracking
-- **Data Ownership**: User owns all data through CloudKit
+- **Data Ownership**: User controls all data export/import
 - **Minimal Permissions**: Only camera access required
-- **Transparent Storage**: Users can see and export all data
+- **Transparent Storage**: Users can see and export all data via SQLDelight
 
 ### 6.2 Data Security
 
@@ -405,3 +423,4 @@ This iOS-first architecture provides:
 - **User Experience**: Native iOS patterns and seamless iCloud integration
 
 The architecture is designed to deliver a complete, functional app that can launch independently while maintaining the flexibility to evolve into a full-stack solution as the product grows.
+````
