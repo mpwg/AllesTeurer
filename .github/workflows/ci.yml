@@ -38,6 +38,7 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          build-scan-publish: true
 
       - name: Cache Kotlin/Native dependencies
         uses: actions/cache@v4
@@ -75,6 +76,18 @@ jobs:
             **/build/test-results/
           retention-days: 7
 
+      - name: Upload build reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-build-reports
+          path: |
+            **/build/reports/problems/
+            **/build/reports/configuration-cache/
+            **/build/reports/build-scan/
+            **/build/reports/dependency-verification/
+          retention-days: 7
+
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         if: success()
@@ -104,6 +117,7 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          build-scan-publish: true
 
       - name: Cache Kotlin/Native dependencies
         uses: actions/cache@v4
@@ -132,8 +146,8 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
-      - name: Build shared framework for iOS
-        run: ./gradlew :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64 --no-daemon --parallel --build-cache
+      - name: Build shared module
+        run: ./gradlew :shared:build --no-daemon --parallel --build-cache
 
       - name: Build iOS Kotlin framework
         run: ./gradlew :composeApp:linkDebugFrameworkIosArm64 :composeApp:linkDebugFrameworkIosSimulatorArm64 --no-daemon --parallel --build-cache
@@ -154,6 +168,28 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/test-results/
+          retention-days: 7
+
+      - name: Upload build reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-build-reports
+          path: |
+            **/build/reports/problems/
+            **/build/reports/configuration-cache/
+            **/build/reports/build-scan/
+            **/build/reports/dependency-verification/
+          retention-days: 7
+
+      - name: Upload Xcode build logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xcode-build-logs
+          path: |
+            ~/Library/Logs/DiagnosticReports/
+            ~/Library/Developer/Xcode/DerivedData/**/Logs/
           retention-days: 7
 
   # Lint and code quality checks
@@ -182,6 +218,7 @@ jobs:
         with:
           gradle-version: wrapper
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          build-scan-publish: true
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -208,6 +245,17 @@ jobs:
           path: |
             **/build/reports/ktlint/
             **/build/reports/detekt/
+          retention-days: 7
+
+      - name: Upload lint build reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-build-reports
+          path: |
+            **/build/reports/problems/
+            **/build/reports/configuration-cache/
+            **/build/reports/build-scan/
           retention-days: 7
 
   # Security and dependency checks
@@ -250,6 +298,64 @@ jobs:
     if: always()
 
     steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+        continue-on-error: true
+
+      - name: Create build summary report
+        run: |
+          mkdir -p build-summary
+          echo "# AllesTeurer CI Build Report" > build-summary/BUILD_REPORT.md
+          echo "" >> build-summary/BUILD_REPORT.md
+          echo "## Build Status" >> build-summary/BUILD_REPORT.md
+          echo "- **Android & Shared build**: ${{ needs.android-and-shared.result }}" >> build-summary/BUILD_REPORT.md
+          echo "- **iOS build**: ${{ needs.ios.result }}" >> build-summary/BUILD_REPORT.md
+          echo "- **Lint**: ${{ needs.lint.result }}" >> build-summary/BUILD_REPORT.md
+          echo "- **Security**: ${{ needs.security.result }}" >> build-summary/BUILD_REPORT.md
+          echo "" >> build-summary/BUILD_REPORT.md
+          echo "## Available Artifacts" >> build-summary/BUILD_REPORT.md
+          if [ -d "artifacts" ]; then
+            find artifacts -type f -name "*.html" -o -name "*.xml" -o -name "*.json" | head -20 | while read file; do
+              echo "- \`$file\`" >> build-summary/BUILD_REPORT.md
+            done
+          fi
+          echo "" >> build-summary/BUILD_REPORT.md
+          echo "Generated on: $(date)" >> build-summary/BUILD_REPORT.md
+
+      - name: Create GitHub Job Summary
+        run: |
+          echo "# 🏗️ AllesTeurer Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Android & Shared | ${{ needs.android-and-shared.result == 'success' && '✅ Success' || needs.android-and-shared.result == 'failure' && '❌ Failed' || '⚠️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| iOS | ${{ needs.ios.result == 'success' && '✅ Success' || needs.ios.result == 'failure' && '❌ Failed' || '⚠️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint & Code Quality | ${{ needs.lint.result == 'success' && '✅ Success' || needs.lint.result == 'failure' && '❌ Failed' || '⚠️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security.result == 'success' && '✅ Success' || needs.security.result == 'failure' && '❌ Failed' || '⚠️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📁 Generated Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "The following reports and artifacts were generated:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🧪 Test reports (Android & iOS)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏗️ Build reports and configuration cache info" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 Lint and static analysis reports" >> $GITHUB_STEP_SUMMARY
+          echo "- 📱 Android APK (debug build)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔐 Security scan results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All artifacts are available for download from the Actions summary page." >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload consolidated build summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-summary
+          path: |
+            build-summary/
+            artifacts/
+          retention-days: 14
+
       - name: Check build results
         run: |
           echo "Android & Shared build: ${{ needs.android-and-shared.result }}"
