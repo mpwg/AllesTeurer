@@ -1,0 +1,640 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_price_record_date ON PriceRecord(created_at)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_price_record_matched ON PriceRecord(is_matched)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_price_record_product_id ON PriceRecord(product_id)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_price_record_product_name ON PriceRecord(normalized_product_name)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_price_record_receipt_id ON PriceRecord(receipt_id)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_price_record_unit_price ON PriceRecord(unit_price)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_product_category ON Product(category)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_product_normalized_name ON Product(normalized_name)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_receipt_receipt_date ON Receipt(receipt_date)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_receipt_scan_date ON Receipt(scan_date)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_receipt_store_id ON Receipt(store_id)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_receipt_total_amount ON Receipt(total_amount)", 0)</ID>
+    <ID>ArgumentListWrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, "CREATE INDEX IF NOT EXISTS idx_receipt_validated ON Receipt(is_validated)", 0)</ID>
+    <ID>ArgumentListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(-1_417_683_083, arrayOf("PriceRecord", "Receipt"), driver, "PriceRecord.sq", "selectAllPriceRecords", """ |SELECT pr.id, pr.receipt_id, pr.product_id, pr.product_name, pr.normalized_product_name, pr.quantity, pr.unit_price, pr.total_price, pr.unit_type, pr.brand, pr.category, pr.tax_rate, pr.discount_amount, pr.raw_text, pr.line_number, pr.is_matched, pr.match_confidence, pr.created_at, pr.updated_at, r.receipt_date, r.store_name |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |ORDER BY r.receipt_date DESC """.trimMargin())</ID>
+    <ID>ArgumentListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(106_695_423, arrayOf("PriceRecord"), driver, "PriceRecord.sq", "selectUnmatchedPriceRecords", "SELECT PriceRecord.id, PriceRecord.receipt_id, PriceRecord.product_id, PriceRecord.product_name, PriceRecord.normalized_product_name, PriceRecord.quantity, PriceRecord.unit_price, PriceRecord.total_price, PriceRecord.unit_type, PriceRecord.brand, PriceRecord.category, PriceRecord.tax_rate, PriceRecord.discount_amount, PriceRecord.raw_text, PriceRecord.line_number, PriceRecord.is_matched, PriceRecord.match_confidence, PriceRecord.created_at, PriceRecord.updated_at FROM PriceRecord WHERE is_matched = 0 ORDER BY created_at DESC")</ID>
+    <ID>ArgumentListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(1_738_314_632, arrayOf("PriceRecord", "Receipt"), driver, "PriceRecord.sq", "selectSignificantPriceChanges", """ |SELECT | pr1.product_id, | pr1.product_name, | pr1.unit_price AS old_price, | pr2.unit_price AS new_price, | (pr2.unit_price - pr1.unit_price) AS price_diff, | ((pr2.unit_price - pr1.unit_price) / pr1.unit_price * 100) AS price_change_percent, | r1.receipt_date AS old_date, | r2.receipt_date AS new_date, | r1.store_name AS old_store, | r2.store_name AS new_store |FROM PriceRecord pr1 |JOIN Receipt r1 ON pr1.receipt_id = r1.id |JOIN PriceRecord pr2 ON pr1.product_id = pr2.product_id |JOIN Receipt r2 ON pr2.receipt_id = r2.id |WHERE pr1.product_id IS NOT NULL |AND r2.receipt_date &gt; r1.receipt_date |AND ABS((pr2.unit_price - pr1.unit_price) / pr1.unit_price * 100) &gt; 10 -- More than 10% change |ORDER BY price_change_percent DESC """.trimMargin())</ID>
+    <ID>ArgumentListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(772_093_110, arrayOf("Receipt", "PriceRecord"), driver, "PriceRecord.sq", "selectAveragePricesByProduct", """ |SELECT | product_id, | product_name, | COUNT(*) AS record_count, | AVG(unit_price) AS avg_price, | MIN(unit_price) AS min_price, | MAX(unit_price) AS max_price, | MIN(r.receipt_date) AS first_seen, | MAX(r.receipt_date) AS last_seen |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |WHERE pr.product_id IS NOT NULL |GROUP BY product_id, product_name |ORDER BY record_count DESC """.trimMargin())</ID>
+    <ID>ArgumentListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(receipt_date, receipt_date_)</ID>
+    <ID>ArgumentListWrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordByIdQuery$(-335_430_553, """SELECT PriceRecord.id, PriceRecord.receipt_id, PriceRecord.product_id, PriceRecord.product_name, PriceRecord.normalized_product_name, PriceRecord.quantity, PriceRecord.unit_price, PriceRecord.total_price, PriceRecord.unit_type, PriceRecord.brand, PriceRecord.category, PriceRecord.tax_rate, PriceRecord.discount_amount, PriceRecord.raw_text, PriceRecord.line_number, PriceRecord.is_matched, PriceRecord.match_confidence, PriceRecord.created_at, PriceRecord.updated_at FROM PriceRecord WHERE id = ?""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByReceiptIdQuery$(1_142_385_630, """SELECT PriceRecord.id, PriceRecord.receipt_id, PriceRecord.product_id, PriceRecord.product_name, PriceRecord.normalized_product_name, PriceRecord.quantity, PriceRecord.unit_price, PriceRecord.total_price, PriceRecord.unit_type, PriceRecord.brand, PriceRecord.category, PriceRecord.tax_rate, PriceRecord.discount_amount, PriceRecord.raw_text, PriceRecord.line_number, PriceRecord.is_matched, PriceRecord.match_confidence, PriceRecord.created_at, PriceRecord.updated_at FROM PriceRecord WHERE receipt_id = ? ORDER BY line_number ASC""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries$(-884_296_318, arrayOf("Product"), driver, "Product.sq", "selectDistinctBrands", "SELECT DISTINCT brand FROM Product WHERE brand IS NOT NULL ORDER BY brand")</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries$(243_796_690, arrayOf("Product"), driver, "Product.sq", "selectDistinctCategories", "SELECT DISTINCT category FROM Product WHERE category IS NOT NULL ORDER BY category")</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries$(535_417_547, arrayOf("Product"), driver, "Product.sq", "selectAllProducts", "SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product ORDER BY name ASC")</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries$(value_, value__, value___, value____, name, value_____, value______)</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries.SelectProductByBarcodeQuery$(null, """SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE barcode ${ if (barcode == null) "IS" else "=" } ?""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries.SelectProductByIdQuery$(-126_819_833, """SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE id = ?""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries.SelectProductByNameQuery$(-1_614_625_673, """SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE name = ?""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries.SelectProductsByBrandQuery$(null, """SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE brand ${ if (brand == null) "IS" else "=" } ? ORDER BY name ASC""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:ProductQueries.kt$ProductQueries.SelectProductsByCategoryQuery$(null, """SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE category ${ if (category == null) "IS" else "=" } ? ORDER BY name ASC""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:ReceiptQueries.kt$ReceiptQueries$(-2_038_396_679, arrayOf("Receipt"), driver, "Receipt.sq", "selectAllReceipts", "SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt ORDER BY receipt_date DESC")</ID>
+    <ID>ArgumentListWrapping:ReceiptQueries.kt$ReceiptQueries$(1_270_212_077, arrayOf("Receipt"), driver, "Receipt.sq", "selectUnvalidatedReceipts", """ |SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt |WHERE is_validated = 0 |ORDER BY scan_date DESC """.trimMargin())</ID>
+    <ID>ArgumentListWrapping:ReceiptQueries.kt$ReceiptQueries$(1_925_417_326, arrayOf("Receipt"), driver, "Receipt.sq", "selectMonthlySpending", """ |SELECT | strftime('%Y-%m', datetime(receipt_date, 'unixepoch')) AS month, | SUM(total_amount) AS total_spending, | COUNT(*) AS receipt_count |FROM Receipt |GROUP BY month |ORDER BY month DESC """.trimMargin())</ID>
+    <ID>ArgumentListWrapping:ReceiptQueries.kt$ReceiptQueries$(receipt_date, receipt_date_)</ID>
+    <ID>ArgumentListWrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptByIdQuery$(629_566_759, """SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt WHERE id = ?""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByStoreQuery$(null, """SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt WHERE store_id ${ if (store_id == null) "IS" else "=" } ? ORDER BY receipt_date DESC""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:Res.kt$Res$("composeResources/allesteurer.composeapp.generated.resources/" + path)</ID>
+    <ID>ArgumentListWrapping:Store.kt$Store$("Country code must be 2 characters (ISO 3166-1 alpha-2)")</ID>
+    <ID>ArgumentListWrapping:Store.kt$Store$(IllegalArgumentException("Country code must be 2 characters (ISO 3166-1 alpha-2)"))</ID>
+    <ID>ArgumentListWrapping:StoreQueries.kt$StoreQueries$(1_582_514_535, arrayOf("Store"), driver, "Store.sq", "selectAllStores", "SELECT Store.id, Store.name, Store.address, Store.city, Store.postal_code, Store.country, Store.created_at, Store.updated_at FROM Store ORDER BY name ASC")</ID>
+    <ID>ArgumentListWrapping:StoreQueries.kt$StoreQueries.SelectStoreByIdQuery$(-589_454_073, """SELECT Store.id, Store.name, Store.address, Store.city, Store.postal_code, Store.country, Store.created_at, Store.updated_at FROM Store WHERE id = ?""", mapper, 1)</ID>
+    <ID>ArgumentListWrapping:StoreQueries.kt$StoreQueries.SelectStoreByNameQuery$(470_468_471, """SELECT Store.id, Store.name, Store.address, Store.city, Store.postal_code, Store.country, Store.created_at, Store.updated_at FROM Store WHERE name = ?""", mapper, 1)</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val discount_amount: Double?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val is_matched: Long?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val line_number: Long?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val match_confidence: Double?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val normalized_product_name: String</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val raw_text: String?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val receipt_id: String</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val tax_rate: Double?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val total_price: Double</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val unit_price: Double</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val unit_type: String?</ID>
+    <ID>ConstructorParameterNaming:PriceRecord.kt$PriceRecord$public val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductNameQuery$public val normalized_product_name: String</ID>
+    <ID>ConstructorParameterNaming:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductQuery$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByProductIdQuery$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByReceiptIdQuery$public val receipt_id: String</ID>
+    <ID>ConstructorParameterNaming:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceTrendsForProductQuery$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:PriceRecordQueries.kt$PriceRecordQueries.SelectTopSpendingByCategoryQuery$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:PriceRecordQueries.kt$PriceRecordQueries.SelectTopSpendingByCategoryQuery$public val receipt_date_: Long</ID>
+    <ID>ConstructorParameterNaming:Product.kt$Product$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:Product.kt$Product$public val normalized_name: String</ID>
+    <ID>ConstructorParameterNaming:Product.kt$Product$public val unit_type: String?</ID>
+    <ID>ConstructorParameterNaming:Product.kt$Product$public val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:ProductQueries.kt$ProductQueries.SearchProductsQuery$public val value_: String</ID>
+    <ID>ConstructorParameterNaming:ProductQueries.kt$ProductQueries.SearchProductsQuery$public val value__: String</ID>
+    <ID>ConstructorParameterNaming:ProductQueries.kt$ProductQueries.SearchProductsQuery$public val value___: String</ID>
+    <ID>ConstructorParameterNaming:ProductQueries.kt$ProductQueries.SearchProductsQuery$public val value____: String</ID>
+    <ID>ConstructorParameterNaming:ProductQueries.kt$ProductQueries.SearchProductsQuery$public val value_____: String</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val cashier_id: String?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val discount_amount: Double?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val image_path: String?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val is_validated: Long?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val ocr_confidence: Double?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val payment_method: String?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val raw_ocr_text: String?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val receipt_number: String?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val scan_date: Long</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val store_id: String?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val store_name: String</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val tax_amount: Double?</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val total_amount: Double</ID>
+    <ID>ConstructorParameterNaming:Receipt.kt$Receipt$public val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SearchReceiptsQuery$public val value_: String</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SearchReceiptsQuery$public val value__: String</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByDateRangeQuery$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByDateRangeQuery$public val receipt_date_: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByMonthQuery$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByMonthQuery$public val receipt_date_: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByStoreQuery$public val store_id: String?</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectSpendingByStoreQuery$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectSpendingByStoreQuery$public val receipt_date_: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectTotalSpendingByDateRangeQuery$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:ReceiptQueries.kt$ReceiptQueries.SelectTotalSpendingByDateRangeQuery$public val receipt_date_: Long</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val discount_amount: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val is_matched: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val line_number: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val match_confidence: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val normalized_product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val raw_text: String?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val receipt_id: String</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val store_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val tax_rate: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val total_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val unit_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val unit_type: String?</ID>
+    <ID>ConstructorParameterNaming:SelectAllPriceRecords.kt$SelectAllPriceRecords$public val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val avg_price: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val first_seen: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val last_seen: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val max_price: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val min_price: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val product_id: String</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$public val record_count: Long</ID>
+    <ID>ConstructorParameterNaming:SelectMonthlySpending.kt$SelectMonthlySpending$public val receipt_count: Long</ID>
+    <ID>ConstructorParameterNaming:SelectMonthlySpending.kt$SelectMonthlySpending$public val total_spending: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val discount_amount: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val is_matched: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val line_number: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val match_confidence: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val normalized_product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val raw_text: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val receipt_id: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val store_id: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val store_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val tax_rate: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val total_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val unit_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val unit_type: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$public val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val discount_amount: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val is_matched: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val line_number: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val match_confidence: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val normalized_product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val raw_text: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val receipt_id: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val store_id: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val store_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val tax_rate: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val total_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val unit_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val unit_type: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$public val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val discount_amount: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val is_matched: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val line_number: Long?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val match_confidence: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val normalized_product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val raw_text: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val receipt_id: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val store_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val tax_rate: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val total_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val unit_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val unit_type: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$public val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceTrendsForProduct.kt$SelectPriceTrendsForProduct$public val product_id: String?</ID>
+    <ID>ConstructorParameterNaming:SelectPriceTrendsForProduct.kt$SelectPriceTrendsForProduct$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceTrendsForProduct.kt$SelectPriceTrendsForProduct$public val receipt_date: Long</ID>
+    <ID>ConstructorParameterNaming:SelectPriceTrendsForProduct.kt$SelectPriceTrendsForProduct$public val store_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectPriceTrendsForProduct.kt$SelectPriceTrendsForProduct$public val unit_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val new_date: Long</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val new_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val new_store: String</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val old_date: Long</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val old_price: Double</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val old_store: String</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val price_change_percent: Double</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val price_diff: Double</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val product_id: String</ID>
+    <ID>ConstructorParameterNaming:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$public val product_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectSpendingByStore.kt$SelectSpendingByStore$public val receipt_count: Long</ID>
+    <ID>ConstructorParameterNaming:SelectSpendingByStore.kt$SelectSpendingByStore$public val store_name: String</ID>
+    <ID>ConstructorParameterNaming:SelectSpendingByStore.kt$SelectSpendingByStore$public val total_spending: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectTopSpendingByCategory.kt$SelectTopSpendingByCategory$public val avg_unit_price: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectTopSpendingByCategory.kt$SelectTopSpendingByCategory$public val item_count: Long</ID>
+    <ID>ConstructorParameterNaming:SelectTopSpendingByCategory.kt$SelectTopSpendingByCategory$public val total_spent: Double?</ID>
+    <ID>ConstructorParameterNaming:SelectTotalSpendingByDateRange.kt$SelectTotalSpendingByDateRange$public val total_spending: Double?</ID>
+    <ID>ConstructorParameterNaming:Store.kt$Store$public val created_at: Long</ID>
+    <ID>ConstructorParameterNaming:Store.kt$Store$public val postal_code: String?</ID>
+    <ID>ConstructorParameterNaming:Store.kt$Store$public val updated_at: Long</ID>
+    <ID>CyclomaticComplexMethod:PriceRecord.kt$PriceRecord$fun validate(): Result&lt;Unit&gt;</ID>
+    <ID>FinalNewline:App.kt$eu.mpwg.allesteurer.App.kt</ID>
+    <ID>FinalNewline:DatabaseDriverFactory.kt$eu.mpwg.allesteurer.data.local.DatabaseDriverFactory.kt</ID>
+    <ID>FinalNewline:ModelUtils.kt$eu.mpwg.allesteurer.data.models.ModelUtils.kt</ID>
+    <ID>FinalNewline:OCRResult.kt$eu.mpwg.allesteurer.data.models.OCRResult.kt</ID>
+    <ID>FinalNewline:PriceRecord.kt$eu.mpwg.allesteurer.data.models.PriceRecord.kt</ID>
+    <ID>FinalNewline:Product.kt$eu.mpwg.allesteurer.data.models.Product.kt</ID>
+    <ID>FinalNewline:Receipt.kt$eu.mpwg.allesteurer.data.models.Receipt.kt</ID>
+    <ID>FinalNewline:Store.kt$eu.mpwg.allesteurer.data.models.Store.kt</ID>
+    <ID>FunctionNaming:App.kt$@Composable @Preview fun App()</ID>
+    <ID>FunctionNaming:Drawable0.commonMain.kt$@InternalResourceApi internal fun _collectCommonMainDrawable0Resources(map: MutableMap&lt;String, DrawableResource&gt;)</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$created_at: Long</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$discount_amount: Double?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$is_matched: Long?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$line_number: Long?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$match_confidence: Double?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$normalized_product_name: String</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$product_id: String?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$product_name: String</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$raw_text: String?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$receipt_date: Long</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$receipt_date_: Long</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$receipt_id: String</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$tax_rate: Double?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$total_price: Double</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$unit_price: Double</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$unit_type: String?</ID>
+    <ID>FunctionParameterNaming:PriceRecordQueries.kt$PriceRecordQueries$updated_at: Long</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$`value`: String</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$created_at: Long</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$normalized_name: String</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$unit_type: String?</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$updated_at: Long</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$value_: String</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$value__: String</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$value___: String</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$value____: String</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$value_____: String</ID>
+    <ID>FunctionParameterNaming:ProductQueries.kt$ProductQueries$value______: String</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$`value`: Long</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$`value`: String</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$cashier_id: String?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$created_at: Long</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$discount_amount: Double?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$image_path: String?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$is_validated: Long?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$ocr_confidence: Double?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$payment_method: String?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$raw_ocr_text: String?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$receipt_date: Long</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$receipt_date_: Long</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$receipt_number: String?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$scan_date: Long</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$store_id: String?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$store_name: String</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$tax_amount: Double?</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$total_amount: Double</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$updated_at: Long</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$value_: Long</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$value_: String</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$value__: String</ID>
+    <ID>FunctionParameterNaming:ReceiptQueries.kt$ReceiptQueries$value___: String</ID>
+    <ID>FunctionParameterNaming:StoreQueries.kt$StoreQueries$`value`: String</ID>
+    <ID>FunctionParameterNaming:StoreQueries.kt$StoreQueries$created_at: Long</ID>
+    <ID>FunctionParameterNaming:StoreQueries.kt$StoreQueries$postal_code: String?</ID>
+    <ID>FunctionParameterNaming:StoreQueries.kt$StoreQueries$updated_at: Long</ID>
+    <ID>FunctionParameterNaming:StoreQueries.kt$StoreQueries$value_: String</ID>
+    <ID>FunctionReturnTypeSpacing:PriceRecordQueries.kt$PriceRecordQueries$public fun selectPriceHistoryByProductName(normalized_product_name: String): Query&lt;SelectPriceHistoryByProductName&gt;</ID>
+    <ID>ImportOrdering:App.kt$import androidx.compose.animation.AnimatedVisibility import androidx.compose.foundation.Image import androidx.compose.foundation.background import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.safeContentPadding import androidx.compose.material3.Button import androidx.compose.material3.MaterialTheme import androidx.compose.material3.Text import androidx.compose.runtime.* import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import org.jetbrains.compose.resources.painterResource import org.jetbrains.compose.ui.tooling.preview.Preview import allesteurer.composeapp.generated.resources.Res import allesteurer.composeapp.generated.resources.compose_multiplatform</ID>
+    <ID>ImportOrdering:Drawable0.commonMain.kt$import kotlin.OptIn import kotlin.String import kotlin.collections.MutableMap import org.jetbrains.compose.resources.DrawableResource import org.jetbrains.compose.resources.InternalResourceApi import org.jetbrains.compose.resources.ResourceItem</ID>
+    <ID>ImportOrdering:ExpectResourceCollectors.kt$import kotlin.String import kotlin.collections.Map import org.jetbrains.compose.resources.DrawableResource import org.jetbrains.compose.resources.FontResource import org.jetbrains.compose.resources.PluralStringResource import org.jetbrains.compose.resources.StringArrayResource import org.jetbrains.compose.resources.StringResource</ID>
+    <ID>ImportOrdering:OCRResult.kt$import kotlinx.serialization.Serializable import kotlinx.datetime.Instant import kotlin.random.Random</ID>
+    <ID>ImportOrdering:PriceRecord.kt$import kotlinx.serialization.Serializable import kotlinx.datetime.Instant import kotlin.random.Random</ID>
+    <ID>ImportOrdering:Product.kt$import kotlinx.serialization.Serializable import kotlinx.datetime.Instant import kotlin.random.Random</ID>
+    <ID>ImportOrdering:Receipt.kt$import kotlinx.serialization.Serializable import kotlinx.datetime.Instant import kotlin.random.Random</ID>
+    <ID>ImportOrdering:Res.kt$import kotlin.ByteArray import kotlin.OptIn import kotlin.String import kotlin.Suppress import org.jetbrains.compose.resources.InternalResourceApi import org.jetbrains.compose.resources.getResourceUri import org.jetbrains.compose.resources.readResourceBytes</ID>
+    <ID>ImportOrdering:Store.kt$import kotlinx.serialization.Serializable import kotlinx.datetime.Instant import kotlin.random.Random</ID>
+    <ID>Indentation:AllesTeuerDatabase.kt$AllesTeuerDatabase$ </ID>
+    <ID>Indentation:AllesTeuerDatabase.kt$AllesTeuerDatabase.Companion$ </ID>
+    <ID>Indentation:AllesTeuerDatabaseImpl.kt$ </ID>
+    <ID>Indentation:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl$ </ID>
+    <ID>Indentation:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$ </ID>
+    <ID>Indentation:Drawable0.commonMain.kt$ </ID>
+    <ID>Indentation:PriceRecord.kt$PriceRecord$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductNameQuery$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductQuery$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordByIdQuery$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByProductIdQuery$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByReceiptIdQuery$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceTrendsForProductQuery$ </ID>
+    <ID>Indentation:PriceRecordQueries.kt$PriceRecordQueries.SelectTopSpendingByCategoryQuery$ </ID>
+    <ID>Indentation:Product.kt$Product$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries.SearchProductsByNormalizedNameQuery$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries.SearchProductsQuery$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries.SelectProductByBarcodeQuery$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries.SelectProductByIdQuery$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries.SelectProductByNameQuery$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries.SelectProductsByBrandQuery$ </ID>
+    <ID>Indentation:ProductQueries.kt$ProductQueries.SelectProductsByCategoryQuery$ </ID>
+    <ID>Indentation:Receipt.kt$Receipt$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SearchReceiptsQuery$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SelectReceiptByIdQuery$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByDateRangeQuery$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByMonthQuery$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByStoreQuery$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SelectRecentReceiptsQuery$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SelectSpendingByStoreQuery$ </ID>
+    <ID>Indentation:ReceiptQueries.kt$ReceiptQueries.SelectTotalSpendingByDateRangeQuery$ </ID>
+    <ID>Indentation:Res.kt$ </ID>
+    <ID>Indentation:Res.kt$Res$ </ID>
+    <ID>Indentation:SelectAllPriceRecords.kt$SelectAllPriceRecords$ </ID>
+    <ID>Indentation:SelectAveragePricesByProduct.kt$SelectAveragePricesByProduct$ </ID>
+    <ID>Indentation:SelectMonthlySpending.kt$SelectMonthlySpending$ </ID>
+    <ID>Indentation:SelectPriceHistoryByProduct.kt$SelectPriceHistoryByProduct$ </ID>
+    <ID>Indentation:SelectPriceHistoryByProductName.kt$SelectPriceHistoryByProductName$ </ID>
+    <ID>Indentation:SelectPriceRecordsByProductId.kt$SelectPriceRecordsByProductId$ </ID>
+    <ID>Indentation:SelectPriceTrendsForProduct.kt$SelectPriceTrendsForProduct$ </ID>
+    <ID>Indentation:SelectSignificantPriceChanges.kt$SelectSignificantPriceChanges$ </ID>
+    <ID>Indentation:SelectSpendingByStore.kt$SelectSpendingByStore$ </ID>
+    <ID>Indentation:SelectTopSpendingByCategory.kt$SelectTopSpendingByCategory$ </ID>
+    <ID>Indentation:SelectTotalSpendingByDateRange.kt$SelectTotalSpendingByDateRange$ </ID>
+    <ID>Indentation:Store.kt$Store$ </ID>
+    <ID>Indentation:StoreQueries.kt$StoreQueries$ </ID>
+    <ID>Indentation:StoreQueries.kt$StoreQueries.SearchStoresByNameQuery$ </ID>
+    <ID>Indentation:StoreQueries.kt$StoreQueries.SelectStoreByIdQuery$ </ID>
+    <ID>Indentation:StoreQueries.kt$StoreQueries.SelectStoreByNameQuery$ </ID>
+    <ID>LargeClass:PriceRecordQueries.kt$PriceRecordQueries : TransacterImpl</ID>
+    <ID>LargeClass:ReceiptQueries.kt$ReceiptQueries : TransacterImpl</ID>
+    <ID>LongMethod:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$override fun create(driver: SqlDriver): QueryResult.Value&lt;Unit&gt;</ID>
+    <ID>LongParameterList:PriceRecordQueries.kt$PriceRecordQueries$( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, )</ID>
+    <ID>LongParameterList:PriceRecordQueries.kt$PriceRecordQueries$( product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, updated_at: Long, id: String, )</ID>
+    <ID>LongParameterList:ProductQueries.kt$ProductQueries$( `value`: String, value_: String, value__: String, value___: String, name: String, value____: String, value_____: String, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T, )</ID>
+    <ID>LongParameterList:ProductQueries.kt$ProductQueries$( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, )</ID>
+    <ID>LongParameterList:ProductQueries.kt$ProductQueries$( name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, updated_at: Long, id: String, )</ID>
+    <ID>LongParameterList:ProductQueries.kt$ProductQueries$( value_: String, value__: String, value___: String, value____: String, name: String, value_____: String, value______: String, )</ID>
+    <ID>LongParameterList:ProductQueries.kt$ProductQueries.SearchProductsQuery$( public val `value`: String, public val value_: String, public val value__: String, public val value___: String, public val name: String, public val value____: String, public val value_____: String, mapper: (SqlCursor) -&gt; T, )</ID>
+    <ID>LongParameterList:ReceiptQueries.kt$ReceiptQueries$( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, )</ID>
+    <ID>LongParameterList:ReceiptQueries.kt$ReceiptQueries$( store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, updated_at: Long, id: String, )</ID>
+    <ID>LongParameterList:StoreQueries.kt$StoreQueries$( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, )</ID>
+    <ID>LongParameterList:StoreQueries.kt$StoreQueries$( name: String, address: String?, city: String?, postal_code: String?, country: String?, updated_at: Long, id: String, )</ID>
+    <ID>MagicNumber:OCRResult.kt$ExtractedItem$0.01</ID>
+    <ID>MagicNumber:OCRResult.kt$ImageMetadata$1_000_000.0</ID>
+    <ID>MagicNumber:OCRResult.kt$OCRResult$0.8</ID>
+    <ID>MagicNumber:OCRResult.kt$OCRResult.Companion$36</ID>
+    <ID>MagicNumber:PriceRecord.kt$PriceRecord$0.8</ID>
+    <ID>MagicNumber:PriceRecord.kt$PriceRecord$100.0</ID>
+    <ID>MagicNumber:PriceRecord.kt$PriceRecord$1000</ID>
+    <ID>MagicNumber:PriceRecord.kt$PriceRecord.Companion$36</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$10</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$106_695_423</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$11</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$12</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$13</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$14</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$15</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$16</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$17</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$18</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$19</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$1_417_683_083</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$1_738_314_632</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$1_988_483_902</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$20</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$209_180_952</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$21</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$2_141_399_782</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$3</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$4</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$5</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$6</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$611_924_401</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$7</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$772_093_110</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$8</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$9</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries$903_674_120</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductNameQuery$1_628_629_683</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordByIdQuery$335_430_553</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByReceiptIdQuery$1_142_385_630</ID>
+    <ID>MagicNumber:PriceRecordQueries.kt$PriceRecordQueries.SelectTopSpendingByCategoryQuery$1_538_360_265</ID>
+    <ID>MagicNumber:Product.kt$Product.Companion$36</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$10</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$119_259_398</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$187_475_912</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$1_171_918_808</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$243_796_690</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$3</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$4</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$5</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$535_417_547</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$6</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$7</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$8</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$884_296_318</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries$9</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SearchProductsByNormalizedNameQuery$607_079_005</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SearchProductsQuery$3</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SearchProductsQuery$4</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SearchProductsQuery$5</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SearchProductsQuery$6</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SearchProductsQuery$683_478_230</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SearchProductsQuery$7</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SelectProductByIdQuery$126_819_833</ID>
+    <ID>MagicNumber:ProductQueries.kt$ProductQueries.SelectProductByNameQuery$1_614_625_673</ID>
+    <ID>MagicNumber:Receipt.kt$Receipt$0.8</ID>
+    <ID>MagicNumber:Receipt.kt$Receipt$100</ID>
+    <ID>MagicNumber:Receipt.kt$Receipt$3</ID>
+    <ID>MagicNumber:Receipt.kt$Receipt.Companion$36</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$10</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$11</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$12</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$13</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$14</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$15</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$16</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$17</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$18</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$19</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$1_270_212_077</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$1_795_290_296</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$1_925_417_326</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$2_038_396_679</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$3</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$397_915_617</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$4</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$5</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$504_112_090</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$6</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$7</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$8</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$810_847_400</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries$9</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SearchReceiptsQuery$1_466_842_122</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SearchReceiptsQuery$3</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SelectReceiptByIdQuery$629_566_759</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByDateRangeQuery$1_074_035_366</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByMonthQuery$903_282_901</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SelectRecentReceiptsQuery$946_811_033</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SelectSpendingByStoreQuery$210_074_851</ID>
+    <ID>MagicNumber:ReceiptQueries.kt$ReceiptQueries.SelectTotalSpendingByDateRangeQuery$1_583_081_843</ID>
+    <ID>MagicNumber:Store.kt$Store.Companion$36</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$1_454_373_864</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$1_582_514_535</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$1_924_671_480</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$3</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$4</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$5</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$6</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$7</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$8</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries$905_997_382</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries.SearchStoresByNameQuery$627_726_516</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries.SelectStoreByIdQuery$589_454_073</ID>
+    <ID>MagicNumber:StoreQueries.kt$StoreQueries.SelectStoreByNameQuery$470_468_471</ID>
+    <ID>MaxLineLength:PriceRecordQueries.kt$PriceRecordQueries$"SELECT PriceRecord.id, PriceRecord.receipt_id, PriceRecord.product_id, PriceRecord.product_name, PriceRecord.normalized_product_name, PriceRecord.quantity, PriceRecord.unit_price, PriceRecord.total_price, PriceRecord.unit_type, PriceRecord.brand, PriceRecord.category, PriceRecord.tax_rate, PriceRecord.discount_amount, PriceRecord.raw_text, PriceRecord.line_number, PriceRecord.is_matched, PriceRecord.match_confidence, PriceRecord.created_at, PriceRecord.updated_at FROM PriceRecord WHERE is_matched = 0 ORDER BY created_at DESC"</ID>
+    <ID>MaxLineLength:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordByIdQuery$"""SELECT PriceRecord.id, PriceRecord.receipt_id, PriceRecord.product_id, PriceRecord.product_name, PriceRecord.normalized_product_name, PriceRecord.quantity, PriceRecord.unit_price, PriceRecord.total_price, PriceRecord.unit_type, PriceRecord.brand, PriceRecord.category, PriceRecord.tax_rate, PriceRecord.discount_amount, PriceRecord.raw_text, PriceRecord.line_number, PriceRecord.is_matched, PriceRecord.match_confidence, PriceRecord.created_at, PriceRecord.updated_at FROM PriceRecord WHERE id = ?"""</ID>
+    <ID>MaxLineLength:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByReceiptIdQuery$"""SELECT PriceRecord.id, PriceRecord.receipt_id, PriceRecord.product_id, PriceRecord.product_name, PriceRecord.normalized_product_name, PriceRecord.quantity, PriceRecord.unit_price, PriceRecord.total_price, PriceRecord.unit_type, PriceRecord.brand, PriceRecord.category, PriceRecord.tax_rate, PriceRecord.discount_amount, PriceRecord.raw_text, PriceRecord.line_number, PriceRecord.is_matched, PriceRecord.match_confidence, PriceRecord.created_at, PriceRecord.updated_at FROM PriceRecord WHERE receipt_id = ? ORDER BY line_number ASC"""</ID>
+    <ID>MaxLineLength:ProductQueries.kt$ProductQueries$"SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product ORDER BY name ASC"</ID>
+    <ID>MaxLineLength:ProductQueries.kt$ProductQueries.SelectProductByBarcodeQuery$"""SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE barcode ${ if (barcode == null) "IS" else "=" } ?"""</ID>
+    <ID>MaxLineLength:ProductQueries.kt$ProductQueries.SelectProductByIdQuery$"""SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE id = ?"""</ID>
+    <ID>MaxLineLength:ProductQueries.kt$ProductQueries.SelectProductByNameQuery$"""SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE name = ?"""</ID>
+    <ID>MaxLineLength:ProductQueries.kt$ProductQueries.SelectProductsByBrandQuery$"""SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE brand ${ if (brand == null) "IS" else "=" } ? ORDER BY name ASC"""</ID>
+    <ID>MaxLineLength:ProductQueries.kt$ProductQueries.SelectProductsByCategoryQuery$"""SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product WHERE category ${ if (category == null) "IS" else "=" } ? ORDER BY name ASC"""</ID>
+    <ID>MaxLineLength:ReceiptQueries.kt$ReceiptQueries$"SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt ORDER BY receipt_date DESC"</ID>
+    <ID>MaxLineLength:ReceiptQueries.kt$ReceiptQueries.SelectReceiptByIdQuery$"""SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt WHERE id = ?"""</ID>
+    <ID>MaxLineLength:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByStoreQuery$"""SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt WHERE store_id ${ if (store_id == null) "IS" else "=" } ? ORDER BY receipt_date DESC"""</ID>
+    <ID>MaxLineLength:Res.kt$Res$public</ID>
+    <ID>MaxLineLength:Res.kt$Res$public suspend</ID>
+    <ID>MaxLineLength:Store.kt$Store$country.length != 2 -&gt; Result.failure(IllegalArgumentException("Country code must be 2 characters (ISO 3166-1 alpha-2)"))</ID>
+    <ID>MaxLineLength:StoreQueries.kt$StoreQueries$"SELECT Store.id, Store.name, Store.address, Store.city, Store.postal_code, Store.country, Store.created_at, Store.updated_at FROM Store ORDER BY name ASC"</ID>
+    <ID>MaxLineLength:StoreQueries.kt$StoreQueries.SelectStoreByIdQuery$"""SELECT Store.id, Store.name, Store.address, Store.city, Store.postal_code, Store.country, Store.created_at, Store.updated_at FROM Store WHERE id = ?"""</ID>
+    <ID>MaxLineLength:StoreQueries.kt$StoreQueries.SelectStoreByNameQuery$"""SELECT Store.id, Store.name, Store.address, Store.city, Store.postal_code, Store.country, Store.created_at, Store.updated_at FROM Store WHERE name = ?"""</ID>
+    <ID>MaximumLineLength:PriceRecordQueries.kt$PriceRecordQueries$ </ID>
+    <ID>MaximumLineLength:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordByIdQuery$ </ID>
+    <ID>MaximumLineLength:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByReceiptIdQuery$ </ID>
+    <ID>MaximumLineLength:ProductQueries.kt$ProductQueries$ </ID>
+    <ID>MaximumLineLength:ProductQueries.kt$ProductQueries.SelectProductByBarcodeQuery$ </ID>
+    <ID>MaximumLineLength:ProductQueries.kt$ProductQueries.SelectProductByIdQuery$ </ID>
+    <ID>MaximumLineLength:ProductQueries.kt$ProductQueries.SelectProductByNameQuery$ </ID>
+    <ID>MaximumLineLength:ProductQueries.kt$ProductQueries.SelectProductsByBrandQuery$ </ID>
+    <ID>MaximumLineLength:ProductQueries.kt$ProductQueries.SelectProductsByCategoryQuery$ </ID>
+    <ID>MaximumLineLength:ReceiptQueries.kt$ReceiptQueries$ </ID>
+    <ID>MaximumLineLength:ReceiptQueries.kt$ReceiptQueries.SelectReceiptByIdQuery$ </ID>
+    <ID>MaximumLineLength:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByStoreQuery$ </ID>
+    <ID>MaximumLineLength:Res.kt$Res$ </ID>
+    <ID>MaximumLineLength:Store.kt$Store$ </ID>
+    <ID>MaximumLineLength:StoreQueries.kt$StoreQueries$ </ID>
+    <ID>MaximumLineLength:StoreQueries.kt$StoreQueries.SelectStoreByIdQuery$ </ID>
+    <ID>MaximumLineLength:StoreQueries.kt$StoreQueries.SelectStoreByNameQuery$ </ID>
+    <ID>MultiLineIfElse:PriceRecord.kt$PriceRecord$unitPrice</ID>
+    <ID>MultiLineIfElse:Receipt.kt$Receipt$null</ID>
+    <ID>NewLineAtEndOfFile:App.kt$eu.mpwg.allesteurer.App.kt</ID>
+    <ID>NewLineAtEndOfFile:DatabaseDriverFactory.kt$eu.mpwg.allesteurer.data.local.DatabaseDriverFactory.kt</ID>
+    <ID>NewLineAtEndOfFile:ModelUtils.kt$eu.mpwg.allesteurer.data.models.ModelUtils.kt</ID>
+    <ID>NewLineAtEndOfFile:OCRResult.kt$eu.mpwg.allesteurer.data.models.OCRResult.kt</ID>
+    <ID>NewLineAtEndOfFile:PriceRecord.kt$eu.mpwg.allesteurer.data.models.PriceRecord.kt</ID>
+    <ID>NewLineAtEndOfFile:Product.kt$eu.mpwg.allesteurer.data.models.Product.kt</ID>
+    <ID>NewLineAtEndOfFile:Receipt.kt$eu.mpwg.allesteurer.data.models.Receipt.kt</ID>
+    <ID>NewLineAtEndOfFile:Store.kt$eu.mpwg.allesteurer.data.models.Store.kt</ID>
+    <ID>NoTrailingSpaces:DatabaseDriverFactory.kt$DatabaseManager$ </ID>
+    <ID>NoTrailingSpaces:ModelUtils.kt$ModelUtils$ </ID>
+    <ID>NoTrailingSpaces:OCRResult.kt$ExtractedItem$ </ID>
+    <ID>NoTrailingSpaces:OCRResult.kt$ExtractedReceipt$ </ID>
+    <ID>NoTrailingSpaces:OCRResult.kt$ImageMetadata$ </ID>
+    <ID>NoTrailingSpaces:OCRResult.kt$OCRResult$ </ID>
+    <ID>NoTrailingSpaces:PriceRecord.kt$PriceRecord$ </ID>
+    <ID>NoTrailingSpaces:Product.kt$Product$ </ID>
+    <ID>NoTrailingSpaces:Product.kt$Product.Companion$ </ID>
+    <ID>NoTrailingSpaces:Receipt.kt$Receipt$ </ID>
+    <ID>NoTrailingSpaces:Receipt.kt$Receipt.Companion$ </ID>
+    <ID>NoTrailingSpaces:Store.kt$Store$ </ID>
+    <ID>NoWildcardImports:App.kt$import androidx.compose.runtime.*</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(id: String, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, receipt_date: Long, store_name: String, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(mapper: ( product_id: String, product_name: String, old_price: Double, new_price: Double, price_diff: Double, price_change_percent: Double, old_date: Long, new_date: Long, old_store: String, new_store: String, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(mapper: ( product_id: String, product_name: String, record_count: Long, avg_price: Double?, min_price: Double?, max_price: Double?, first_seen: Long?, last_seen: Long?, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(normalized_product_name: String, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, receipt_date: Long, store_name: String, store_id: String?, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(product_id: String?, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, receipt_date: Long, store_name: String, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(product_id: String?, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, receipt_date: Long, store_name: String, store_id: String?, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(product_id: String?, mapper: ( product_id: String?, product_name: String, receipt_date: Long, unit_price: Double, store_name: String, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:PriceRecordQueries.kt$PriceRecordQueries$(receipt_id: String, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ProductQueries.kt$ProductQueries$(`value`: String, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ProductQueries.kt$ProductQueries$(barcode: String?, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ProductQueries.kt$ProductQueries$(brand: String?, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ProductQueries.kt$ProductQueries$(category: String?, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ProductQueries.kt$ProductQueries$(id: String, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ProductQueries.kt$ProductQueries$(mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ProductQueries.kt$ProductQueries$(name: String, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ReceiptQueries.kt$ReceiptQueries$(`value`: Long, mapper: ( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ReceiptQueries.kt$ReceiptQueries$(id: String, mapper: ( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ReceiptQueries.kt$ReceiptQueries$(mapper: ( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ReceiptQueries.kt$ReceiptQueries$(mapper: ( month: String, total_spending: Double?, receipt_count: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:ReceiptQueries.kt$ReceiptQueries$(store_id: String?, mapper: ( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:Res.kt$Res$(path: String)</ID>
+    <ID>ParameterListWrapping:StoreQueries.kt$StoreQueries$(`value`: String, mapper: ( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:StoreQueries.kt$StoreQueries$(id: String, mapper: ( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:StoreQueries.kt$StoreQueries$(mapper: ( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>ParameterListWrapping:StoreQueries.kt$StoreQueries$(name: String, mapper: ( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>TooManyFunctions:PriceRecordQueries.kt$PriceRecordQueries : TransacterImpl</ID>
+    <ID>TooManyFunctions:ProductQueries.kt$ProductQueries : TransacterImpl</ID>
+    <ID>TooManyFunctions:ReceiptQueries.kt$ReceiptQueries : TransacterImpl</ID>
+    <ID>TooManyFunctions:StoreQueries.kt$StoreQueries : TransacterImpl</ID>
+    <ID>WildcardImport:App.kt$import androidx.compose.runtime.*</ID>
+    <ID>Wrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(</ID>
+    <ID>Wrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, """ |CREATE TABLE IF NOT EXISTS PriceRecord ( | id TEXT PRIMARY KEY NOT NULL, | receipt_id TEXT NOT NULL, | product_id TEXT, -- May be null if product not matched yet | product_name TEXT NOT NULL, -- Raw product name from receipt | normalized_product_name TEXT NOT NULL, -- Normalized for matching | quantity REAL NOT NULL DEFAULT 1.0, | unit_price REAL NOT NULL, | total_price REAL NOT NULL, | unit_type TEXT DEFAULT 'piece', | brand TEXT, | category TEXT, | tax_rate REAL, -- Tax rate as percentage (e.g., 19.0 for 19%) | discount_amount REAL DEFAULT 0.0, | raw_text TEXT, -- Original OCR text for this line item | line_number INTEGER, -- Position in receipt | is_matched INTEGER DEFAULT 0, -- Boolean: product has been matched | match_confidence REAL, -- Confidence score for product matching | created_at INTEGER NOT NULL, -- Unix timestamp | updated_at INTEGER NOT NULL, -- Unix timestamp | FOREIGN KEY (receipt_id) REFERENCES Receipt(id) ON DELETE CASCADE, | FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE SET NULL |) """.trimMargin(), 0)</ID>
+    <ID>Wrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, """ |CREATE TABLE IF NOT EXISTS Product ( | id TEXT PRIMARY KEY NOT NULL, | name TEXT NOT NULL, | normalized_name TEXT NOT NULL, -- For fuzzy matching | category TEXT, | subcategory TEXT, | brand TEXT, | barcode TEXT, | unit_type TEXT DEFAULT 'piece', -- piece, kg, g, l, ml, etc. | created_at INTEGER NOT NULL, -- Unix timestamp | updated_at INTEGER NOT NULL -- Unix timestamp |) """.trimMargin(), 0)</ID>
+    <ID>Wrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, """ |CREATE TABLE IF NOT EXISTS Receipt ( | id TEXT PRIMARY KEY NOT NULL, | store_id TEXT, | store_name TEXT NOT NULL, -- Fallback if store_id is null | total_amount REAL NOT NULL, | tax_amount REAL DEFAULT 0.0, | discount_amount REAL DEFAULT 0.0, | receipt_date INTEGER NOT NULL, -- Unix timestamp | scan_date INTEGER NOT NULL, -- Unix timestamp | receipt_number TEXT, | cashier_id TEXT, | payment_method TEXT, | currency TEXT DEFAULT 'EUR', | raw_ocr_text TEXT, -- Original OCR text for debugging/reprocessing | ocr_confidence REAL, -- OCR processing confidence score | image_path TEXT, -- Path to stored receipt image (optional) | is_validated INTEGER DEFAULT 0, -- Boolean: user has validated OCR results | notes TEXT, | created_at INTEGER NOT NULL, -- Unix timestamp | updated_at INTEGER NOT NULL, -- Unix timestamp | FOREIGN KEY (store_id) REFERENCES Store(id) ON DELETE SET NULL |) """.trimMargin(), 0)</ID>
+    <ID>Wrapping:AllesTeuerDatabaseImpl.kt$AllesTeuerDatabaseImpl.Schema$(null, """ |CREATE TABLE IF NOT EXISTS Store ( | id TEXT PRIMARY KEY NOT NULL, | name TEXT NOT NULL, | address TEXT, | city TEXT, | postal_code TEXT, | country TEXT DEFAULT 'DE', | created_at INTEGER NOT NULL, -- Unix timestamp | updated_at INTEGER NOT NULL -- Unix timestamp |) """.trimMargin(), 0)</ID>
+    <ID>Wrapping:Drawable0.commonMain.kt$(</ID>
+    <ID>Wrapping:Drawable0.commonMain.kt$("drawable:compose_multiplatform", setOf( ResourceItem(setOf(), "${MD}drawable/compose-multiplatform.xml", -1, -1), ))</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(-1_417_683_083, arrayOf("PriceRecord", "Receipt"), driver, "PriceRecord.sq", "selectAllPriceRecords", """ |SELECT pr.id, pr.receipt_id, pr.product_id, pr.product_name, pr.normalized_product_name, pr.quantity, pr.unit_price, pr.total_price, pr.unit_type, pr.brand, pr.category, pr.tax_rate, pr.discount_amount, pr.raw_text, pr.line_number, pr.is_matched, pr.match_confidence, pr.created_at, pr.updated_at, r.receipt_date, r.store_name |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |ORDER BY r.receipt_date DESC """.trimMargin())</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(1_738_314_632, arrayOf("PriceRecord", "Receipt"), driver, "PriceRecord.sq", "selectSignificantPriceChanges", """ |SELECT | pr1.product_id, | pr1.product_name, | pr1.unit_price AS old_price, | pr2.unit_price AS new_price, | (pr2.unit_price - pr1.unit_price) AS price_diff, | ((pr2.unit_price - pr1.unit_price) / pr1.unit_price * 100) AS price_change_percent, | r1.receipt_date AS old_date, | r2.receipt_date AS new_date, | r1.store_name AS old_store, | r2.store_name AS new_store |FROM PriceRecord pr1 |JOIN Receipt r1 ON pr1.receipt_id = r1.id |JOIN PriceRecord pr2 ON pr1.product_id = pr2.product_id |JOIN Receipt r2 ON pr2.receipt_id = r2.id |WHERE pr1.product_id IS NOT NULL |AND r2.receipt_date &gt; r1.receipt_date |AND ABS((pr2.unit_price - pr1.unit_price) / pr1.unit_price * 100) &gt; 10 -- More than 10% change |ORDER BY price_change_percent DESC """.trimMargin())</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(1_988_483_902, """ |UPDATE PriceRecord |SET product_id = ?, is_matched = ?, match_confidence = ?, updated_at = ? |WHERE id = ? """.trimMargin(), 5)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(209_180_952, """ |INSERT INTO PriceRecord( | id, receipt_id, product_id, product_name, normalized_product_name, | quantity, unit_price, total_price, unit_type, brand, category, | tax_rate, discount_amount, raw_text, line_number, is_matched, | match_confidence, created_at, updated_at |) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """.trimMargin(), 19)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(772_093_110, arrayOf("Receipt", "PriceRecord"), driver, "PriceRecord.sq", "selectAveragePricesByProduct", """ |SELECT | product_id, | product_name, | COUNT(*) AS record_count, | AVG(unit_price) AS avg_price, | MIN(unit_price) AS min_price, | MAX(unit_price) AS max_price, | MIN(r.receipt_date) AS first_seen, | MAX(r.receipt_date) AS last_seen |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |WHERE pr.product_id IS NOT NULL |GROUP BY product_id, product_name |ORDER BY record_count DESC """.trimMargin())</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(903_674_120, """ |UPDATE PriceRecord |SET product_id = ?, product_name = ?, normalized_product_name = ?, | quantity = ?, unit_price = ?, total_price = ?, unit_type = ?, | brand = ?, category = ?, tax_rate = ?, discount_amount = ?, | raw_text = ?, line_number = ?, is_matched = ?, match_confidence = ?, | updated_at = ? |WHERE id = ? """.trimMargin(), 17)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(id: String, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(normalized_product_name: String, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, receipt_date: Long, store_name: String, store_id: String?, ) -&gt; T)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(product_id: String?, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, receipt_date: Long, store_name: String, ) -&gt; T)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(product_id: String?, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, receipt_date: Long, store_name: String, store_id: String?, ) -&gt; T)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(product_id: String?, mapper: ( product_id: String?, product_name: String, receipt_date: Long, unit_price: Double, store_name: String, ) -&gt; T)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries$(receipt_id: String, mapper: ( id: String, receipt_id: String, product_id: String?, product_name: String, normalized_product_name: String, quantity: Double, unit_price: Double, total_price: Double, unit_type: String?, brand: String?, category: String?, tax_rate: Double?, discount_amount: Double?, raw_text: String?, line_number: Long?, is_matched: Long?, match_confidence: Double?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductNameQuery$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductNameQuery$(1_628_629_683, """ |SELECT pr.id, pr.receipt_id, pr.product_id, pr.product_name, pr.normalized_product_name, pr.quantity, pr.unit_price, pr.total_price, pr.unit_type, pr.brand, pr.category, pr.tax_rate, pr.discount_amount, pr.raw_text, pr.line_number, pr.is_matched, pr.match_confidence, pr.created_at, pr.updated_at, r.receipt_date, r.store_name, r.store_id |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |WHERE pr.normalized_product_name = ? |ORDER BY r.receipt_date DESC """.trimMargin(), mapper, 1)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductQuery$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceHistoryByProductQuery$(null, """ |SELECT pr.id, pr.receipt_id, pr.product_id, pr.product_name, pr.normalized_product_name, pr.quantity, pr.unit_price, pr.total_price, pr.unit_type, pr.brand, pr.category, pr.tax_rate, pr.discount_amount, pr.raw_text, pr.line_number, pr.is_matched, pr.match_confidence, pr.created_at, pr.updated_at, r.receipt_date, r.store_name, r.store_id |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |WHERE pr.product_id ${ if (product_id == null) "IS" else "=" } ? |ORDER BY r.receipt_date DESC """.trimMargin(), mapper, 1)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordByIdQuery$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByProductIdQuery$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByProductIdQuery$(null, """ |SELECT pr.id, pr.receipt_id, pr.product_id, pr.product_name, pr.normalized_product_name, pr.quantity, pr.unit_price, pr.total_price, pr.unit_type, pr.brand, pr.category, pr.tax_rate, pr.discount_amount, pr.raw_text, pr.line_number, pr.is_matched, pr.match_confidence, pr.created_at, pr.updated_at, r.receipt_date, r.store_name |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |WHERE pr.product_id ${ if (product_id == null) "IS" else "=" } ? |ORDER BY r.receipt_date DESC """.trimMargin(), mapper, 1)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceRecordsByReceiptIdQuery$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceTrendsForProductQuery$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectPriceTrendsForProductQuery$(null, """ |SELECT | pr.product_id, | pr.product_name, | r.receipt_date, | pr.unit_price, | r.store_name |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |WHERE pr.product_id ${ if (product_id == null) "IS" else "=" } ? |ORDER BY r.receipt_date DESC """.trimMargin(), mapper, 1)</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectTopSpendingByCategoryQuery$(</ID>
+    <ID>Wrapping:PriceRecordQueries.kt$PriceRecordQueries.SelectTopSpendingByCategoryQuery$(1_538_360_265, """ |SELECT | category, | SUM(total_price) AS total_spent, | COUNT(*) AS item_count, | AVG(unit_price) AS avg_unit_price |FROM PriceRecord pr |JOIN Receipt r ON pr.receipt_id = r.id |WHERE pr.category IS NOT NULL |AND r.receipt_date BETWEEN ? AND ? |GROUP BY category |ORDER BY total_spent DESC """.trimMargin(), mapper, 2)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(-187_475_912, """ |INSERT INTO Product(id, name, normalized_name, category, subcategory, brand, barcode, unit_type, created_at, updated_at) |VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """.trimMargin(), 10)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(-1_171_918_808, """ |UPDATE Product |SET name = ?, normalized_name = ?, category = ?, subcategory = ?, brand = ?, barcode = ?, unit_type = ?, updated_at = ? |WHERE id = ? """.trimMargin(), 9)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(`value`: String, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(barcode: String?, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(brand: String?, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(category: String?, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(id: String, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries$(name: String, mapper: ( id: String, name: String, normalized_name: String, category: String?, subcategory: String?, brand: String?, barcode: String?, unit_type: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SearchProductsByNormalizedNameQuery$(</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SearchProductsByNormalizedNameQuery$(-607_079_005, """ |SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product |WHERE normalized_name LIKE '%' || ? || '%' |ORDER BY name ASC """.trimMargin(), mapper, 1)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SearchProductsQuery$(</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SearchProductsQuery$(-683_478_230, """ |SELECT Product.id, Product.name, Product.normalized_name, Product.category, Product.subcategory, Product.brand, Product.barcode, Product.unit_type, Product.created_at, Product.updated_at FROM Product |WHERE (name LIKE '%' || ? || '%' OR normalized_name LIKE '%' || ? || '%') |AND (brand IS NULL OR brand LIKE '%' || ? || '%') |AND (category IS NULL OR category LIKE '%' || ? || '%') |ORDER BY | CASE | WHEN name = ? THEN 1 | WHEN name LIKE ? || '%' THEN 2 | WHEN normalized_name LIKE ? || '%' THEN 3 | ELSE 4 | END, | name ASC """.trimMargin(), mapper, 7)</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SelectProductByBarcodeQuery$(</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SelectProductByIdQuery$(</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SelectProductByNameQuery$(</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SelectProductsByBrandQuery$(</ID>
+    <ID>Wrapping:ProductQueries.kt$ProductQueries.SelectProductsByCategoryQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(-1_795_290_296, """ |UPDATE Receipt |SET store_id = ?, store_name = ?, total_amount = ?, tax_amount = ?, | discount_amount = ?, receipt_date = ?, receipt_number = ?, | cashier_id = ?, payment_method = ?, currency = ?, raw_ocr_text = ?, | ocr_confidence = ?, image_path = ?, is_validated = ?, notes = ?, | updated_at = ? |WHERE id = ? """.trimMargin(), 17)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(-810_847_400, """ |INSERT INTO Receipt( | id, store_id, store_name, total_amount, tax_amount, discount_amount, | receipt_date, scan_date, receipt_number, cashier_id, payment_method, | currency, raw_ocr_text, ocr_confidence, image_path, is_validated, | notes, created_at, updated_at |) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """.trimMargin(), 19)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(1_270_212_077, arrayOf("Receipt"), driver, "Receipt.sq", "selectUnvalidatedReceipts", """ |SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt |WHERE is_validated = 0 |ORDER BY scan_date DESC """.trimMargin())</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(1_925_417_326, arrayOf("Receipt"), driver, "Receipt.sq", "selectMonthlySpending", """ |SELECT | strftime('%Y-%m', datetime(receipt_date, 'unixepoch')) AS month, | SUM(total_amount) AS total_spending, | COUNT(*) AS receipt_count |FROM Receipt |GROUP BY month |ORDER BY month DESC """.trimMargin())</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(397_915_617, """ |UPDATE Receipt |SET is_validated = ?, updated_at = ? |WHERE id = ? """.trimMargin(), 3)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(`value`: Long, mapper: ( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(id: String, mapper: ( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries$(store_id: String?, mapper: ( id: String, store_id: String?, store_name: String, total_amount: Double, tax_amount: Double?, discount_amount: Double?, receipt_date: Long, scan_date: Long, receipt_number: String?, cashier_id: String?, payment_method: String?, currency: String?, raw_ocr_text: String?, ocr_confidence: Double?, image_path: String?, is_validated: Long?, notes: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SearchReceiptsQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SearchReceiptsQuery$(1_466_842_122, """ |SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt |WHERE store_name LIKE '%' || ? || '%' |OR receipt_number LIKE '%' || ? || '%' |OR notes LIKE '%' || ? || '%' |ORDER BY receipt_date DESC """.trimMargin(), mapper, 3)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptByIdQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByDateRangeQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByDateRangeQuery$(-1_074_035_366, """ |SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt |WHERE receipt_date BETWEEN ? AND ? |ORDER BY receipt_date DESC """.trimMargin(), mapper, 2)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByMonthQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByMonthQuery$(-903_282_901, """ |SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt |WHERE receipt_date BETWEEN ? AND ? |ORDER BY receipt_date DESC """.trimMargin(), mapper, 2)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectReceiptsByStoreQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectRecentReceiptsQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectRecentReceiptsQuery$(946_811_033, """ |SELECT Receipt.id, Receipt.store_id, Receipt.store_name, Receipt.total_amount, Receipt.tax_amount, Receipt.discount_amount, Receipt.receipt_date, Receipt.scan_date, Receipt.receipt_number, Receipt.cashier_id, Receipt.payment_method, Receipt.currency, Receipt.raw_ocr_text, Receipt.ocr_confidence, Receipt.image_path, Receipt.is_validated, Receipt.notes, Receipt.created_at, Receipt.updated_at FROM Receipt |ORDER BY scan_date DESC |LIMIT ? """.trimMargin(), mapper, 1)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectSpendingByStoreQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectSpendingByStoreQuery$(210_074_851, """ |SELECT store_name, SUM(total_amount) AS total_spending, COUNT(*) AS receipt_count |FROM Receipt |WHERE receipt_date BETWEEN ? AND ? |GROUP BY store_id, store_name |ORDER BY total_spending DESC """.trimMargin(), mapper, 2)</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectTotalSpendingByDateRangeQuery$(</ID>
+    <ID>Wrapping:ReceiptQueries.kt$ReceiptQueries.SelectTotalSpendingByDateRangeQuery$(1_583_081_843, """ |SELECT SUM(total_amount) AS total_spending |FROM Receipt |WHERE receipt_date BETWEEN ? AND ? """.trimMargin(), mapper, 2)</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries$(</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries$(1_454_373_864, """ |UPDATE Store |SET name = ?, address = ?, city = ?, postal_code = ?, country = ?, updated_at = ? |WHERE id = ? """.trimMargin(), 7)</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries$(1_924_671_480, """ |INSERT INTO Store(id, name, address, city, postal_code, country, created_at, updated_at) |VALUES(?, ?, ?, ?, ?, ?, ?, ?) """.trimMargin(), 8)</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries$(`value`: String, mapper: ( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries$(id: String, mapper: ( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries$(name: String, mapper: ( id: String, name: String, address: String?, city: String?, postal_code: String?, country: String?, created_at: Long, updated_at: Long, ) -&gt; T)</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries.SearchStoresByNameQuery$(</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries.SearchStoresByNameQuery$(-627_726_516, """ |SELECT Store.id, Store.name, Store.address, Store.city, Store.postal_code, Store.country, Store.created_at, Store.updated_at FROM Store |WHERE name LIKE '%' || ? || '%' |ORDER BY name ASC """.trimMargin(), mapper, 1)</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries.SelectStoreByIdQuery$(</ID>
+    <ID>Wrapping:StoreQueries.kt$StoreQueries.SelectStoreByNameQuery$(</ID>
+  </CurrentIssues>
+</SmellBaseline>
