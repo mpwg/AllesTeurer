@@ -32,7 +32,6 @@ WORKSPACE_PATH = "./iosApp.xcodeproj"
 
 platform :ios do
   before_all do
-#
     # Setup keychain for CI
     if is_ci
       create_keychain(
