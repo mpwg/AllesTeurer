@@ -24,6 +24,7 @@ graph TB
         PWA[Progressive Web App]
     end
 ```
+
 ## 2. System Architecture Overview
 
 ### 2.1 Kotlin Multiplatform Architecture
@@ -124,12 +125,14 @@ graph TB
 ### 3.2 Platform-Specific Integrations
 
 #### iOS
+
 - **OCR**: Vision Framework via expect/actual
 - **Camera**: AVFoundation via Compose integration
 - **Local Storage**: SQLDelight with SQLite.swift
 - **Navigation**: Native iOS navigation patterns
 
 #### Android
+
 - **OCR**: ML Kit via expect/actual declarations
 - **Camera**: CameraX via Compose integration
 - **Local Storage**: SQLDelight with Android SQLite
@@ -372,7 +375,7 @@ class AppUITests: XCTestCase {
 
 ### 10.1 App Store Configuration
 
-- **Bundle Identifier**: com.allesteuer.ios
+- **Bundle Identifier**: eu.mpwg.allesteuer
 - **Version Strategy**: Semantic versioning (1.0.0)
 - **Capabilities**:
   - CloudKit
@@ -424,4 +427,3 @@ This iOS-first architecture provides:
 - **User Experience**: Native iOS patterns and seamless iCloud integration
 
 The architecture is designed to deliver a complete, functional app that can launch independently while maintaining the flexibility to evolve into a full-stack solution as the product grows.
-
