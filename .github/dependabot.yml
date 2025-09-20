@@ -1,0 +1,91 @@
+version: 2
+updates:
+  # Gradle dependencies (Kotlin Multiplatform, Android, Compose)
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "gradle"
+    groups:
+      # Group Kotlin ecosystem updates
+      kotlin-ecosystem:
+        patterns:
+          - "org.jetbrains.kotlin:*"
+          - "org.jetbrains.kotlinx:*"
+          - "org.jetbrains.compose:*"
+      # Group Android dependencies
+      android-ecosystem:
+        patterns:
+          - "androidx.*:*"
+          - "com.android.*:*"
+      # Group Compose Multiplatform
+      compose-multiplatform:
+        patterns:
+          - "*compose*"
+      # Group SQLDelight
+      sqldelight:
+        patterns:
+          - "app.cash.sqldelight:*"
+      # Group Koin DI
+      koin:
+        patterns:
+          - "io.insert-koin:*"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci"
+    groups:
+      # Group GitHub Actions updates
+      github-actions:
+        patterns:
+          - "actions/*"
+          - "gradle/actions/*"
+          - "github/codeql-action/*"
+
+  # Swift Package Manager (if you have Package.swift)
+  - package-ecosystem: "swift"
+    directory: "/iosApp"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "deps-ios"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ios"
+      - "swift"
+    groups:
+      # Group Swift dependencies
+      swift-packages:
+        patterns:
+          - "*"
