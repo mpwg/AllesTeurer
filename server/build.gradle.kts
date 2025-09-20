@@ -6,6 +6,13 @@ plugins {
 
 group = "eu.mpwg.allesteurer"
 version = "1.0.0"
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
 application {
     mainClass.set("eu.mpwg.allesteurer.ApplicationKt")
     
