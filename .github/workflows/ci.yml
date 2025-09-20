@@ -158,7 +158,7 @@ jobs:
       - name: Build iOS app for simulator
         run: |
           cd iosApp
-          xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' build
+          xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' build
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
@@ -230,11 +230,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Run Kotlin linter
-        run: ./gradlew ktlintCheck --no-daemon --parallel
+      - name: Run Android Lint
+        run: ./gradlew :composeApp:lint :shared:lint --no-daemon --parallel
 
-      - name: Run detekt
-        run: ./gradlew detekt --no-daemon --parallel
+      - name: Run Detekt static analysis
+        run: ./gradlew detekt --continue --no-daemon --parallel
+
+      - name: Run basic Kotlin compilation check
+        run: ./gradlew compileKotlin --no-daemon --parallel
         continue-on-error: true
 
       - name: Upload lint reports
@@ -243,8 +246,21 @@ jobs:
         with:
           name: lint-reports
           path: |
-            **/build/reports/ktlint/
-            **/build/reports/detekt/
+            **/build/reports/lint-results-*.html
+            **/build/reports/lint-results-*.xml
+            **/build/reports/lint-results-*.txt
+          retention-days: 7
+
+      - name: Upload detekt reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: detekt-reports
+          path: |
+            **/build/reports/detekt/*.html
+            **/build/reports/detekt/*.xml
+            **/build/reports/detekt/*.txt
+            **/build/reports/detekt/*.sarif
           retention-days: 7
 
       - name: Upload lint build reports
