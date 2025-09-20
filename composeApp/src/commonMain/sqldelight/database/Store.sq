@@ -1,0 +1,42 @@
+-- Store table for managing shop/retailer information
+CREATE TABLE IF NOT EXISTS Store (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT,
+    city TEXT,
+    postal_code TEXT,
+    country TEXT DEFAULT 'DE',
+    created_at INTEGER NOT NULL, -- Unix timestamp
+    updated_at INTEGER NOT NULL  -- Unix timestamp
+);
+
+-- Index for fast name lookup
+CREATE INDEX IF NOT EXISTS idx_store_name ON Store(name);
+
+-- Store queries
+insertStore:
+INSERT INTO Store(id, name, address, city, postal_code, country, created_at, updated_at)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?);
+
+selectStoreById:
+SELECT * FROM Store WHERE id = ?;
+
+selectStoreByName:
+SELECT * FROM Store WHERE name = ?;
+
+selectAllStores:
+SELECT * FROM Store ORDER BY name ASC;
+
+updateStore:
+UPDATE Store 
+SET name = ?, address = ?, city = ?, postal_code = ?, country = ?, updated_at = ?
+WHERE id = ?;
+
+deleteStore:
+DELETE FROM Store WHERE id = ?;
+
+-- Search stores by name pattern
+searchStoresByName:
+SELECT * FROM Store 
+WHERE name LIKE '%' || ? || '%' 
+ORDER BY name ASC;

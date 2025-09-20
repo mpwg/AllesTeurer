@@ -1,207 +1,360 @@
-# AllesTeurer - iOS-First Implementation Plan
+# AllesTeurer - Kotlin Multiplatform Implementation Plan
 
 ## Executive Summary
 
-This document provides a detailed implementation plan for AllesTeurer, beginning with a privacy-focused iOS application that enables users to track product prices through receipt scanning and local price monitoring. The app starts as an iOS-only solution using local Core Data storage and Apple's Vision Framework, with a clear evolution path to multi-platform support and cloud services.
+This document provides a comprehensive implementation plan for AllesTeurer, a privacy-focused Kotlin Multiplatform Mobile (KMP) application that enables users to track product prices through receipt scanning and local price monitoring. The app uses shared business logic across iOS and Android platforms, platform-specific OCR implementations (Vision Framework for iOS, ML Kit for Android), and SQLDelight for type-safe database operations, ensuring maximum code reuse while maintaining native performance and user experience.
 
 ## 1. Project Architecture Overview
 
-### 1.1 iOS-First Technology Stack
+### 1.1 Kotlin Multiplatform Technology Stack
 
-**iOS Application (Phase 1):**
+**Shared Components (commonMain):**
 
-- **Language:** Swift 6.0+
-- **UI Framework:** SwiftUI
-- **Architecture:** MVVM with async/await
-- **Local Storage:** Core Data with CloudKit sync
-- **AI/ML:** Vision Framework + Apple Intelligence
-- **Camera:** AVFoundation for receipt scanning
-- **Charts:** Swift Charts for data visualization
-- **Deployment:** Xcode Cloud + App Store Connect
+- **Language:** Kotlin 2.2.20+ with K2 compiler
+- **UI Framework:** Compose Multiplatform
+- **Architecture:** MVVM with Repository pattern
+- **Database:** SQLDelight for type-safe, cross-platform SQL
+- **Concurrency:** Kotlin Coroutines + Flow
+- **Serialization:** kotlinx.serialization
+- **Navigation:** Compose Navigation (shared)
+
+**Platform-Specific Implementations:**
+
+**iOS (iosMain):**
+
+- **OCR:** Vision Framework via expect/actual
+- **Camera:** AVFoundation via Compose integration
+- **Local Storage:** SQLDelight with native SQLite driver
+- **Sync:** CloudKit for optional device synchronization
+
+**Android (androidMain):**
+
+- **OCR:** ML Kit via expect/actual declarations
+- **Camera:** CameraX via Compose integration
+- **Local Storage:** SQLDelight with Android SQLite
+- **Sync:** Google Drive for optional cloud backup
 
 **Future Expansion (Phase 2+):**
 
-- **Backend Services:** Node.js + GraphQL (when needed)
-- **Database:** PostgreSQL for cloud sync
-- **Android App:** Kotlin + Jetpack Compose
-- **Web App:** Next.js + React
+- **Backend Services:** Ktor server (when needed)
+- **Desktop:** Compose Desktop support
+- **Web:** Kotlin/JS with Compose for Web
 
-### 1.2 iOS Project Structure
+### 1.2 KMP Project Structure
 
-```
-AllesTeurer.xcodeproj
-├── AllesTeurer/
-│   ├── App/
-│   │   ├── AllesTeurerApp.swift
-│   │   └── ContentView.swift
-│   ├── Models/
-│   │   ├── CoreData/
-│   │   │   ├── AllesTeurer.xcdatamodeld
-│   │   │   ├── Receipt+CoreDataClass.swift
-│   │   │   ├── Product+CoreDataClass.swift
-│   │   │   ├── PriceRecord+CoreDataClass.swift
-│   │   │   └── Store+CoreDataClass.swift
-│   │   └── ViewModels/
-│   │       ├── ReceiptScannerViewModel.swift
-│   │       ├── PriceHistoryViewModel.swift
-│   │       ├── ProductDetailViewModel.swift
-│   │       └── AnalyticsViewModel.swift
-│   ├── Views/
-│   │   ├── Scanner/
-│   │   │   ├── CameraView.swift
-│   │   │   ├── ReceiptScannerView.swift
-│   │   │   └── ScanResultView.swift
-│   │   ├── Products/
-│   │   │   ├── ProductListView.swift
-│   │   │   ├── ProductDetailView.swift
-│   │   │   └── PriceHistoryView.swift
-│   │   ├── Analytics/
-│   │   │   ├── DashboardView.swift
-│   │   │   ├── SpendingTrendsView.swift
-│   │   │   └── InflationTrackerView.swift
-│   │   └── Settings/
-│   │       ├── SettingsView.swift
-│   │       └── DataExportView.swift
-│   ├── Services/
-│   │   ├── DataManager.swift         // Core Data operations
-│   │   ├── OCRService.swift          // Vision Framework
-│   │   ├── ReceiptParser.swift       // Text processing
-│   │   ├── ProductMatcher.swift      // Local matching
-│   │   ├── PriceAnalyzer.swift       // Local analytics
-│   │   └── CloudKitService.swift     // Device sync
-│   └── Utils/
-│       ├── Extensions/
-│       │   ├── String+Extensions.swift
-│       │   └── Date+Extensions.swift
-│       └── Helpers/
-│           ├── CameraPermissions.swift
-│           └── NumberFormatter.swift
-├── AllesTeurerTests/
-└── AllesTeurerUITests/
+```text
+alles-teurer/
+├── gradle/                  # Gradle wrapper and version catalogs
+├── apps/
+│   └── composeApp/         # Main KMP application
+│       ├── src/
+│       │   ├── commonMain/ # Shared Kotlin code
+│       │   │   ├── kotlin/
+│       │   │   │   ├── data/        # Repositories and data sources
+│       │   │   │   │   ├── local/       # SQLDelight database access
+│       │   │   │   │   ├── repository/  # Repository implementations
+│       │   │   │   │   └── models/      # Data models (@Serializable)
+│       │   │   │   ├── domain/      # Business logic and use cases
+│       │   │   │   │   ├── models/      # Domain entities
+│       │   │   │   │   ├── repository/  # Repository interfaces
+│       │   │   │   │   └── usecase/     # Business logic use cases
+│       │   │   │   ├── presentation/ # ViewModels and UI state
+│       │   │   │   │   ├── viewmodel/   # Shared ViewModels
+│       │   │   │   │   └── state/       # UI state classes
+│       │   │   │   └── ui/          # Compose Multiplatform UI
+│       │   │   │       ├── screens/     # Compose screens
+│       │   │   │       ├── components/  # Reusable UI components
+│       │   │   │       └── theme/       # Design system and theming
+│       │   │   └── sqldelight/     # Database schema and queries
+│       │   │       └── database/       # SQL schema definitions
+│       │   ├── androidMain/ # Android-specific implementations
+│       │   │   └── kotlin/
+│       │   │       ├── ocr/         # ML Kit OCR implementation
+│       │   │       ├── camera/      # Android camera integration
+│       │   │       └── platform/   # Android-specific utilities
+│       │   └── iosMain/     # iOS-specific implementations
+│       │       └── kotlin/
+│       │           ├── ocr/         # Vision Framework OCR
+│       │           ├── camera/      # iOS camera integration
+│       │           └── platform/   # iOS-specific utilities
+│       ├── androidApp/      # Android app wrapper
+│       └── iosApp/         # iOS app wrapper (Xcode project)
+├── shared/                 # Additional shared modules (if needed)
+├── backend/               # Optional backend services (Ktor)
+├── spec/                  # Requirements and architecture docs
+├── tools/                 # Development tooling and scripts
+├── gradle.properties      # Gradle configuration
+├── settings.gradle.kts    # Module configuration
+└── build.gradle.kts       # Root build configuration
 ```
 
 ## 2. Implementation Phases
 
-### Phase 1: iOS Foundation & Core Data Setup (Weeks 1-2)
+### Phase 1: KMP Foundation & Project Setup (Weeks 1-2)
 
-#### 2.1 iOS Project Setup
+#### 2.1 KMP Project Initialization
 
 **Timeline:** Week 1  
-**Effort:** 3 days  
+**Effort:** 5 days  
 **Dependencies:** None
 
 **Tasks:**
 
-1. **Initialize iOS Xcode project**
+1. **Initialize Kotlin Multiplatform project**
 
-   ```swift
-   // AllesTeurer/AllesTeurerApp.swift
-   import SwiftUI
-   import CoreData
+   ```bash
+   # Create new KMP project with Compose Multiplatform
+   mkdir alles-teurer && cd alles-teurer
 
-   @main
-   struct AllesTeurerApp: App {
-       let persistenceController = PersistenceController.shared
+   # Initialize with KMP wizard or template
+   # Set up build.gradle.kts for multiplatform
+   ```
 
-       var body: some Scene {
-           WindowGroup {
-               ContentView()
-                   .environment(\.managedObjectContext, persistenceController.container.viewContext)
+2. **Configure gradle build scripts**
+
+   ```kotlin
+   // build.gradle.kts (root)
+   plugins {
+       alias(libs.plugins.kotlin.multiplatform) apply false
+       alias(libs.plugins.kotlin.serialization) apply false
+       alias(libs.plugins.sqldelight) apply false
+       alias(libs.plugins.compose.multiplatform) apply false
+   }
+
+   // apps/composeApp/build.gradle.kts
+   kotlin {
+       androidTarget()
+
+       listOf(
+           iosX64(),
+           iosArm64(),
+           iosSimulatorArm64()
+       ).forEach { iosTarget ->
+           iosTarget.binaries.framework {
+               baseName = "ComposeApp"
+               isStatic = true
+           }
+       }
+
+       sourceSets {
+           val commonMain by getting {
+               dependencies {
+                   implementation(compose.runtime)
+                   implementation(compose.foundation)
+                   implementation(compose.material3)
+                   implementation(compose.components.resources)
+                   implementation(libs.kotlinx.coroutines.core)
+                   implementation(libs.kotlinx.serialization.json)
+                   implementation(libs.sqldelight.runtime)
+                   implementation(libs.sqldelight.coroutines.extensions)
+               }
            }
        }
    }
    ```
 
-2. **Configure project structure**
+3. **Set up module structure**
+   - Configure commonMain, androidMain, iosMain source sets
+   - Set up proper package structure following Clean Architecture
+   - Initialize SQLDelight configuration
+   - Set up Compose Multiplatform integration
 
-   - Set iOS 17.0+ minimum deployment target
-   - Create folder structure for Models, Views, Services
-   - Configure SwiftUI + Core Data integration
-   - Set up basic navigation structure
-
-3. **Development environment setup**
-   - Configure SwiftLint for code quality
-   - Set up unit testing target
-   - Configure Xcode Cloud for CI/CD
-   - Set up App Store Connect integration
-
-#### 2.2 Core Data Model Setup
+#### 2.2 SQLDelight Database Setup
 
 **Timeline:** Week 2  
 **Effort:** 4 days  
-**Dependencies:** iOS project setup
+**Dependencies:** Project setup
 
 **Tasks:**
 
-1. **Design Core Data model**
+1. **Design database schema**
 
-   ```swift
-   // Receipt Entity
-   @objc(Receipt)
-   public class Receipt: NSManagedObject {
-       @NSManaged public var id: UUID
-       @NSManaged public var storeName: String?
-       @NSManaged public var totalAmount: Decimal
-       @NSManaged public var purchaseDate: Date
-       @NSManaged public var imageData: Data?
-       @NSManaged public var ocrText: String?
-       @NSManaged public var isProcessed: Bool
-       @NSManaged public var items: NSSet?
-   }
+   ```sql
+   -- commonMain/sqldelight/database/Receipt.sq
+   CREATE TABLE Receipt (
+       id TEXT PRIMARY KEY NOT NULL,
+       storeName TEXT,
+       totalAmount REAL NOT NULL,
+       purchaseDate INTEGER NOT NULL,
+       imageData BLOB,
+       ocrText TEXT,
+       isProcessed INTEGER NOT NULL DEFAULT 0
+   );
 
-   // Product Entity
-   @objc(Product)
-   public class Product: NSManagedObject {
-       @NSManaged public var id: UUID
-       @NSManaged public var name: String
-       @NSManaged public var category: String?
-       @NSManaged public var brand: String?
-       @NSManaged public var priceRecords: NSSet?
-   }
+   -- commonMain/sqldelight/database/Product.sq
+   CREATE TABLE Product (
+       id TEXT PRIMARY KEY NOT NULL,
+       name TEXT NOT NULL,
+       category TEXT,
+       brand TEXT,
+       createdAt INTEGER NOT NULL
+   );
 
-   // PriceRecord Entity
-   @objc(PriceRecord)
-   public class PriceRecord: NSManagedObject {
-       @NSManaged public var id: UUID
-       @NSManaged public var price: Decimal
-       @NSManaged public var quantity: Decimal
-       @NSManaged public var recordedDate: Date
-       @NSManaged public var storeName: String
-       @NSManaged public var product: Product?
-       @NSManaged public var receipt: Receipt?
+   -- commonMain/sqldelight/database/PriceRecord.sq
+   CREATE TABLE PriceRecord (
+       id TEXT PRIMARY KEY NOT NULL,
+       productId TEXT NOT NULL,
+       receiptId TEXT NOT NULL,
+       price REAL NOT NULL,
+       quantity REAL NOT NULL DEFAULT 1.0,
+       recordedDate INTEGER NOT NULL,
+       storeName TEXT NOT NULL,
+       FOREIGN KEY (productId) REFERENCES Product(id),
+       FOREIGN KEY (receiptId) REFERENCES Receipt(id)
+   );
+   ```
+
+2. **Create data models and repositories**
+
+   ```kotlin
+   // commonMain/kotlin/data/models/Receipt.kt
+   @Serializable
+   data class Receipt(
+       val id: String = UUID.randomUUID().toString(),
+       val storeName: String? = null,
+       val totalAmount: Double,
+       val purchaseDate: Instant,
+       val imageData: ByteArray? = null,
+       val ocrText: String? = null,
+       val isProcessed: Boolean = false,
+       val items: List<ReceiptItem> = emptyList()
+   )
+
+   // commonMain/kotlin/data/models/Product.kt
+   @Serializable
+   data class Product(
+       val id: String = UUID.randomUUID().toString(),
+       val name: String,
+       val category: String? = null,
+       val brand: String? = null,
+       val createdAt: Instant = Clock.System.now()
+   )
+
+   // commonMain/kotlin/data/repository/ReceiptRepository.kt
+   interface ReceiptRepository {
+       suspend fun insertReceipt(receipt: Receipt): Result<String>
+       suspend fun getAllReceipts(): Flow<List<Receipt>>
+       suspend fun getReceiptById(id: String): Receipt?
+       suspend fun updateReceipt(receipt: Receipt): Result<Unit>
+       suspend fun deleteReceipt(id: String): Result<Unit>
    }
    ```
 
-2. **Core Data service layer**
-   ```swift
-   // Services/DataManager.swift
-   class DataManager: ObservableObject {
-       static let shared = DataManager()
+### Phase 2: Platform-Specific OCR Implementation (Weeks 3-4)
 
-       lazy var persistentContainer: NSPersistentContainer = {
-           let container = NSPersistentContainer(name: "AllesTeurer")
-           container.loadPersistentStores { _, error in
-               if let error = error {
-                   fatalError("Core Data error: \(error)")
+#### 2.3 Expect/Actual OCR Interfaces
+
+**Timeline:** Week 3  
+**Effort:** 5 days  
+**Dependencies:** Database setup
+
+**Tasks:**
+
+1. **Define shared OCR interface**
+
+   ```kotlin
+   // commonMain/kotlin/domain/ocr/OCRService.kt
+   expect class OCRService {
+       suspend fun processReceiptImage(imageData: ByteArray): Result<OCRResult>
+       suspend fun processTextFromImage(imageData: ByteArray): Result<String>
+   }
+
+   @Serializable
+   data class OCRResult(
+       val rawText: String,
+       val storeName: String? = null,
+       val totalAmount: Double? = null,
+       val purchaseDate: String? = null,
+       val items: List<OCRItem> = emptyList(),
+       val confidence: Float = 0.0f
+   )
+
+   @Serializable
+   data class OCRItem(
+       val name: String,
+       val price: Double? = null,
+       val quantity: Double = 1.0,
+       val confidence: Float = 0.0f
+   )
+   ```
+
+2. **iOS Vision Framework implementation**
+
+   ```kotlin
+   // iosMain/kotlin/platform/ocr/OCRService.kt
+   actual class OCRService {
+       actual suspend fun processReceiptImage(imageData: ByteArray): Result<OCRResult> {
+           return withContext(Dispatchers.Default) {
+               try {
+                   val nsData = NSData.create(bytes = imageData.toCValues(), length = imageData.size.toULong())
+                   val uiImage = UIImage.imageWithData(nsData) ?: return@withContext Result.failure(Exception("Invalid image data"))
+
+                   val request = VNRecognizeTextRequest()
+                   request.recognitionLevel = VNRequestTextRecognitionLevelAccurate
+                   request.usesLanguageCorrection = true
+
+                   val handler = VNImageRequestHandler(uiImage.CGImage, mapOf<Any?, Any>())
+                   handler.performRequests(listOf(request))
+
+                   val observations = request.results?.filterIsInstance<VNRecognizedTextObservation>()
+                   val recognizedText = observations?.compactMap { it.topCandidates(1).firstOrNull()?.string }?.joined("\n") ?: ""
+
+                   val ocrResult = parseReceiptText(recognizedText)
+                   Result.success(ocrResult)
+               } catch (e: Exception) {
+                   Result.failure(e)
                }
            }
-           return container
-       }()
+       }
 
-       func save() {
-           let context = persistentContainer.viewContext
-           if context.hasChanges {
-               try? context.save()
+       private fun parseReceiptText(text: String): OCRResult {
+           // Implement German receipt parsing logic
+           // Extract store name, total amount, date, and items
+           return OCRResult(
+               rawText = text,
+               storeName = extractStoreName(text),
+               totalAmount = extractTotalAmount(text),
+               purchaseDate = extractPurchaseDate(text),
+               items = extractItems(text)
+           )
+       }
+   }
+   ```
+
+3. **Android ML Kit implementation**
+
+   ```kotlin
+   // androidMain/kotlin/platform/ocr/OCRService.kt
+   actual class OCRService(private val context: Context) {
+       actual suspend fun processReceiptImage(imageData: ByteArray): Result<OCRResult> {
+           return withContext(Dispatchers.Default) {
+               try {
+                   val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+                   val inputImage = InputImage.fromBitmap(bitmap, 0)
+
+                   val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
+                   val result = recognizer.process(inputImage).await()
+                   val recognizedText = result.text
+
+                   val ocrResult = parseReceiptText(recognizedText)
+                   Result.success(ocrResult)
+               } catch (e: Exception) {
+                   Result.failure(e)
+               }
            }
        }
 
-       func saveReceipt(_ receipt: Receipt) {
-           save()
-       }
-
-       func fetchProducts() -> [Product] {
-           let request: NSFetchRequest<Product> = Product.fetchRequest()
-           return (try? persistentContainer.viewContext.fetch(request)) ?? []
+       private fun parseReceiptText(text: String): OCRResult {
+           // Implement German receipt parsing logic for Android
+           // Similar logic as iOS but adapted for ML Kit results
+           return OCRResult(
+               rawText = text,
+               storeName = extractStoreName(text),
+               totalAmount = extractTotalAmount(text),
+               purchaseDate = extractPurchaseDate(text),
+               items = extractItems(text)
+           )
        }
    }
    ```
@@ -216,527 +369,1104 @@ AllesTeurer.xcodeproj
 
 **Tasks:**
 
-1. **Camera permissions and setup**
+#### 2.4 Camera Integration (Expect/Actual)
 
-   ```swift
-   // Services/CameraService.swift
-   import AVFoundation
-   import SwiftUI
-
-   class CameraService: NSObject, ObservableObject {
-       @Published var isCameraAuthorized = false
-
-       func requestCameraPermission() {
-           AVCaptureDevice.requestAccess(for: .video) { granted in
-               DispatchQueue.main.async {
-                   self.isCameraAuthorized = granted
-               }
-           }
-       }
-   }
-   ```
-
-2. **Receipt capture view**
-   ```swift
-   // Views/Scanner/CameraView.swift
-   struct CameraView: UIViewControllerRepresentable {
-       @Binding var capturedImage: UIImage?
-       @Environment(\.dismiss) var dismiss
-
-       func makeUIViewController(context: Context) -> UIImagePickerController {
-           let picker = UIImagePickerController()
-           picker.delegate = context.coordinator
-           picker.sourceType = .camera
-           return picker
-       }
-
-       func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-
-       func makeCoordinator() -> Coordinator {
-           Coordinator(self)
-       }
-
-       class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-           let parent: CameraView
-
-           init(_ parent: CameraView) {
-               self.parent = parent
-           }
-
-           func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-               if let image = info[.originalImage] as? UIImage {
-                   parent.capturedImage = image
-               }
-               parent.dismiss()
-           }
-       }
-   }
-   ```
-
-#### 2.4 Vision Framework OCR
-
-**Timeline:** Week 4-5  
-**Effort:** 6 days  
-**Dependencies:** Camera integration
+**Timeline:** Week 4  
+**Effort:** 5 days  
+**Dependencies:** OCR interfaces
 
 **Tasks:**
 
-1. **OCR service implementation**
+1. **Define shared camera interface**
 
-   ```swift
-   // Services/OCRService.swift
-   import Vision
-   import UIKit
-
-   class OCRService: ObservableObject {
-       @Published var recognizedText = ""
-       @Published var isProcessing = false
-
-       func processReceiptImage(_ image: UIImage) async -> ReceiptData {
-           isProcessing = true
-           defer { isProcessing = false }
-
-           guard let cgImage = image.cgImage else {
-               return ReceiptData(text: "", items: [])
-           }
-
-           let requestHandler = VNImageRequestHandler(cgImage: cgImage)
-           let request = VNRecognizeTextRequest { [weak self] request, error in
-               guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
-
-               let recognizedStrings = observations.compactMap { observation in
-                   observation.topCandidates(1).first?.string
-               }
-
-               DispatchQueue.main.async {
-                   self?.recognizedText = recognizedStrings.joined(separator: "\n")
-               }
-           }
-
-           request.recognitionLevel = .accurate
-           request.usesLanguageCorrection = true
-
-           do {
-               try requestHandler.perform([request])
-               return parseReceiptText(recognizedText)
-           } catch {
-               print("OCR Error: \(error)")
-               return ReceiptData(text: recognizedText, items: [])
-           }
-       }
-
-       private func parseReceiptText(_ text: String) -> ReceiptData {
-           // Parse receipt text to extract items, prices, store info
-           let lines = text.components(separatedBy: .newlines)
-           var items: [ReceiptItem] = []
-           var storeName: String?
-           var totalAmount: Decimal?
-
-           for line in lines {
-               if let item = parseReceiptLine(line) {
-                   items.append(item)
-               }
-               if storeName == nil {
-                   storeName = detectStoreName(line)
-               }
-               if totalAmount == nil {
-                   totalAmount = detectTotalAmount(line)
-               }
-           }
-
-           return ReceiptData(
-               text: text,
-               items: items,
-               storeName: storeName,
-               totalAmount: totalAmount
-           )
-       }
-
-       private func parseReceiptLine(_ line: String) -> ReceiptItem? {
-           // Implement receipt line parsing logic
-           // Look for patterns like "Product Name 2.99" or "2x Product 5.98"
-           return nil // Placeholder
-       }
+   ```kotlin
+   // commonMain/kotlin/domain/camera/CameraService.kt
+   expect class CameraService {
+       suspend fun requestCameraPermission(): Boolean
+       suspend fun captureReceiptImage(): Result<ByteArray>
+       fun isCameraAvailable(): Boolean
    }
 
-   struct ReceiptData {
-       let text: String
-       let items: [ReceiptItem]
-       let storeName: String?
-       let totalAmount: Decimal?
-   }
+   data class CameraPermissionState(
+       val isGranted: Boolean = false,
+       val shouldShowRationale: Boolean = false,
+       val isPermanentlyDenied: Boolean = false
+   )
+   ```
 
-   struct ReceiptItem {
-       let name: String
-       let price: Decimal
-       let quantity: Decimal
+2. **iOS camera implementation**
+
+   ```kotlin
+   // iosMain/kotlin/platform/camera/CameraService.kt
+   actual class CameraService {
+       actual suspend fun requestCameraPermission(): Boolean {
+           return withContext(Dispatchers.Main) {
+               when (AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)) {
+                   AVAuthorizationStatusAuthorized -> true
+                   AVAuthorizationStatusNotDetermined -> {
+                       suspendCoroutine { continuation ->
+                           AVCaptureDevice.requestAccessForMediaType(AVMediaTypeVideo) { granted ->
+                               continuation.resume(granted)
+                           }
+                       }
+                   }
+                   else -> false
+               }
+           }
+       }
+
+       actual suspend fun captureReceiptImage(): Result<ByteArray> {
+           return try {
+               val imagePickerController = UIImagePickerController()
+               imagePickerController.sourceType = UIImagePickerControllerSourceTypeCamera
+               imagePickerController.allowsEditing = false
+
+               // Implementation would use UIImagePickerController delegate
+               // Convert UIImage to ByteArray
+               val imageData = captureImageFromCamera()
+               Result.success(imageData)
+           } catch (e: Exception) {
+               Result.failure(e)
+           }
+       }
    }
    ```
 
-2. **Receipt parsing algorithms**
-   - Implement German receipt format detection
-   - Extract product names, prices, quantities
-   - Handle different store formats (REWE, Edeka, etc.)
-   - Validate extracted data
+3. **Android camera implementation**
 
-### Phase 3: Local Product Management (Weeks 6-7)
+   ```kotlin
+   // androidMain/kotlin/platform/camera/CameraService.kt
+   actual class CameraService(private val context: Context) {
+       actual suspend fun requestCameraPermission(): Boolean {
+           return when {
+               ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+               PackageManager.PERMISSION_GRANTED -> true
+               else -> {
+                   // Use ActivityResultLauncher in actual implementation
+                   requestCameraPermissionInternal()
+               }
+           }
+       }
 
-#### 2.5 Product Matching & Storage
+       actual suspend fun captureReceiptImage(): Result<ByteArray> {
+           return try {
+               val imageCapture = ImageCapture.Builder().build()
+               val outputFileOptions = ImageCapture.OutputFileOptions.Builder(createTempFile()).build()
 
-**Timeline:** Week 6-7  
-**Effort:** 6 days  
-**Dependencies:** OCR implementation
+               // Use CameraX to capture image
+               val imageData = captureImageWithCameraX(imageCapture, outputFileOptions)
+               Result.success(imageData)
+           } catch (e: Exception) {
+               Result.failure(e)
+           }
+       }
+   }
+   ```
+
+### Phase 3: Shared Business Logic Implementation (Weeks 5-6)
+
+#### 2.5 ViewModels and Use Cases
+
+**Timeline:** Week 5  
+**Effort:** 5 days  
+**Dependencies:** Platform implementations
 
 **Tasks:**
 
-1. **Product matching service**
+1. **Receipt processing use cases**
 
-   ```swift
-   // Services/ProductMatcher.swift
-   import Foundation
+   ```kotlin
+   // commonMain/kotlin/domain/usecase/ProcessReceiptUseCase.kt
+   class ProcessReceiptUseCase(
+       private val ocrService: OCRService,
+       private val receiptRepository: ReceiptRepository,
+       private val productRepository: ProductRepository,
+       private val productMatcher: ProductMatcher
+   ) {
+       suspend fun execute(imageData: ByteArray): Result<Receipt> {
+           return try {
+               // Process image with OCR
+               val ocrResult = ocrService.processReceiptImage(imageData).getOrThrow()
 
-   class ProductMatcher: ObservableObject {
-       private let dataManager = DataManager.shared
+               // Create receipt from OCR data
+               val receipt = Receipt(
+                   storeName = ocrResult.storeName,
+                   totalAmount = ocrResult.totalAmount ?: 0.0,
+                   purchaseDate = parseDate(ocrResult.purchaseDate) ?: Clock.System.now(),
+                   ocrText = ocrResult.rawText,
+                   imageData = imageData
+               )
 
-       func findOrCreateProduct(name: String, category: String? = nil) async -> Product {
+               // Save receipt
+               receiptRepository.insertReceipt(receipt)
+
+               // Process individual items
+               processReceiptItems(receipt, ocrResult.items)
+
+               Result.success(receipt)
+           } catch (e: Exception) {
+               Result.failure(e)
+           }
+       }
+
+       private suspend fun processReceiptItems(receipt: Receipt, ocrItems: List<OCRItem>) {
+           ocrItems.forEach { ocrItem ->
+               val product = productMatcher.findOrCreateProduct(
+                   name = ocrItem.name,
+                   category = categorizeProduct(ocrItem.name)
+               )
+
+               val priceRecord = PriceRecord(
+                   productId = product.id,
+                   receiptId = receipt.id,
+                   price = ocrItem.price ?: 0.0,
+                   quantity = ocrItem.quantity,
+                   recordedDate = receipt.purchaseDate,
+                   storeName = receipt.storeName ?: ""
+               )
+
+               // Save price record (implement repository method)
+           }
+       }
+   }
+   ```
+
+2. **Shared ViewModels**
+
+   ```kotlin
+   // commonMain/kotlin/presentation/viewmodel/ReceiptScannerViewModel.kt
+   class ReceiptScannerViewModel(
+       private val processReceiptUseCase: ProcessReceiptUseCase,
+       private val cameraService: CameraService
+   ) : ViewModel() {
+
+       private val _uiState = MutableStateFlow(ReceiptScannerState())
+       val uiState = _uiState.asStateFlow()
+
+       fun requestCameraPermission() {
+           viewModelScope.launch {
+               _uiState.value = _uiState.value.copy(isRequestingPermission = true)
+               val granted = cameraService.requestCameraPermission()
+               _uiState.value = _uiState.value.copy(
+                   isRequestingPermission = false,
+                   isCameraPermissionGranted = granted
+               )
+           }
+       }
+
+       fun captureAndProcessReceipt() {
+           viewModelScope.launch {
+               _uiState.value = _uiState.value.copy(isProcessing = true)
+
+               try {
+                   val imageData = cameraService.captureReceiptImage().getOrThrow()
+                   val receipt = processReceiptUseCase.execute(imageData).getOrThrow()
+
+                   _uiState.value = _uiState.value.copy(
+                       isProcessing = false,
+                       processedReceipt = receipt,
+                       showSuccess = true
+                   )
+               } catch (e: Exception) {
+                   _uiState.value = _uiState.value.copy(
+                       isProcessing = false,
+                       error = e.message
+                   )
+               }
+           }
+       }
+   }
+
+   data class ReceiptScannerState(
+       val isProcessing: Boolean = false,
+       val isRequestingPermission: Boolean = false,
+       val isCameraPermissionGranted: Boolean = false,
+       val processedReceipt: Receipt? = null,
+       val showSuccess: Boolean = false,
+       val error: String? = null
+   )
+   ```
+
+3. **Product matching algorithms**
+
+   ```kotlin
+   // commonMain/kotlin/domain/matching/ProductMatcher.kt
+   class ProductMatcher(
+       private val productRepository: ProductRepository
+   ) {
+       suspend fun findOrCreateProduct(name: String, category: String? = null): Product {
            // First, try to find existing product with fuzzy matching
-           if let existingProduct = await findSimilarProduct(name: name) {
+           val existingProduct = findSimilarProduct(name)
+           if (existingProduct != null) {
                return existingProduct
            }
 
            // Create new product if no match found
-           return createNewProduct(name: name, category: category)
+           val newProduct = Product(
+               name = normalizeProductName(name),
+               category = category,
+               brand = extractBrand(name)
+           )
+
+           productRepository.insertProduct(newProduct)
+           return newProduct
        }
 
-       private func findSimilarProduct(name: String) async -> Product? {
-           let products = dataManager.fetchProducts()
+       private suspend fun findSimilarProduct(name: String): Product? {
+           val normalizedName = normalizeProductName(name)
+           val allProducts = productRepository.getAllProducts()
 
-           // Use string similarity algorithms
-           for product in products {
-               if similarity(name, product.name) > 0.8 {
-                   return product
-               }
-           }
-
-           return nil
-       }
-
-       private func similarity(_ s1: String, _ s2: String) -> Double {
-           // Implement Levenshtein distance or similar algorithm
-           return 0.0 // Placeholder
-       }
-
-       private func createNewProduct(name: String, category: String?) -> Product {
-           let context = dataManager.persistentContainer.viewContext
-           let product = Product(context: context)
-           product.id = UUID()
-           product.name = name
-           product.category = category
-           dataManager.save()
-           return product
-       }
-   }
+           return allProducts.firstOrNull { product ->
+               calculateSimilarity(normalizedName, product.name) > 0.85
    ```
 
-2. **Product categorization**
-   - Implement automatic categorization based on keywords
-   - Use Apple's Natural Language framework
-   - Create predefined categories (Food, Electronics, etc.)
-   - Allow manual category assignment
+### Phase 4: Compose Multiplatform UI Implementation (Weeks 7-8)
 
-### Phase 4: Analytics & Visualization (Weeks 8-9)
+#### 2.6 Shared UI Components
 
-#### 2.6 Price History & Analytics
-
-**Timeline:** Week 8-9  
-**Effort:** 6 days  
-**Dependencies:** Product management
+**Timeline:** Week 7  
+**Effort:** 5 days  
+**Dependencies:** ViewModels and use cases
 
 **Tasks:**
 
-1. **Analytics service**
+1.  **Design system and theming**
 
-   ```swift
-   // Services/PriceAnalyzer.swift
-   import Foundation
-   import CoreData
+    ```kotlin
+    // commonMain/kotlin/ui/theme/Theme.kt
+    @Composable
+    fun AllesTeurerTheme(
+        darkTheme: Boolean = isSystemInDarkTheme(),
+        dynamicColor: Boolean = true,
+        content: @Composable () -> Unit
+    ) {
+        val colorScheme = when {
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
+            darkTheme -> DarkColorScheme
+            else -> LightColorScheme
+        }
 
-   class PriceAnalyzer: ObservableObject {
-       private let dataManager = DataManager.shared
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 
-       func calculateInflationRate(for category: String, period: DateInterval) -> Double {
-           let priceRecords = fetchPriceRecords(category: category, period: period)
+    // Color schemes
+    private val DarkColorScheme = darkColorScheme(
+        primary = Purple80,
+        secondary = PurpleGrey80,
+        tertiary = Pink80
+    )
 
-           guard priceRecords.count > 1 else { return 0.0 }
+    private val LightColorScheme = lightColorScheme(
+        primary = Purple40,
+        secondary = PurpleGrey40,
+        tertiary = Pink40
+    )
+    ```
 
-           let sortedRecords = priceRecords.sorted { $0.recordedDate < $1.recordedDate }
-           let startPrice = sortedRecords.first!.price
-           let endPrice = sortedRecords.last!.price
+2.  **Shared navigation**
 
-           return Double(truncating: ((endPrice - startPrice) / startPrice * 100))
-       }
+    ```kotlin
+    // commonMain/kotlin/ui/navigation/Navigation.kt
+    @Composable
+    fun AllesTeurerNavigation() {
+        val navController = rememberNavController()
 
-       func getSpendingTrends() -> [SpendingTrend] {
-           let receipts = fetchRecentReceipts()
-           var trends: [String: Decimal] = [:]
+        NavHost(
+            navController = navController,
+            startDestination = Screen.ReceiptScanner.route
+        ) {
+            composable(Screen.ReceiptScanner.route) {
+                ReceiptScannerScreen(
+                    onNavigateToHistory = {
+                        navController.navigate(Screen.ReceiptHistory.route)
+                    }
+                )
+            }
 
-           for receipt in receipts {
-               let monthKey = DateFormatter.monthYear.string(from: receipt.purchaseDate)
-               trends[monthKey, default: 0] += receipt.totalAmount
-           }
+            composable(Screen.ReceiptHistory.route) {
+                ReceiptHistoryScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToDetail = { receiptId ->
+                        navController.navigate("${Screen.ReceiptDetail.route}/$receiptId")
+                    }
+                )
+            }
 
-           return trends.map { SpendingTrend(period: $0.key, amount: $0.value) }
-       }
+            composable(
+                route = "${Screen.ReceiptDetail.route}/{receiptId}",
+                arguments = listOf(navArgument("receiptId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val receiptId = backStackEntry.arguments?.getString("receiptId") ?: ""
+                ReceiptDetailScreen(
+                    receiptId = receiptId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
 
-       func getPriceHistory(for product: Product) -> [PriceRecord] {
-           guard let priceRecords = product.priceRecords as? Set<PriceRecord> else { return [] }
-           return Array(priceRecords).sorted { $0.recordedDate < $1.recordedDate }
-       }
-   }
+            composable(Screen.ProductList.route) {
+                ProductListScreen(
+                    onNavigateToDetail = { productId ->
+                        navController.navigate("${Screen.ProductDetail.route}/$productId")
+                    }
+                )
+            }
 
-   struct SpendingTrend {
-       let period: String
-       let amount: Decimal
-   }
-   ```
+            composable(Screen.Analytics.route) {
+                AnalyticsScreen()
+            }
+        }
+    }
 
-2. **Chart views with Swift Charts**
+    sealed class Screen(val route: String) {
+        object ReceiptScanner : Screen("receipt_scanner")
+        object ReceiptHistory : Screen("receipt_history")
+        object ReceiptDetail : Screen("receipt_detail")
+        object ProductList : Screen("product_list")
+        object ProductDetail : Screen("product_detail")
+        object Analytics : Screen("analytics")
+    }
+    ```
 
-   ```swift
-   // Views/Analytics/PriceHistoryView.swift
-   import SwiftUI
-   import Charts
+3.  **Receipt scanner screen**
 
-   struct PriceHistoryView: View {
-       let product: Product
-       @StateObject private var analyzer = PriceAnalyzer()
+    ```kotlin
+    // commonMain/kotlin/ui/screens/ReceiptScannerScreen.kt
+    @Composable
+    fun ReceiptScannerScreen(
+        viewModel: ReceiptScannerViewModel = koinViewModel(),
+        onNavigateToHistory: () -> Unit = {}
+    ) {
+        val uiState by viewModel.uiState.collectAsState()
 
-       var body: some View {
-           VStack {
-               Text(product.name)
-                   .font(.headline)
+        LaunchedEffect(Unit) {
+            viewModel.requestCameraPermission()
+        }
 
-               Chart {
-                   ForEach(analyzer.getPriceHistory(for: product), id: \.id) { record in
-                       LineMark(
-                           x: .value("Date", record.recordedDate),
-                           y: .value("Price", Double(truncating: record.price))
-                       )
-                   }
-               }
-               .frame(height: 200)
-           }
-           .navigationTitle("Price History")
-       }
-   }
-   ```
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            when {
+                uiState.isRequestingPermission -> {
+                    CircularProgressIndicator()
+                    Text(
+                        text = "Kamera-Berechtigung wird angefordert...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
 
-### Phase 5: User Interface & Experience (Weeks 10-11)
+                !uiState.isCameraPermissionGranted -> {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Kamera",
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Kamera-Berechtigung erforderlich",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    Text(
+                        text = "Um Kassenbons zu scannen, benötigt die App Zugriff auf Ihre Kamera.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    Button(onClick = { viewModel.requestCameraPermission() }) {
+                        Text("Berechtigung erteilen")
+                    }
+                }
 
-#### 2.7 Main App Interface
+                uiState.isProcessing -> {
+                    CircularProgressIndicator()
+                    Text(
+                        text = "Kassenbon wird verarbeitet...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
 
-**Timeline:** Week 10-11  
-**Effort:** 6 days  
-**Dependencies:** Analytics implementation
+                else -> {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Kassenbon scannen",
+                        modifier = Modifier.size(96.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Text(
+                        text = "Kassenbon scannen",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(16.dp)
+                    )
+
+                    Text(
+                        text = "Fotografieren Sie Ihren Kassenbon, um Produkte und Preise automatisch zu erfassen.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 32.dp)
+                    )
+
+                    Button(
+                        onClick = { viewModel.captureAndProcessReceipt() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Kassenbon fotografieren")
+                    }
+
+                    OutlinedButton(
+                        onClick = onNavigateToHistory,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Verlauf anzeigen")
+                    }
+                }
+            }
+        }
+
+        // Handle success state
+        if (uiState.showSuccess) {
+            LaunchedEffect(uiState.processedReceipt) {
+                // Show success feedback and navigate
+                onNavigateToHistory()
+            }
+        }
+
+        // Handle error state
+        uiState.error?.let { error ->
+            LaunchedEffect(error) {
+                // Show error snackbar or dialog
+            }
+        }
+    }
+    ```
+
+        private func parseReceiptLine(_ line: String) -> ReceiptItem? {
+            // Implement receipt line parsing logic
+            // Look for patterns like "Product Name 2.99" or "2x Product 5.98"
+
+#### 2.7 Analytics and Charts Implementation
+
+**Timeline:** Week 8  
+**Effort:** 5 days  
+**Dependencies:** Shared UI components
 
 **Tasks:**
 
-1. **Main navigation structure**
+1. **Price analytics screens**
 
-   ```swift
-   // ContentView.swift
-   struct ContentView: View {
-       var body: some View {
-           TabView {
-               DashboardView()
-                   .tabItem {
-                       Image(systemName: "house.fill")
-                       Text("Dashboard")
-                   }
+   ```kotlin
+   // commonMain/kotlin/ui/screens/AnalyticsScreen.kt
+   @Composable
+   fun AnalyticsScreen(
+       viewModel: AnalyticsViewModel = koinViewModel()
+   ) {
+       val uiState by viewModel.uiState.collectAsState()
 
-               ReceiptScannerView()
-                   .tabItem {
-                       Image(systemName: "camera.fill")
-                       Text("Scan")
-                   }
+       LazyColumn(
+           modifier = Modifier
+               .fillMaxSize()
+               .padding(16.dp),
+           verticalArrangement = Arrangement.spacedBy(16.dp)
+       ) {
+           item {
+               Text(
+                   text = "Preisanalyse",
+                   style = MaterialTheme.typography.headlineMedium
+               )
+           }
 
-               ProductListView()
-                   .tabItem {
-                       Image(systemName: "list.bullet")
-                       Text("Products")
-                   }
+           item {
+               InflationCard(inflationRate = uiState.inflationRate)
+           }
 
-               AnalyticsView()
-                   .tabItem {
-                       Image(systemName: "chart.bar.fill")
-                       Text("Analytics")
-                   }
+           item {
+               SpendingTrendsChart(trends = uiState.spendingTrends)
+           }
 
-               SettingsView()
-                   .tabItem {
-                       Image(systemName: "gear")
-                       Text("Settings")
-                   }
+           item {
+               CategoryBreakdownCard(breakdown = uiState.categoryBreakdown)
+           }
+
+           items(uiState.topProducts) { product ->
+               ProductPriceCard(
+                   product = product,
+                   priceHistory = uiState.priceHistories[product.id] ?: emptyList()
+               )
+           }
+       }
+   }
+
+   @Composable
+   fun SpendingTrendsChart(trends: List<SpendingTrend>) {
+       Card(
+           modifier = Modifier.fillMaxWidth()
+       ) {
+           Column(
+               modifier = Modifier.padding(16.dp)
+           ) {
+               Text(
+                   text = "Ausgabentrends",
+                   style = MaterialTheme.typography.titleMedium,
+                   modifier = Modifier.padding(bottom = 8.dp)
+               )
+
+               // Use compose-charts or similar for multiplatform charts
+               SimpleLineChart(
+                   data = trends,
+                   modifier = Modifier
+                       .fillMaxWidth()
+                       .height(200.dp)
+               )
            }
        }
    }
    ```
 
-2. **Dashboard implementation**
-   ```swift
-   // Views/Analytics/DashboardView.swift
-   struct DashboardView: View {
-       @StateObject private var analyzer = PriceAnalyzer()
+2. **Local analytics calculations**
 
-       var body: some View {
-           NavigationView {
-               ScrollView {
-                   LazyVStack(spacing: 16) {
-                       SpendingSummaryCard()
-                       RecentReceiptsCard()
-                       InflationTrackerCard()
-                       TopCategoriesCard()
-                   }
-                   .padding()
-               }
-               .navigationTitle("AllesTeurer")
-               .refreshable {
-                   // Refresh data
-               }
+   ```kotlin
+   // commonMain/kotlin/domain/usecase/CalculateAnalyticsUseCase.kt
+   class CalculateAnalyticsUseCase(
+       private val receiptRepository: ReceiptRepository,
+       private val productRepository: ProductRepository,
+       private val priceRecordRepository: PriceRecordRepository
+   ) {
+       suspend fun calculateInflationRate(
+           category: String? = null,
+           periodDays: Int = 365
+       ): Double {
+           val endDate = Clock.System.now()
+           val startDate = endDate.minus(periodDays.days)
+
+           val priceRecords = priceRecordRepository.getPriceRecordsInPeriod(
+               startDate = startDate,
+               endDate = endDate,
+               category = category
+           )
+
+           if (priceRecords.size < 2) return 0.0
+
+           val sortedRecords = priceRecords.sortedBy { it.recordedDate }
+           val averageStartPrice = sortedRecords.take(sortedRecords.size / 4).map { it.price }.average()
+           val averageEndPrice = sortedRecords.takeLast(sortedRecords.size / 4).map { it.price }.average()
+
+           return ((averageEndPrice - averageStartPrice) / averageStartPrice) * 100
+       }
+
+       suspend fun calculateSpendingTrends(): List<SpendingTrend> {
+           val receipts = receiptRepository.getAllReceipts().first()
+           val monthlySpending = receipts.groupBy {
+               val instant = Instant.fromEpochMilliseconds(it.purchaseDate.toEpochMilliseconds())
+               "${instant.toLocalDateTime(TimeZone.currentSystemDefault()).year}-${instant.toLocalDateTime(TimeZone.currentSystemDefault()).monthNumber}"
+           }.mapValues { (_, receipts) ->
+               receipts.sumOf { it.totalAmount }
            }
+
+           return monthlySpending.map { (month, amount) ->
+               SpendingTrend(period = month, amount = amount)
+           }.sortedBy { it.period }
        }
    }
    ```
 
-### Phase 6: CloudKit Sync & Polish (Weeks 12)
+### Phase 5: Testing and Quality Assurance (Week 9)
 
-#### 2.8 CloudKit Integration
+#### 2.8 Comprehensive Testing Strategy
 
-**Timeline:** Week 12  
-**Effort:** 4 days  
-**Dependencies:** Main UI complete
+**Timeline:** Week 9  
+**Effort:** 5 days  
+**Dependencies:** UI implementation complete
 
 **Tasks:**
 
-1. **CloudKit sync setup**
+1. **Unit tests for shared business logic**
 
-   ```swift
-   // Services/CloudKitService.swift
-   import CloudKit
-   import CoreData
+   ```kotlin
+   // commonTest/kotlin/domain/usecase/ProcessReceiptUseCaseTest.kt
+   class ProcessReceiptUseCaseTest {
 
-   class CloudKitService: ObservableObject {
-       private let container = CKContainer(identifier: "iCloud.com.allesteuer.app")
+       @Test
+       fun `processReceipt should successfully extract receipt data`() = runTest {
+           // Given
+           val mockOcrService = mockk<OCRService>()
+           val mockReceiptRepository = mockk<ReceiptRepository>()
+           val mockProductMatcher = mockk<ProductMatcher>()
 
-       func setupCloudKit() {
-           // Configure CloudKit container
-           // Set up sync with Core Data
-         }
+           val ocrResult = OCRResult(
+               rawText = "REWE\nMilch 1.49\nBrot 2.99\nSumme: 4.48",
+               storeName = "REWE",
+               totalAmount = 4.48,
+               items = listOf(
+                   OCRItem("Milch", 1.49),
+                   OCRItem("Brot", 2.99)
+               )
+           )
 
-       func syncData() async {
-           // Implement bidirectional sync
-           // Handle conflicts
+           every { mockOcrService.processReceiptImage(any()) } returns Result.success(ocrResult)
+           every { mockReceiptRepository.insertReceipt(any()) } returns Result.success("test-id")
+           every { mockProductMatcher.findOrCreateProduct(any(), any()) } returns Product(
+               name = "Test Product"
+           )
+
+           val useCase = ProcessReceiptUseCase(
+               mockOcrService,
+               mockReceiptRepository,
+               mockk(),
+               mockProductMatcher
+           )
+
+           // When
+           val result = useCase.execute(byteArrayOf())
+
+           // Then
+           assertTrue(result.isSuccess)
+           verify { mockOcrService.processReceiptImage(any()) }
+           verify { mockReceiptRepository.insertReceipt(any()) }
        }
    }
    ```
 
-2. **Data export functionality**
-   - Export receipts as CSV
-   - Export analytics as PDF reports
-   - Backup/restore functionality
+2. **Platform-specific integration tests**
 
-## 3. Core Data Model Specifications
+   ```kotlin
+   // androidTest/kotlin/platform/ocr/OCRServiceTest.kt
+   @RunWith(AndroidJUnit4::class)
+   class AndroidOCRServiceTest {
 
-### 3.1 iOS Core Data Schema
+       @Test
+       fun ocrService_shouldProcessGermanReceipt() = runTest {
+           val context = InstrumentationRegistry.getInstrumentation().targetContext
+           val ocrService = OCRService(context)
 
-```swift
-// AllesTeurer.xcdatamodeld
+           // Load test receipt image
+           val testImageData = loadTestReceiptImage()
 
-// Receipt Entity
-entity Receipt {
-    id: UUID
-    storeName: String?
-    totalAmount: Decimal
-    purchaseDate: Date
-    imageData: Data?
-    ocrText: String?
-    isProcessed: Bool
-    createdAt: Date
-    updatedAt: Date
+           val result = ocrService.processReceiptImage(testImageData)
+
+           assertTrue(result.isSuccess)
+           val ocrResult = result.getOrNull()
+           assertNotNull(ocrResult)
+           assertTrue(ocrResult.rawText.isNotEmpty())
+       }
+   }
+   ```
+
+3. **UI tests with Compose testing**
+
+   ```kotlin
+   // commonTest/kotlin/ui/screens/ReceiptScannerScreenTest.kt
+   class ReceiptScannerScreenTest {
+
+       @get:Rule
+       val composeTestRule = createComposeRule()
+
+       @Test
+       fun receiptScannerScreen_showsCameraPermissionRequest() {
+           // Given
+           val mockViewModel = mockk<ReceiptScannerViewModel>()
+           every { mockViewModel.uiState } returns flowOf(
+               ReceiptScannerState(isCameraPermissionGranted = false)
+           ).asStateFlow()
+
+           // When
+           composeTestRule.setContent {
+               ReceiptScannerScreen(viewModel = mockViewModel)
+           }
+
+           // Then
+           composeTestRule
+               .onNodeWithText("Kamera-Berechtigung erforderlich")
+               .assertIsDisplayed()
+           composeTestRule
+               .onNodeWithText("Berechtigung erteilen")
+               .assertIsDisplayed()
+       }
+   }
+   ```
+
+### Phase 6: Deployment and App Store Preparation (Week 10)
+
+#### 2.9 Platform-Specific App Store Setup
+
+**Timeline:** Week 10  
+**Effort:** 3 days  
+**Dependencies:** Testing complete
+
+**Tasks:**
+
+1. **iOS App Store preparation**
+
+   ```kotlin
+   // Configure iOS app bundle in iosApp/Configuration/Config.xcconfig
+   PRODUCT_BUNDLE_IDENTIFIER = eu.mpwg.allesteurer
+   MARKETING_VERSION = 1.0.0
+   CURRENT_PROJECT_VERSION = 1
+
+   IPHONEOS_DEPLOYMENT_TARGET = 15.0
+   TARGETED_DEVICE_FAMILY = 1 // iPhone only initially
+
+   // Privacy usage descriptions
+   NSCameraUsageDescription = Diese App benötigt Kamera-Zugriff zum Scannen von Kassenbons
+   NSPhotoLibraryUsageDescription = Diese App benötigt Zugriff auf Ihre Fotobibliothek zum Importieren von Kassenbon-Bildern
+   ```
+
+2. **Android Play Store preparation**
+
+   ```kotlin
+   // androidApp/src/main/AndroidManifest.xml
+   <uses-permission android:name="android.permission.CAMERA" />
+   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+   <application
+       android:name=".AllesTeurerApplication"
+       android:allowBackup="false"
+       android:icon="@mipmap/ic_launcher"
+       android:label="@string/app_name"
+       android:theme="@style/AppTheme">
+
+       <activity
+           android:name=".MainActivity"
+           android:exported="true"
+           android:theme="@style/AppTheme.NoActionBar">
+           <intent-filter>
+               <action android:name="android.intent.action.MAIN" />
+               <category android:name="android.intent.category.LAUNCHER" />
+           </intent-filter>
+       </activity>
+   </application>
+   ```
+
+3. **CI/CD pipeline setup**
+
+   ```yaml
+   # .github/workflows/build-and-test.yml
+   name: Build and Test KMP App
+
+   on:
+     push:
+       branches: [main, develop]
+     pull_request:
+       branches: [main]
+
+   jobs:
+     test-shared:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v3
+         - uses: actions/setup-java@v3
+           with:
+             java-version: "17"
+             distribution: "temurin"
+         - name: Test shared code
+           run: ./gradlew testDebugUnitTest
+
+     build-android:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v3
+         - name: Build Android APK
+           run: ./gradlew assembleDebug
+
+     build-ios:
+       runs-on: macos-latest
+       steps:
+         - uses: actions/checkout@v3
+         - name: Build iOS
+           run: |
+             cd iosApp
+             xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator
+   ```
+
+## 3. Technology Integration Specifications
+
+### 3.1 SQLDelight Database Schema
+
+```sql
+-- Database schema for cross-platform local storage
+-- commonMain/sqldelight/database/AllesTeurer.sq
+
+CREATE TABLE Receipt (
+    id TEXT PRIMARY KEY NOT NULL,
+    storeName TEXT,
+    totalAmount REAL NOT NULL,
+    purchaseDate INTEGER NOT NULL, -- Unix timestamp
+    imageData BLOB,
+    ocrText TEXT,
+    isProcessed INTEGER NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+CREATE TABLE Product (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    normalizedName TEXT NOT NULL, -- For matching algorithms
+    category TEXT,
+    brand TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+CREATE TABLE PriceRecord (
+    id TEXT PRIMARY KEY NOT NULL,
+    productId TEXT NOT NULL,
+    receiptId TEXT NOT NULL,
+    price REAL NOT NULL,
+    quantity REAL NOT NULL DEFAULT 1.0,
+    unit TEXT, -- kg, pcs, liter, etc.
+    recordedDate INTEGER NOT NULL,
+    storeName TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiptId) REFERENCES Receipt(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Category (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    color TEXT, -- Hex color for UI
+    iconName TEXT,
+    parentCategoryId TEXT,
+    createdAt INTEGER NOT NULL,
+    FOREIGN KEY (parentCategoryId) REFERENCES Category(id)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_receipt_purchase_date ON Receipt(purchaseDate);
+CREATE INDEX idx_price_record_product_id ON PriceRecord(productId);
+CREATE INDEX idx_price_record_recorded_date ON PriceRecord(recordedDate);
+CREATE INDEX idx_product_normalized_name ON Product(normalizedName);
+
+-- Queries
+selectAllReceipts:
+SELECT * FROM Receipt ORDER BY purchaseDate DESC;
+
+selectReceiptById:
+SELECT * FROM Receipt WHERE id = ?;
+
+selectProductsByCategory:
+SELECT * FROM Product WHERE category = ? ORDER BY name ASC;
+
+selectPriceHistoryForProduct:
+SELECT pr.*, r.storeName, r.purchaseDate
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receiptId = r.id
+WHERE pr.productId = ?
+ORDER BY pr.recordedDate ASC;
+
+insertReceipt:
+INSERT INTO Receipt (id, storeName, totalAmount, purchaseDate, imageData, ocrText, isProcessed, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertProduct:
+INSERT INTO Product (id, name, normalizedName, category, brand, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+insertPriceRecord:
+INSERT INTO PriceRecord (id, productId, receiptId, price, quantity, unit, recordedDate, storeName, createdAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+```
+
+## 4. Privacy and Security Implementation
+
+### 4.1 Data Privacy Framework
+
+```kotlin
+// commonMain/kotlin/domain/privacy/PrivacyManager.kt
+class PrivacyManager {
+
+    fun anonymizeReceiptData(receipt: Receipt): Receipt {
+        return receipt.copy(
+            imageData = null, // Remove raw image data if requested
+            ocrText = receipt.ocrText?.anonymizePersonalInfo()
+        )
+    }
+
+    fun exportUserData(): UserDataExport {
+        // GDPR Article 20 - Data portability
+        return UserDataExport(
+            receipts = getAllReceipts(),
+            products = getAllProducts(),
+            priceRecords = getAllPriceRecords(),
+            analytics = calculateUserAnalytics(),
+            exportDate = Clock.System.now()
+        )
+    }
+
+    suspend fun deleteAllUserData(): Result<Unit> {
+        // GDPR Article 17 - Right to erasure
+        return try {
+            receiptRepository.deleteAllReceipts()
+            productRepository.deleteAllProducts()
+            priceRecordRepository.deleteAllRecords()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+```
+
+## 5. Future Roadmap and Evolution
+
+### 5.1 Backend Integration Preparation
+
+```kotlin
+// Future backend integration points
+// commonMain/kotlin/domain/sync/SyncManager.kt
+interface SyncManager {
+    suspend fun syncReceiptsToCloud(): Result<Unit>
+    suspend fun syncProductsFromCloud(): Result<List<Product>>
+    suspend fun backupUserData(): Result<String> // Returns backup ID
+    suspend fun restoreUserData(backupId: String): Result<Unit>
+}
+```
+
+### 5.2 Desktop Platform Support
+
+The KMP architecture already supports desktop platforms through Compose Desktop. Future expansion would include:
+
+- Desktop-specific UI adaptations
+- File system integrations for bulk receipt import
+- Advanced analytics with larger screen real estate
+- Keyboard shortcuts and desktop-specific UX patterns
+
+## 6. Success Metrics and KPIs
+
+### 6.1 Technical Metrics
+
+- **Code Sharing**: Target 85%+ shared business logic between platforms
+- **Performance**: App launch < 2 seconds, OCR processing < 5 seconds
+- **Database Performance**: All queries < 100ms
+- **Test Coverage**: > 80% for shared code, > 70% for platform code
+
+### 6.2 User Experience Metrics
+
+- **OCR Accuracy**: > 90% accurate product recognition
+- **User Retention**: > 70% monthly active users after 3 months
+- **Feature Adoption**: > 60% users scan receipts regularly
+- **Privacy Satisfaction**: > 95% users satisfied with local-only approach
+
+## Conclusion
+
+This implementation plan provides a comprehensive roadmap for developing AllesTeurer as a Kotlin Multiplatform application that maximizes code sharing while delivering native performance and user experience on both iOS and Android platforms. The privacy-first, local-processing approach ensures user data remains secure while providing powerful price tracking and analytics capabilities.
+
+The phased development approach allows for iterative improvements and user feedback integration, while the clean architecture ensures the codebase remains maintainable and extensible for future enhancements.
+totalAmount: Decimal
+purchaseDate: Date
+imageData: Data?
+ocrText: String?
+isProcessed: Bool
+createdAt: Date
+updatedAt: Date
 
     // Relationships
     items: [ReceiptItem] (One-to-Many)
+
 }
 
 // Product Entity
 entity Product {
-    id: UUID
-    name: String
-    category: String?
-    brand: String?
-    normalizedName: String  // For matching
-    createdAt: Date
-    updatedAt: Date
+id: UUID
+name: String
+category: String?
+brand: String?
+normalizedName: String // For matching
+createdAt: Date
+updatedAt: Date
 
     // Relationships
     priceRecords: [PriceRecord] (One-to-Many)
+
 }
 
 // PriceRecord Entity
 entity PriceRecord {
-    id: UUID
-    price: Decimal
-    quantity: Decimal
-    unitPrice: Decimal
-    recordedDate: Date
-    storeName: String
-    createdAt: Date
+id: UUID
+price: Decimal
+quantity: Decimal
+unitPrice: Decimal
+recordedDate: Date
+storeName: String
+createdAt: Date
 
     // Relationships
     product: Product (Many-to-One)
     receipt: Receipt (Many-to-One)
+
 }
 
 // ReceiptItem Entity
 entity ReceiptItem {
-    id: UUID
-    itemName: String
-    extractedPrice: Decimal
-    extractedQuantity: Decimal?
-    lineText: String  // Original OCR text
-    isMatched: Bool
-    createdAt: Date
+id: UUID
+itemName: String
+extractedPrice: Decimal
+extractedQuantity: Decimal?
+lineText: String // Original OCR text
+isMatched: Bool
+createdAt: Date
 
     // Relationships
     receipt: Receipt (Many-to-One)
     product: Product? (Many-to-One, optional)
+
 }
 
 // Store Entity
 entity Store {
-    id: UUID
-    name: String
-    location: String?
-    logoImage: Data?
-    createdAt: Date
+id: UUID
+name: String
+location: String?
+logoImage: Data?
+createdAt: Date
 
     // Relationships
     receipts: [Receipt] (One-to-Many)
     priceRecords: [PriceRecord] (One-to-Many)
+
 }
 
 // Category Entity
 entity Category {
-    id: UUID
-    name: String
-    iconName: String?
-    colorHex: String?
-    sortOrder: Int32
+id: UUID
+name: String
+iconName: String?
+colorHex: String?
+sortOrder: Int32
 
     // Relationships
     products: [Product] (One-to-Many)
+
 }
-```
+
+````
 
 ### 3.2 CloudKit Integration Schema
 
@@ -773,7 +1503,7 @@ fields: [
     "recordedDate": Date,
     "storeName": String
 ]
-```
+````
 
 ## 4. Advanced Features Implementation
 

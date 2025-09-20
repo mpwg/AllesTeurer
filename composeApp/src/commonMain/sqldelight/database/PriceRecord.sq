@@ -1,0 +1,164 @@
+-- PriceRecord table for tracking individual receipt items and price history
+CREATE TABLE IF NOT EXISTS PriceRecord (
+    id TEXT PRIMARY KEY NOT NULL,
+    receipt_id TEXT NOT NULL,
+    product_id TEXT, -- May be null if product not matched yet
+    product_name TEXT NOT NULL, -- Raw product name from receipt
+    normalized_product_name TEXT NOT NULL, -- Normalized for matching
+    quantity REAL NOT NULL DEFAULT 1.0,
+    unit_price REAL NOT NULL,
+    total_price REAL NOT NULL,
+    unit_type TEXT DEFAULT 'piece',
+    brand TEXT,
+    category TEXT,
+    tax_rate REAL, -- Tax rate as percentage (e.g., 19.0 for 19%)
+    discount_amount REAL DEFAULT 0.0,
+    raw_text TEXT, -- Original OCR text for this line item
+    line_number INTEGER, -- Position in receipt
+    is_matched INTEGER DEFAULT 0, -- Boolean: product has been matched
+    match_confidence REAL, -- Confidence score for product matching
+    created_at INTEGER NOT NULL, -- Unix timestamp
+    updated_at INTEGER NOT NULL, -- Unix timestamp
+    FOREIGN KEY (receipt_id) REFERENCES Receipt(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE SET NULL
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_price_record_receipt_id ON PriceRecord(receipt_id);
+CREATE INDEX IF NOT EXISTS idx_price_record_product_id ON PriceRecord(product_id);
+CREATE INDEX IF NOT EXISTS idx_price_record_product_name ON PriceRecord(normalized_product_name);
+CREATE INDEX IF NOT EXISTS idx_price_record_date ON PriceRecord(created_at);
+CREATE INDEX IF NOT EXISTS idx_price_record_unit_price ON PriceRecord(unit_price);
+CREATE INDEX IF NOT EXISTS idx_price_record_matched ON PriceRecord(is_matched);
+
+-- PriceRecord queries
+insertPriceRecord:
+INSERT INTO PriceRecord(
+    id, receipt_id, product_id, product_name, normalized_product_name, 
+    quantity, unit_price, total_price, unit_type, brand, category, 
+    tax_rate, discount_amount, raw_text, line_number, is_matched, 
+    match_confidence, created_at, updated_at
+) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectPriceRecordById:
+SELECT * FROM PriceRecord WHERE id = ?;
+
+selectPriceRecordsByReceiptId:
+SELECT * FROM PriceRecord WHERE receipt_id = ? ORDER BY line_number ASC;
+
+selectPriceRecordsByProductId:
+SELECT pr.*, r.receipt_date, r.store_name
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receipt_id = r.id
+WHERE pr.product_id = ? 
+ORDER BY r.receipt_date DESC;
+
+selectUnmatchedPriceRecords:
+SELECT * FROM PriceRecord WHERE is_matched = 0 ORDER BY created_at DESC;
+
+selectAllPriceRecords:
+SELECT pr.*, r.receipt_date, r.store_name
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receipt_id = r.id
+ORDER BY r.receipt_date DESC;
+
+updatePriceRecord:
+UPDATE PriceRecord 
+SET product_id = ?, product_name = ?, normalized_product_name = ?, 
+    quantity = ?, unit_price = ?, total_price = ?, unit_type = ?, 
+    brand = ?, category = ?, tax_rate = ?, discount_amount = ?, 
+    raw_text = ?, line_number = ?, is_matched = ?, match_confidence = ?, 
+    updated_at = ?
+WHERE id = ?;
+
+updatePriceRecordProductMatch:
+UPDATE PriceRecord 
+SET product_id = ?, is_matched = ?, match_confidence = ?, updated_at = ?
+WHERE id = ?;
+
+deletePriceRecord:
+DELETE FROM PriceRecord WHERE id = ?;
+
+deletePriceRecordsByReceiptId:
+DELETE FROM PriceRecord WHERE receipt_id = ?;
+
+-- Price history and analytics queries
+selectPriceHistoryByProduct:
+SELECT pr.*, r.receipt_date, r.store_name, r.store_id
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receipt_id = r.id
+WHERE pr.product_id = ? 
+ORDER BY r.receipt_date DESC;
+
+selectPriceHistoryByProductName:
+SELECT pr.*, r.receipt_date, r.store_name, r.store_id
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receipt_id = r.id
+WHERE pr.normalized_product_name = ? 
+ORDER BY r.receipt_date DESC;
+
+-- Price trends for analytics (simplified without window functions)
+selectPriceTrendsForProduct:
+SELECT 
+    pr.product_id,
+    pr.product_name,
+    r.receipt_date,
+    pr.unit_price,
+    r.store_name
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receipt_id = r.id
+WHERE pr.product_id = ?
+ORDER BY r.receipt_date DESC;
+
+-- Average prices by product over time periods
+selectAveragePricesByProduct:
+SELECT 
+    product_id,
+    product_name,
+    COUNT(*) AS record_count,
+    AVG(unit_price) AS avg_price,
+    MIN(unit_price) AS min_price,
+    MAX(unit_price) AS max_price,
+    MIN(r.receipt_date) AS first_seen,
+    MAX(r.receipt_date) AS last_seen
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receipt_id = r.id
+WHERE pr.product_id IS NOT NULL
+GROUP BY product_id, product_name
+ORDER BY record_count DESC;
+
+-- Price changes detection
+selectSignificantPriceChanges:
+SELECT 
+    pr1.product_id,
+    pr1.product_name,
+    pr1.unit_price AS old_price,
+    pr2.unit_price AS new_price,
+    (pr2.unit_price - pr1.unit_price) AS price_diff,
+    ((pr2.unit_price - pr1.unit_price) / pr1.unit_price * 100) AS price_change_percent,
+    r1.receipt_date AS old_date,
+    r2.receipt_date AS new_date,
+    r1.store_name AS old_store,
+    r2.store_name AS new_store
+FROM PriceRecord pr1
+JOIN Receipt r1 ON pr1.receipt_id = r1.id
+JOIN PriceRecord pr2 ON pr1.product_id = pr2.product_id
+JOIN Receipt r2 ON pr2.receipt_id = r2.id
+WHERE pr1.product_id IS NOT NULL 
+AND r2.receipt_date > r1.receipt_date
+AND ABS((pr2.unit_price - pr1.unit_price) / pr1.unit_price * 100) > 10 -- More than 10% change
+ORDER BY price_change_percent DESC;
+
+-- Top spending categories
+selectTopSpendingByCategory:
+SELECT 
+    category,
+    SUM(total_price) AS total_spent,
+    COUNT(*) AS item_count,
+    AVG(unit_price) AS avg_unit_price
+FROM PriceRecord pr
+JOIN Receipt r ON pr.receipt_id = r.id
+WHERE pr.category IS NOT NULL
+AND r.receipt_date BETWEEN ? AND ?
+GROUP BY category
+ORDER BY total_spent DESC;
