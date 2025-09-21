@@ -46,7 +46,7 @@ jobs:
     name: Build & Test (Android)
     runs-on: ubuntu-latest
     outputs:
-      build-success: ${{ steps.build.conclusion == 'success' }}
+      build-success: ${{ steps.build.outcome == 'success' }}
       apk-path: ${{ steps.build.outputs.apk-path }}
     steps:
       - name: Checkout code
@@ -76,7 +76,6 @@ jobs:
         run: |
           ./gradlew detekt test --continue
         timeout-minutes: 15
-        continue-on-error: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
 
       - name: Build Android Debug APK
         id: build
@@ -175,7 +174,7 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' && 
       github.event.inputs.deploy_target != 'none' &&
-      needs.build-and-test.outputs.build-success == true
+      needs.build-and-test.outputs.build-success
     environment:
       name: ${{ github.event.inputs.deploy_target }}
     steps:
@@ -201,7 +200,7 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           groups: testers
-          file: composeApp-debug.apk
+          file: android-debug-apk/composeApp-debug.apk
           releaseNotes: |
             Branch: ${{ github.ref }}
             Commit: ${{ github.sha }}

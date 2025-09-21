@@ -104,4 +104,4 @@ MIT License - see [LICENSE](LICENSE)
 
 ---
 
-> This documentation was updated to reflect the current CI workflow. For questions, see [docs/CI_SETUP.md] or ask in the repository discussions
+> This documentation was updated to reflect the current CI workflow. For questions, see [CI Setup](./CI_SETUP.md) or ask in the [repository discussions](https://github.com/mpwg/AllesTeurer/discussions)

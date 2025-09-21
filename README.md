@@ -83,7 +83,7 @@ alles-teurer/
 
 **iOS-Entwicklung:**
 
-- **Xcode 16.0+** für iOS-spezifische Entwicklung
+- **Xcode 26.0+** für iOS-spezifische Entwicklung
 - **iOS 18.0+** als Mindest-Deployment-Version
 - **Apple Developer Account** für Gerätetests
 
