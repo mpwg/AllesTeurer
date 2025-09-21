@@ -531,13 +531,13 @@ platform :android do
     
     UI.success("✅ Android keystore generated successfully!")
     UI.message("🔑 Keystore location: #{keystore_path}")
-    UI.message("🔑 Keystore password: #{keystore_password}")
+    UI.message("🔑 Keystore password: [REDACTED]")
     UI.message("🔑 Key alias: #{key_alias}")
-    UI.message("🔑 Key password: #{key_password}")
+    UI.message("🔑 Key password: [REDACTED]")
     UI.message("")
     UI.message("💡 Add these environment variables to your .env file:")
-    UI.message("ANDROID_KEYSTORE_PASSWORD=#{keystore_password}")
-    UI.message("ANDROID_KEY_PASSWORD=#{key_password}")
+    UI.message("ANDROID_KEYSTORE_PASSWORD=[REDACTED]")
+    UI.message("ANDROID_KEY_PASSWORD=[REDACTED]")
     UI.message("ANDROID_KEY_ALIAS=#{key_alias}")
   end
 
