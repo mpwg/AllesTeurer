@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 90;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -44,9 +44,11 @@
 /* Begin PBXFrameworksBuildPhase section */
 		667729EBE9A666867EAFFA19 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 				401409812E7F29D300AB2314 /* libsqlite3.tbd in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -91,10 +93,14 @@
 			);
 			buildRules = (
 			);
+			dependencies = (
+			);
 			fileSystemSynchronizedGroups = (
 				67CC88F0204CF7D9FC001630 /* iosApp */,
 			);
 			name = iosApp;
+			packageProductDependencies = (
+			);
 			productName = iosApp;
 			productReference = 8F5521D50E85B6E4C800046B /* AllesTeurer.app */;
 			productType = "com.apple.product-type.application";
@@ -123,7 +129,7 @@
 			);
 			mainGroup = E15F768C0440546FFC4679F0;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 90;
+			preferredProjectObjectVersion = 77;
 			productRefGroup = ECABB4E01CE39CF2DCFAA406 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -136,8 +142,10 @@
 /* Begin PBXResourcesBuildPhase section */
 		2142DBADE9BB52981D1154EC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
@@ -145,31 +153,36 @@
 		381B36269922F9E2ED0B9214 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
-			name = "Compile Kotlin Framework";
-			shellPath = /bin/sh;
-			shellScript = (
-				"if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then",
-				"  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"",
-				"  exit 0",
-				"fi",
-				"cd \"$SRCROOT/..\"",
-				"./gradlew :composeApp:embedAndSignAppleFrameworkForXcode",
-				"",
-				"",
+			buildActionMask = 2147483647;
+			files = (
 			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Compile Kotlin Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7CFB55552FB33E5F149EAE5D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		009B9C5C50CE3B90F70EC1F8 /* Release configuration for PBXProject "iosApp" */ = {
+		009B9C5C50CE3B90F70EC1F8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 609FC40264020CE79D7E0173 /* Configuration */;
 			baseConfigurationReferenceRelativePath = Config.xcconfig;
@@ -206,7 +219,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				DEVELOPMENT_TEAM = PZV43D6HWT;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -229,7 +242,7 @@
 			};
 			name = Release;
 		};
-		2AA0038A4EB52AD54FF24FE0 /* Release configuration for PBXNativeTarget "iosApp" */ = {
+		2AA0038A4EB52AD54FF24FE0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -251,6 +264,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -260,7 +274,7 @@
 			};
 			name = Release;
 		};
-		777298CF1A40480A41026102 /* Debug configuration for PBXProject "iosApp" */ = {
+		777298CF1A40480A41026102 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 609FC40264020CE79D7E0173 /* Configuration */;
 			baseConfigurationReferenceRelativePath = Config.xcconfig;
@@ -297,7 +311,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "${TEAM_ID}";
+				DEVELOPMENT_TEAM = PZV43D6HWT;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -327,7 +341,7 @@
 			};
 			name = Debug;
 		};
-		FEFF993D8B58C25E2F0400C5 /* Debug configuration for PBXNativeTarget "iosApp" */ = {
+		FEFF993D8B58C25E2F0400C5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -349,6 +363,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = YES;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -364,17 +379,19 @@
 		93F634ADC46F94BC71848EE3 /* Build configuration list for PBXProject "iosApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				777298CF1A40480A41026102 /* Debug configuration for PBXProject "iosApp" */,
-				009B9C5C50CE3B90F70EC1F8 /* Release configuration for PBXProject "iosApp" */,
+				777298CF1A40480A41026102 /* Debug */,
+				009B9C5C50CE3B90F70EC1F8 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		CD0E46BAB3FFBD118E9C8516 /* Build configuration list for PBXNativeTarget "iosApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				FEFF993D8B58C25E2F0400C5 /* Debug configuration for PBXNativeTarget "iosApp" */,
-				2AA0038A4EB52AD54FF24FE0 /* Release configuration for PBXNativeTarget "iosApp" */,
+				FEFF993D8B58C25E2F0400C5 /* Debug */,
+				2AA0038A4EB52AD54FF24FE0 /* Release */,
 			);
+			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
