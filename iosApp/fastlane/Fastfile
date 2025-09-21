@@ -28,7 +28,7 @@ default_platform(:ios)
 # Global configuration
 APP_IDENTIFIER = "eu.mpwg.allesteurer.AllesTeurer"
 SCHEME_NAME = "iosApp"
-WORKSPACE_PATH = "./iosApp.xcodeproj"
+WORKSPACE_PATH = "../iosApp.xcodeproj"
 
 platform :ios do
   before_all do
@@ -172,10 +172,12 @@ platform :ios do
   lane :build do
     setup_ci_if_needed
 
-    sync_certificates(type: "development")
+    # Skip certificate sync when using automatic signing
+    # sync_certificates(type: "development")
 
     # Use xcodebuild directly instead of build_app to avoid xcodeproj compatibility issues
     UI.message("🔨 Building with xcodebuild directly (bypassing xcodeproj gem issues)")
+    UI.message("🔐 Using Xcode automatic code signing")
     
     sh("xcodebuild clean archive " \
        "-scheme #{SCHEME_NAME} " \
@@ -184,9 +186,6 @@ platform :ios do
        "-archivePath ./build/validation/#{SCHEME_NAME}-validation.xcarchive " \
        "-sdk iphoneos " \
        "-destination 'generic/platform=iOS' " \
-       "CODE_SIGN_IDENTITY='#{ENV['sigh_eu.mpwg.allesteurer.AllesTeurer_development_certificate-name']}' " \
-       "PROVISIONING_PROFILE='#{ENV['sigh_eu.mpwg.allesteurer.AllesTeurer_development']}' " \
-       "DEVELOPMENT_TEAM='#{ENV['sigh_eu.mpwg.allesteurer.AllesTeurer_development_team-id']}' " \
        "-allowProvisioningUpdates")
 
     UI.success("✅ Build validation completed successfully!")
