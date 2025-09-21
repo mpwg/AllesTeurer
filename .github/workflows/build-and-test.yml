@@ -177,7 +177,7 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' && 
       github.event.inputs.deploy_target != 'none' &&
-      needs.build-and-test.outputs.build-success == 'true'
+      needs.build-and-test.outputs.build-success == true
     environment:
       name: ${{ github.event.inputs.deploy_target }}
     steps:
