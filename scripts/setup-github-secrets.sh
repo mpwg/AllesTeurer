@@ -40,12 +40,32 @@ fi
 echo -e "${GREEN}✅ Prerequisites check passed${NC}"
 echo
 
+# Function to validate input for security
+validate_input() {
+    local input="$1"
+    local var_name="$2"
+    
+    # Check for potentially dangerous characters
+    if echo "$input" | grep -qE '[;|&`$(){}]'; then
+        echo -e "${RED}❌ Error: ${var_name} contains potentially dangerous characters${NC}"
+        return 1
+    fi
+    
+    # Check for excessively long values (prevent DoS)
+    if [ ${#input} -gt 10000 ]; then
+        echo -e "${RED}❌ Error: ${var_name} value is too long (max 10000 characters)${NC}"
+        return 1
+    fi
+    
+    return 0
+}
+
 # Function to set a secret
 set_secret() {
     local secret_name="$1"
     local env_var="$2"
     
-    # Get value from .env file
+    # Get value from .env file - escape potential shell metacharacters
     local value=$(grep "^${env_var}=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
     
     if [ -z "$value" ]; then
@@ -53,9 +73,15 @@ set_secret() {
         return
     fi
     
+    # Validate input for security
+    if ! validate_input "$value" "$env_var"; then
+        echo -e "${RED}❌ Skipping ${secret_name} due to validation failure${NC}"
+        return
+    fi
+    
     # Set the secret
     echo -n "Setting ${secret_name}... "
-    if echo "$value" | gh secret set "$secret_name"; then
+    if printf '%s' "$value" | gh secret set "$secret_name"; then
         echo -e "${GREEN}✅${NC}"
     else
         echo -e "${RED}❌ Failed${NC}"
@@ -85,19 +111,37 @@ set_secret "ANDROID_KEY_PASSWORD" "ANDROID_KEY_PASSWORD"
 
 # Special handling for Google Play JSON key
 echo -n "Setting GOOGLE_PLAY_JSON_KEY_PATH... "
-GOOGLE_PLAY_JSON_PATH=$(grep "^GOOGLE_PLAY_JSON_KEY_PATH=" .env | cut -d'=' -f2)
+GOOGLE_PLAY_JSON_PATH=$(grep "^GOOGLE_PLAY_JSON_KEY_PATH=" .env | cut -d'=' -f2 | tr -d '"')
 if [ -n "$GOOGLE_PLAY_JSON_PATH" ]; then
-    # Expand the tilde to home directory
-    EXPANDED_PATH="${GOOGLE_PLAY_JSON_PATH/#\~/$HOME}"
-    
-    if [ -f "$EXPANDED_PATH" ]; then
-        if cat "$EXPANDED_PATH" | gh secret set "GOOGLE_PLAY_JSON_KEY_PATH"; then
-            echo -e "${GREEN}✅${NC}"
-        else
-            echo -e "${RED}❌ Failed to set JSON content${NC}"
-        fi
+    # Validate the path contains only safe characters
+    if ! echo "$GOOGLE_PLAY_JSON_PATH" | grep -qE '^[a-zA-Z0-9/_.-~]+$'; then
+        echo -e "${RED}❌ Invalid characters in GOOGLE_PLAY_JSON_KEY_PATH${NC}"
     else
-        echo -e "${YELLOW}⚠️  JSON file not found at: $EXPANDED_PATH${NC}"
+        # Expand the tilde to home directory safely
+        case "$GOOGLE_PLAY_JSON_PATH" in
+            "~/"*) EXPANDED_PATH="$HOME/${GOOGLE_PLAY_JSON_PATH#~/}" ;;
+            "~") EXPANDED_PATH="$HOME" ;;
+            /*) EXPANDED_PATH="$GOOGLE_PLAY_JSON_PATH" ;;
+            *) EXPANDED_PATH="$(pwd)/$GOOGLE_PLAY_JSON_PATH" ;;
+        esac
+        
+        if [ -f "$EXPANDED_PATH" ]; then
+            # Validate JSON content
+            if command -v jq >/dev/null 2>&1; then
+                if ! jq empty "$EXPANDED_PATH" 2>/dev/null; then
+                    echo -e "${RED}❌ Invalid JSON format in $EXPANDED_PATH${NC}"
+                    exit 1
+                fi
+            fi
+            
+            if cat "$EXPANDED_PATH" | gh secret set "GOOGLE_PLAY_JSON_KEY_PATH"; then
+                echo -e "${GREEN}✅${NC}"
+            else
+                echo -e "${RED}❌ Failed to set JSON content${NC}"
+            fi
+        else
+            echo -e "${YELLOW}⚠️  JSON file not found at: $EXPANDED_PATH${NC}"
+        fi
     fi
 else
     echo -e "${YELLOW}⚠️  No GOOGLE_PLAY_JSON_KEY_PATH found in .env${NC}"

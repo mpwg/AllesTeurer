@@ -112,10 +112,10 @@ jobs:
        github.event.inputs.build_type == 'all' || 
        github.event.inputs.build_type == 'ios-only')
     env:
-      FASTLANE_SKIP_UPDATE_CHECK: true
-      FASTLANE_HIDE_CHANGELOG: true
-      FASTLANE_DISABLE_COLORS: true
-      FASTLANE_OPT_OUT_USAGE: true
+      FASTLANE_SKIP_UPDATE_CHECK: ${{ secrets.FASTLANE_SKIP_UPDATE_CHECK }}
+      FASTLANE_HIDE_CHANGELOG: ${{ secrets.FASTLANE_HIDE_CHANGELOG }}
+      FASTLANE_DISABLE_COLORS: ${{ secrets.FASTLANE_DISABLE_COLORS }}
+      FASTLANE_OPT_OUT_USAGE: ${{ secrets.FASTLANE_OPT_OUT_USAGE }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -199,10 +199,10 @@ jobs:
        github.event.inputs.build_type == 'all' || 
        github.event.inputs.build_type == 'android-only')
     env:
-      FASTLANE_SKIP_UPDATE_CHECK: true
-      FASTLANE_HIDE_CHANGELOG: true
-      FASTLANE_DISABLE_COLORS: true
-      FASTLANE_OPT_OUT_USAGE: true
+      FASTLANE_SKIP_UPDATE_CHECK: ${{ secrets.FASTLANE_SKIP_UPDATE_CHECK }}
+      FASTLANE_HIDE_CHANGELOG: ${{ secrets.FASTLANE_HIDE_CHANGELOG }}
+      FASTLANE_DISABLE_COLORS: ${{ secrets.FASTLANE_DISABLE_COLORS }}
+      FASTLANE_OPT_OUT_USAGE: ${{ secrets.FASTLANE_OPT_OUT_USAGE }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -313,10 +313,10 @@ jobs:
       (success() || (needs.build-ios.result == 'skipped' && needs.build-android.result != 'failure') || 
        (needs.build-android.result == 'skipped' && needs.build-ios.result != 'failure'))
     env:
-      FASTLANE_SKIP_UPDATE_CHECK: true
-      FASTLANE_HIDE_CHANGELOG: true
-      FASTLANE_DISABLE_COLORS: true
-      FASTLANE_OPT_OUT_USAGE: true
+      FASTLANE_SKIP_UPDATE_CHECK: ${{ secrets.FASTLANE_SKIP_UPDATE_CHECK }}
+      FASTLANE_HIDE_CHANGELOG: ${{ secrets.FASTLANE_HIDE_CHANGELOG }}
+      FASTLANE_DISABLE_COLORS: ${{ secrets.FASTLANE_DISABLE_COLORS }}
+      FASTLANE_OPT_OUT_USAGE: ${{ secrets.FASTLANE_OPT_OUT_USAGE }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -378,10 +378,10 @@ jobs:
       (success() || (needs.build-ios.result == 'skipped' && needs.build-android.result != 'failure') || 
        (needs.build-android.result == 'skipped' && needs.build-ios.result != 'failure'))
     env:
-      FASTLANE_SKIP_UPDATE_CHECK: true
-      FASTLANE_HIDE_CHANGELOG: true
-      FASTLANE_DISABLE_COLORS: true
-      FASTLANE_OPT_OUT_USAGE: true
+      FASTLANE_SKIP_UPDATE_CHECK: ${{ secrets.FASTLANE_SKIP_UPDATE_CHECK }}
+      FASTLANE_HIDE_CHANGELOG: ${{ secrets.FASTLANE_HIDE_CHANGELOG }}
+      FASTLANE_DISABLE_COLORS: ${{ secrets.FASTLANE_DISABLE_COLORS }}
+      FASTLANE_OPT_OUT_USAGE: ${{ secrets.FASTLANE_OPT_OUT_USAGE }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
