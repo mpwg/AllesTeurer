@@ -73,7 +73,7 @@ jobs:
           fi
 
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v2
+        uses: gradle/wrapper-validation-action@v3
 
       - name: Run Detekt
         run: ./gradlew detekt
