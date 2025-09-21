@@ -30,7 +30,7 @@ permissions:
 
 env:
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=true -Dorg.gradle.caching=true
-  JAVA_VERSION: "17"
+  JAVA_VERSION: "21"
 
 jobs:
   # Static analysis and validation
@@ -104,7 +104,7 @@ jobs:
   # Build iOS app using Fastlane
   build-ios:
     name: Build iOS
-    runs-on: macos-14
+    runs-on: macos-26
     needs: validate
     if: |
       needs.validate.outputs.should-build == 'true' &&
