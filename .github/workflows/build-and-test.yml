@@ -122,7 +122,7 @@ jobs:
   # Build iOS app using Fastlane
   build-ios:
     name: Build iOS
-    runs-on: macos-14
+    runs-on: macos-26
     needs: validate
     if: |
       needs.validate.outputs.should-build == 'true' &&
