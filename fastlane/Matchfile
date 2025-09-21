@@ -4,7 +4,7 @@ storage_mode("git")
 
 type("development") # The default type, can be: appstore, adhoc, enterprise or development
 
- app_identifier(["eu.mpwg.allesteurer.AllesTeurer"]) # The bundle identifier of your app
+ app_identifier(["eu.mpwg.allesteurer"]) # The bundle identifier of your iOS app
  username(ENV["APPLE_ID"]) # Your Apple Developer Portal username
 
 # app_identifier(["tools.fastlane.app", "tools.fastlane.app2"])

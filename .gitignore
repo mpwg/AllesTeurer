@@ -18,4 +18,5 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 .env
-iosApp/fastlane/report.xml
+*.backup
+fastlane/report.xml

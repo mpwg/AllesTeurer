@@ -11,7 +11,7 @@
 #
 
 # Load environment variables from .env file if it exists, otherwise use system environment variables
-env_file_path = File.join(File.dirname(__FILE__), '..', '.env')
+env_file_path = File.join(File.dirname(__FILE__), '..', '..', '.env')
 if File.exist?(env_file_path)
   require 'dotenv'
   Dotenv.load(env_file_path)
@@ -25,10 +25,13 @@ end
 
 default_platform(:ios)
 
-# Global configuration
-APP_IDENTIFIER = "eu.mpwg.allesteurer.AllesTeurer"
+# Global configuration for KMP AllesTeurer project
+APP_IDENTIFIER_IOS = "eu.mpwg.allesteurer"
+APP_IDENTIFIER_ANDROID = "eu.mpwg.allesteurer"
 SCHEME_NAME = "iosApp"
 WORKSPACE_PATH = "../iosApp.xcodeproj"
+ANDROID_PROJECT_PATH = "../../"
+ANDROID_MODULE = "composeApp"
 
 platform :ios do
   before_all do
@@ -61,7 +64,7 @@ platform :ios do
 
   # MARK: - Development Builds
 
-  desc "Build development version for testing"
+  desc "Build iOS development version for testing"
   lane :dev do
     setup_ci_if_needed
 
@@ -75,12 +78,12 @@ platform :ios do
       skip_profile_detection: false
     }))
 
-    UI.success("✅ Development build completed successfully!")
+    UI.success("✅ iOS Development build completed successfully!")
   end
 
   # MARK: - Beta Builds (TestFlight)
 
-  desc "Build and upload to TestFlight"
+  desc "Build iOS and upload to TestFlight"
   lane :beta do
     setup_ci_if_needed
 
