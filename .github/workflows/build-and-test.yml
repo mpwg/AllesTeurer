@@ -176,9 +176,6 @@ jobs:
     name: Build iOS
     runs-on: macos-26 # Do not use latest. it has to be 26 for Xcode 26
     needs: validate
-    if: |
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target != 'none')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
