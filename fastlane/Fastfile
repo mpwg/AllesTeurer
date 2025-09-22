@@ -135,14 +135,20 @@ platform :ios do
   private_lane :build_ios_platform do |options|
     UI.header("📱 Building iOS/iPadOS version")
     
-    build_app(common_build_config.merge({
+    # Build configuration with proper export options override
+    build_config = common_build_config.merge({
       configuration: options[:configuration] || "Release",
       export_method: options[:export_method],
       output_directory: options[:output_directory],
       output_name: "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa",
       skip_profile_detection: options[:skip_profile_detection] || true,
       destination: "generic/platform=iOS"
-    }))
+    })
+    
+    # Override export method in export_options
+    build_config[:export_options][:method] = options[:export_method]
+    
+    build_app(build_config)
     
     File.join(options[:output_directory], "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa")
   end
@@ -174,7 +180,8 @@ platform :ios do
     # For Mac Catalyst, we use the same export method as iOS since it's an iOS app on macOS
     export_method = options[:export_method] || "development"
     
-    build_app(common_build_config.merge({
+    # Build configuration with proper export options override
+    build_config = common_build_config.merge({
       configuration: options[:configuration] || "Release",
       export_method: export_method,
       output_directory: options[:output_directory],
@@ -182,7 +189,15 @@ platform :ios do
       skip_profile_detection: options[:skip_profile_detection] || false,
       destination: "platform=macOS,variant=Mac Catalyst",
       catalyst_platform: "macos"
-    }))
+    })
+    
+    # Override export method in export_options for Mac Catalyst
+    build_config[:export_options][:method] = export_method
+    build_config[:export_options][:provisioningProfiles] = {
+      APP_IDENTIFIER => ENV["sigh_#{APP_IDENTIFIER}_development_catalyst_profile-name"] || "match Development #{APP_IDENTIFIER} catalyst"
+    }
+    
+    build_app(build_config)
     
     File.join(options[:output_directory], "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app")
   end
@@ -482,10 +497,18 @@ platform :ios do
       project: WORKSPACE_PATH,
       clean: false,  # Improved: Only clean when necessary for faster incremental builds
       include_bitcode: false,
-      # Let match determine the identity and profile automatically
+      # Force manual code signing with Match profiles
       export_xcargs: "-allowProvisioningUpdates",
       # Performance optimizations
-      xcargs: build_xcargs
+      xcargs: build_xcargs,
+      # Manual code signing configuration
+      codesigning_identity: "Apple Development",
+      export_options: {
+        method: "development", # This will be overridden by each lane
+        provisioningProfiles: {
+          APP_IDENTIFIER => ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"] || "match Development #{APP_IDENTIFIER}"
+        }
+      }
     }
   end
 
@@ -501,7 +524,10 @@ platform :ios do
     # Enable build caching
     args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
     
-    # Allow provisioning profile updates for automatic signing
+    # Force manual code signing (disable automatic signing)
+    args << "CODE_SIGN_STYLE=Manual" if is_ci
+    
+    # Allow provisioning profile updates but use manual signing
     args << "-allowProvisioningUpdates" if is_ci
     
     # Swift compilation optimizations
