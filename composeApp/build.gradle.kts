@@ -68,6 +68,22 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
+    
+    // Android signing configuration
+    signingConfigs {
+        create("release") {
+            // Use environment variables for CI/CD, fall back to gradle.properties for local
+            keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: findProperty("ANDROID_KEY_ALIAS") as String? ?: "allesteurer"
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: findProperty("ANDROID_KEY_PASSWORD") as String?
+            storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH") ?: findProperty("ANDROID_KEYSTORE_PATH") ?: "keystore/release.keystore")
+            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: findProperty("ANDROID_KEYSTORE_PASSWORD") as String?
+        }
+        
+        getByName("debug") {
+            // Use default debug signing for development
+        }
+    }
+    
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -76,6 +92,10 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
