@@ -150,22 +150,36 @@ platform :ios do
   private_lane :build_macos_platform do |options|
     UI.header("🖥️ Building macOS (Mac Catalyst) version")
     
-    # For Mac Catalyst, we need to use a different export method
-    export_method = case options[:export_method]
-                   when "app-store"
-                     "mac-application"
-                   when "development"
-                     "developer-id"
-                   else
-                     "developer-id"
-                   end
+    # Sync Mac Catalyst certificates specifically for macOS builds
+    begin
+      match(
+        type: "development",
+        platform: "catalyst",
+        app_identifier: APP_IDENTIFIER,
+        git_url: ENV["MATCH_GIT_URL"],
+        git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+        keychain_name: is_ci ? "CI" : nil,
+        keychain_password: is_ci ? ENV["KEYCHAIN_PASSWORD"] : nil,
+        readonly: is_ci,
+        verbose: true,
+        skip_confirmation: true,
+        shallow_clone: true
+      )
+    rescue => e
+      UI.error("⚠️ Failed to sync Mac Catalyst certificates: #{e.message}")
+      UI.error("📱 Skipping macOS build")
+      return nil
+    end
+    
+    # For Mac Catalyst, we use the same export method as iOS since it's an iOS app on macOS
+    export_method = options[:export_method] || "development"
     
     build_app(common_build_config.merge({
       configuration: options[:configuration] || "Release",
       export_method: export_method,
       output_directory: options[:output_directory],
       output_name: "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app",
-      skip_profile_detection: options[:skip_profile_detection] || true,
+      skip_profile_detection: options[:skip_profile_detection] || false,
       destination: "platform=macOS,variant=Mac Catalyst",
       catalyst_platform: "macos"
     }))
@@ -262,7 +276,7 @@ platform :ios do
     
     builds = build_multiplatform({
       configuration: "Release",
-      export_method: "development", # For direct distribution
+      export_method: "development", # For direct distribution 
       output_directory: "./build/alpha",
       version: tag_version,
       skip_profile_detection: false  # Enable profile detection to ensure proper signing
