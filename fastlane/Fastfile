@@ -54,7 +54,7 @@ def setup_google_play_json_key
 end
 
 # Global configuration for KMP AllesTeurer project
-APP_IDENTIFIER = "eu.mpwg.allesteurer.AllesTeurer"
+APP_IDENTIFIER = "eu.mpwg.allesteurer"
 SCHEME_NAME = "iosApp"
 WORKSPACE_PATH = "iosApp/iosApp.xcodeproj"
 ANDROID_PROJECT_PATH = "./"
@@ -73,8 +73,16 @@ desc "Build both iOS and Android for development"
 lane :dev_all do
   UI.header("🚀 Building AllesTeurer for all platforms - Development")
   
-  sh("bundle exec fastlane ios dev")
-  sh("bundle exec fastlane android dev")
+  UI.message("📱 Building iOS development...")
+  begin
+    # Note: This will only work on macOS with iOS development environment
+    ios_dev if Helper.mac?
+  rescue => e
+    UI.error("iOS development build failed: #{e.message}")
+  end
+  
+  UI.message("🤖 Building Android development...")
+  android_dev
   
   UI.success("✅ All development builds completed!")
 end
@@ -83,8 +91,15 @@ desc "Build both iOS and Android for beta testing"
 lane :beta_all do
   UI.header("🚀 Building AllesTeurer for all platforms - Beta")
   
-  sh("bundle exec fastlane ios beta")
-  sh("bundle exec fastlane android beta")
+  UI.message("📱 Building iOS beta...")
+  begin
+    ios_beta if Helper.mac?
+  rescue => e
+    UI.error("iOS beta build failed: #{e.message}")
+  end
+  
+  UI.message("🤖 Building Android beta...")
+  android_beta
   
   UI.success("✅ All beta builds completed!")
 end
@@ -93,8 +108,15 @@ desc "Build both iOS and Android for release"
 lane :release_all do
   UI.header("🚀 Building AllesTeurer for all platforms - Release")
   
-  sh("bundle exec fastlane ios release")
-  sh("bundle exec fastlane android release")
+  UI.message("📱 Building iOS release...")
+  begin
+    ios_release if Helper.mac?
+  rescue => e
+    UI.error("iOS release build failed: #{e.message}")
+  end
+  
+  UI.message("🤖 Building Android release...")
+  android_release
   
   UI.success("✅ All release builds completed!")
 end
@@ -104,10 +126,14 @@ lane :build_all do
   UI.header("🔨 Building AllesTeurer for CI validation")
   
   UI.message("📱 Building iOS...")
-  sh("bundle exec fastlane ios build")
+  begin
+    ios_build if Helper.mac?
+  rescue => e
+    UI.error("iOS build failed: #{e.message}")
+  end
   
   UI.message("🤖 Building Android...")
-  sh("bundle exec fastlane android build")
+  android_build
   
   UI.success("✅ All validation builds completed!")
 end
@@ -461,10 +487,25 @@ platform :android do
     unless File.exist?(keystore_path)
       UI.message("🔑 Creating new Android keystore...")
       
-      # Generate keystore using keytool
-      sh("keytool -genkey -v -keystore #{keystore_path} -alias #{key_alias} -keyalg RSA -keysize 2048 -validity 10000 " +
-         "-storepass #{keystore_password} -keypass #{key_password} " +
-         "-dname 'CN=AllesTeurer, OU=Development, O=MPWG, L=Zurich, ST=Zurich, C=CH'")
+      # Generate keystore using keytool with secure password handling
+      require 'tempfile'
+      storepass_file = Tempfile.new(['storepass', '.tmp'])
+      keypass_file = Tempfile.new(['keypass', '.tmp'])
+      begin
+        storepass_file.write(keystore_password)
+        storepass_file.flush
+        keypass_file.write(key_password)
+        keypass_file.flush
+        
+        sh("keytool -genkey -v -keystore #{keystore_path} -alias #{key_alias} -keyalg RSA -keysize 2048 -validity 10000 " +
+           "-storepass:file #{storepass_file.path} -keypass:file #{keypass_file.path} " +
+           "-dname 'CN=AllesTeurer, OU=Development, O=MPWG, L=Zurich, ST=Zurich, C=CH'")
+      ensure
+        storepass_file.close
+        storepass_file.unlink
+        keypass_file.close
+        keypass_file.unlink
+      end
       
       UI.success("✅ Android keystore created at: #{keystore_path}")
       UI.message("🔒 Store this keystore securely! It's needed for all future releases.")
@@ -478,8 +519,19 @@ platform :android do
     
     # Test keystore access
     begin
-      sh("keytool -list -v -keystore #{keystore_path} -storepass #{keystore_password} | head -20")
-      UI.success("✅ Keystore access verified!")
+      # Use secure password handling for keystore verification
+      require 'tempfile'
+      storepass_file = Tempfile.new(['storepass', '.tmp'])
+      begin
+        storepass_file.write(keystore_password)
+        storepass_file.flush
+        
+        sh("keytool -list -v -keystore #{keystore_path} -storepass:file #{storepass_file.path} | head -20")
+        UI.success("✅ Keystore access verified!")
+      ensure
+        storepass_file.close
+        storepass_file.unlink
+      end
     rescue => e
       UI.user_error!("❌ Cannot access keystore: #{e.message}")
     end

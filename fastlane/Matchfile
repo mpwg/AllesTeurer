@@ -5,7 +5,7 @@ storage_mode("git")
 
 type("development") # The default type, can be: appstore, adhoc, enterprise or development
 
-app_identifier(["eu.mpwg.allesteurer.AllesTeurer"]) # The bundle identifier of your iOS app
+app_identifier(["eu.mpwg.allesteurer"]) # The bundle identifier of your iOS app
 username(ENV["APPLE_ID"]) # Your Apple Developer Portal username
 
 # Force Match to use existing certificates on CI to avoid creating new ones
