@@ -5,13 +5,13 @@ on:
   push:
     branches: [main, develop]
     tags:
-      - 'v*.*.*'           # Production releases (v1.0.0)
-      - 'v*.*.*-beta*'     # Beta releases (v1.0.0-beta.1)
-      - 'v*.*.*-rc*'       # Release candidates (v1.0.0-rc.1)
-      - 'v*.*.*-alpha*'    # Alpha releases (v1.0.0-alpha.1)
+      - "v*.*.*" # Production releases (v1.0.0)
+      - "v*.*.*-beta*" # Beta releases (v1.0.0-beta.1)
+      - "v*.*.*-rc*" # Release candidates (v1.0.0-rc.1)
+      - "v*.*.*-alpha*" # Alpha releases (v1.0.0-alpha.1)
   pull_request:
     branches: [main, develop]
-  
+
   # Manual workflow dispatch for emergency releases or testing
   workflow_dispatch:
     inputs:
@@ -30,7 +30,8 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write # Required for creating releases
+  actions: read # Required for downloading artifacts
 
 env:
   FASTLANE_SKIP_UPDATE_CHECK: 1
@@ -148,6 +149,9 @@ jobs:
     if: (startsWith(github.ref, 'refs/tags/v') && (contains(github.ref, '-beta') || contains(github.ref, '-rc'))) || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'testflight')
     needs: build-and-test
     runs-on: macos-26
+    outputs:
+      ios_ipa: ${{ steps.build.outputs.ios_ipa }}
+      macos_app: ${{ steps.build.outputs.macos_app }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -159,6 +163,7 @@ jobs:
           bundler-cache: true
 
       - name: Deploy to TestFlight with Fastlane
+        id: build
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
@@ -167,13 +172,28 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'default_password' }}
-        run: bundle exec fastlane beta
+        run: |
+          bundle exec fastlane beta
+          # Extract file paths for upload
+          echo "ios_ipa=$(find ./build/testflight -name '*iOS*.ipa' | head -1)" >> $GITHUB_OUTPUT
+          echo "macos_app=$(find ./build/testflight -name '*macOS*.app' | head -1)" >> $GITHUB_OUTPUT
+
+      - name: Upload Multi-platform artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AllesTeurer-Beta-${{ github.ref_name }}
+          path: |
+            ./build/testflight/*.ipa
+            ./build/testflight/*.app
 
   deploy-appstore:
     # Deploy to App Store on production tags (vX.Y.Z without suffix) or manual dispatch
     if: (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'appstore')
     needs: build-and-test
     runs-on: macos-26
+    outputs:
+      ios_ipa: ${{ steps.build.outputs.ios_ipa }}
+      macos_app: ${{ steps.build.outputs.macos_app }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -185,6 +205,7 @@ jobs:
           bundler-cache: true
 
       - name: Submit to App Store with Fastlane
+        id: build
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
@@ -193,4 +214,123 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'default_password' }}
-        run: bundle exec fastlane release
+        run: |
+          bundle exec fastlane release
+          # Extract file paths for upload
+          echo "ios_ipa=$(find ./build/appstore -name '*iOS*.ipa' | head -1)" >> $GITHUB_OUTPUT
+          echo "macos_app=$(find ./build/appstore -name '*macOS*.app' | head -1)" >> $GITHUB_OUTPUT
+
+      - name: Upload Multi-platform artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AllesTeurer-Release-${{ github.ref_name }}
+          path: |
+            ./build/appstore/*.ipa
+            ./build/appstore/*.app
+
+  build-alpha:
+    # Build alpha versions (no store upload, only GitHub Release)
+    if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '-alpha')
+    needs: build-and-test
+    runs-on: macos-26
+    outputs:
+      ios_ipa: ${{ steps.build.outputs.ios_ipa }}
+      macos_app: ${{ steps.build.outputs.macos_app }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Build Alpha with Fastlane
+        id: build
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'default_password' }}
+        run: |
+          bundle exec fastlane alpha
+          # Extract file paths for upload
+          echo "ios_ipa=$(find ./build/alpha -name '*iOS*.ipa' | head -1)" >> $GITHUB_OUTPUT
+          echo "macos_app=$(find ./build/alpha -name '*macOS*.app' | head -1)" >> $GITHUB_OUTPUT
+
+      - name: Upload Multi-platform artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AllesTeurer-Alpha-${{ github.ref_name }}
+          path: |
+            ./build/alpha/*.ipa
+            ./build/alpha/*.app
+
+  create-github-release:
+    # Create GitHub Release for all tag-based builds
+    needs: [build-and-test, deploy-testflight, deploy-appstore, build-alpha]
+    runs-on: ubuntu-latest
+    # Always run if build-and-test succeeded and we have a tag, regardless of other jobs
+    if: always() && (needs.build-and-test.result == 'success') && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine release type and content
+        id: release-info
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+
+          if [[ "$TAG_NAME" == *"-alpha"* ]]; then
+            echo "type=alpha" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "title=Alpha Release $TAG_NAME" >> $GITHUB_OUTPUT
+            echo "body=This is an alpha release for testing purposes. Download the packages below for manual installation." >> $GITHUB_OUTPUT
+          elif [[ "$TAG_NAME" == *"-beta"* ]] || [[ "$TAG_NAME" == *"-rc"* ]]; then
+            echo "type=beta" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "title=Beta Release $TAG_NAME" >> $GITHUB_OUTPUT
+            echo "body=Beta release available on TestFlight. iOS version: https://testflight.apple.com/join/YOUR_TESTFLIGHT_LINK" >> $GITHUB_OUTPUT
+          else
+            echo "type=production" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "title=Release $TAG_NAME" >> $GITHUB_OUTPUT
+            echo "body=Production release available on the App Store. iOS: https://apps.apple.com/app/alles-teurer/YOUR_APP_ID | macOS: https://apps.apple.com/app/alles-teurer/YOUR_MAC_APP_ID" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download alpha artifacts (if alpha)
+        if: contains(github.ref, '-alpha')
+        uses: actions/download-artifact@v4
+        with:
+          name: AllesTeurer-Alpha-${{ github.ref_name }}
+          path: ./release-assets/
+
+      - name: Create ZIP archives for alpha releases
+        if: contains(github.ref, '-alpha')
+        run: |
+          cd ./release-assets/
+
+          # Create iOS ZIP
+          if [ -f *.ipa ]; then
+            mv *.ipa "AllesTeurer-iOS-${{ github.ref_name }}.ipa"
+            zip -r "AllesTeurer-iOS-${{ github.ref_name }}.zip" "AllesTeurer-iOS-${{ github.ref_name }}.ipa"
+          fi
+
+          # Create macOS ZIP  
+          if [ -d *.app ]; then
+            mv *.app "AllesTeurer-macOS-${{ github.ref_name }}.app"
+            zip -r "AllesTeurer-macOS-${{ github.ref_name }}.zip" "AllesTeurer-macOS-${{ github.ref_name }}.app"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.release-info.outputs.title }}
+          body: ${{ steps.release-info.outputs.body }}
+          prerelease: ${{ steps.release-info.outputs.prerelease }}
+          files: |
+            ./release-assets/*.zip
+            ./release-assets/*.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

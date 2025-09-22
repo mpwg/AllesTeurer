@@ -117,6 +117,62 @@ platform :ios do
     end
   end
 
+  # MARK: - Multi-Platform Build Functions
+  
+  private_lane :build_multiplatform do |options|
+    # Build for iOS/iPadOS
+    ios_ipa = build_ios_platform(options)
+    
+    # Build for macOS (Mac Catalyst) 
+    macos_app = build_macos_platform(options)
+    
+    {
+      ios_ipa: ios_ipa,
+      macos_app: macos_app
+    }
+  end
+  
+  private_lane :build_ios_platform do |options|
+    UI.header("📱 Building iOS/iPadOS version")
+    
+    build_app(common_build_config.merge({
+      configuration: options[:configuration] || "Release",
+      export_method: options[:export_method],
+      output_directory: options[:output_directory],
+      output_name: "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa",
+      skip_profile_detection: options[:skip_profile_detection] || true,
+      destination: "generic/platform=iOS"
+    }))
+    
+    File.join(options[:output_directory], "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa")
+  end
+  
+  private_lane :build_macos_platform do |options|
+    UI.header("🖥️ Building macOS (Mac Catalyst) version")
+    
+    # For Mac Catalyst, we need to use a different export method
+    export_method = case options[:export_method]
+                   when "app-store"
+                     "mac-application"
+                   when "development"
+                     "developer-id"
+                   else
+                     "developer-id"
+                   end
+    
+    build_app(common_build_config.merge({
+      configuration: options[:configuration] || "Release",
+      export_method: export_method,
+      output_directory: options[:output_directory],
+      output_name: "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app",
+      skip_profile_detection: options[:skip_profile_detection] || true,
+      destination: "platform=macOS,variant=Mac Catalyst",
+      catalyst_platform: "macos"
+    }))
+    
+    File.join(options[:output_directory], "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app")
+  end
+
   # MARK: - Development Builds
 
   desc "Build development version for testing"
@@ -144,19 +200,25 @@ platform :ios do
 
     # Set version from tag if available
     set_version_from_tag
+    tag_version = get_tag_version || "beta"
 
     sync_certificates(type: "appstore")
 
-    build_app(common_build_config.merge({
+    # Build both platforms
+    UI.header("🚀 Building multi-platform beta release")
+    
+    builds = build_multiplatform({
       configuration: "Release",
       export_method: "app-store",
       output_directory: "./build/testflight",
-      output_name: "#{SCHEME_NAME}-testflight.ipa",
+      version: tag_version,
       skip_profile_detection: true
-    }))
+    })
 
+    # Upload iOS version to TestFlight
+    UI.header("📱 Uploading iOS version to TestFlight")
+    
     # Create changelog from tag or use default
-    tag_version = get_tag_version
     changelog = if tag_version && tag_version.include?('-')
       "Beta release #{tag_version}"
     else
@@ -165,6 +227,7 @@ platform :ios do
 
     upload_to_testflight(
       app_identifier: APP_IDENTIFIER,
+      ipa: builds[:ios_ipa],
       skip_waiting_for_build_processing: true,
       distribute_external: false,
       notify_external_testers: false,
@@ -172,9 +235,48 @@ platform :ios do
     )
 
     UI.success("✅ TestFlight upload completed successfully!")
+    UI.success("📱 iOS version: #{builds[:ios_ipa]}")
+    UI.success("🖥️  macOS version: #{builds[:macos_app]}")
     if tag_version
       UI.success("🏷️  Released from tag: #{tag_version}")
     end
+    
+    # Return build paths for GitHub Release creation
+    builds
+  end
+
+  # MARK: - Alpha Builds (GitHub Releases only)
+
+  desc "Build alpha versions for GitHub Releases (no store upload)"
+  lane :alpha do
+    setup_ci_if_needed
+
+    # Set version from tag if available
+    set_version_from_tag
+    tag_version = get_tag_version || "alpha"
+
+    sync_certificates(type: "development")
+
+    # Build both platforms for direct distribution
+    UI.header("🚀 Building multi-platform alpha release")
+    
+    builds = build_multiplatform({
+      configuration: "Release",
+      export_method: "development", # For direct distribution
+      output_directory: "./build/alpha",
+      version: tag_version,
+      skip_profile_detection: true
+    })
+
+    UI.success("✅ Alpha builds completed successfully!")
+    UI.success("📱 iOS version: #{builds[:ios_ipa]}")
+    UI.success("🖥️  macOS version: #{builds[:macos_app]}")
+    if tag_version
+      UI.success("🏷️  Built from tag: #{tag_version}")
+    end
+    
+    # Return build paths for GitHub Release creation
+    builds
   end
 
   # MARK: - Production Builds (App Store)
@@ -185,19 +287,27 @@ platform :ios do
 
     # Set version from tag if available
     set_version_from_tag
+    tag_version = get_tag_version || "release"
 
     sync_certificates(type: "appstore")
 
-    build_app(common_build_config.merge({
+    # Build both platforms
+    UI.header("🚀 Building multi-platform production release")
+    
+    builds = build_multiplatform({
       configuration: "Release",
       export_method: "app-store",
       output_directory: "./build/appstore",
-      output_name: "#{SCHEME_NAME}-appstore.ipa",
+      version: tag_version,
       skip_profile_detection: true
-    }))
+    })
 
+    # Upload iOS version to App Store
+    UI.header("📱 Uploading iOS version to App Store")
+    
     upload_to_app_store(
       app_identifier: APP_IDENTIFIER,
+      ipa: builds[:ios_ipa],
       skip_metadata: true,
       skip_screenshots: true,
       submit_for_review: false, # Manual submission for production
@@ -205,14 +315,18 @@ platform :ios do
       force: true
     )
 
-    tag_version = get_tag_version
     current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
 
     UI.success("✅ App Store upload completed successfully!")
+    UI.success("📱 iOS version: #{builds[:ios_ipa]}")
+    UI.success("🖥️  macOS version: #{builds[:macos_app]}")
     if tag_version
       UI.success("🏷️  Released from tag: #{tag_version}")
     end
     UI.success("📱 Version uploaded: #{current_version}")
+    
+    # Return build paths for GitHub Release creation
+    builds
   end
 
   # MARK: - Testing
