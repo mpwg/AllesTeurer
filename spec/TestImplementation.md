@@ -1,102 +1,90 @@
-# Test Implementation - Kotlin Multiplatform### Test Implementation
+# Test Implementation - Native iOS Application
 
-````typescript
+## Overview
 
-## Overview// Example test suite
+Comprehensive testing strategy for AllesTeurer native iOS application covering SwiftData operations, Vision Framework OCR, SwiftUI interface testing, and accessibility validation using Swift Testing framework and XCUITest.
 
-describe('ShoppingListOptimizer', () => {
+## Testing Architecture
 
-Comprehensive testing strategy for AllesTeurer KMP application covering shared business logic, platform-specific implementations, and integration testing across iOS and Android platforms.  it('should minimize total cost across multiple stores', async () => {
+```text
+Test Structure
+├── Alles TeurerTests/          # Unit Tests with Swift Testing
+│   ├── Models/                 # SwiftData model tests
+│   ├── Services/               # Business logic tests
+│   │   ├── OCRServiceTests.swift    # Vision Framework OCR tests
+│   │   ├── DataManagerTests.swift   # SwiftData operations tests
+│   │   └── PriceAnalyzerTests.swift # Analytics tests
+│   └── ViewModels/             # ViewModel tests
+│       ├── ScannerViewModelTests.swift
+│       └── AnalyticsViewModelTests.swift
+├── Alles TeurerUITests/        # UI Tests with XCUITest
+│   ├── ScannerFlowTests.swift       # Receipt scanning flow
+│   ├── ProductManagementTests.swift # Product CRUD operations
+│   ├── AnalyticsUITests.swift      # Chart interactions
+│   └── AccessibilityTests.swift   # VoiceOver and accessibility
+└── TestUtilities/              # Shared test utilities
+    ├── MockData.swift              # Test data generation
+    ├── TestHelpers.swift           # Common test functions
+    └── TestConstants.swift         # Test configuration
+```
 
-    const items = [
+## Unit Testing with Swift Testing Framework
 
-## Testing Architecture      { productId: '1', quantity: 2 },
+### SwiftData Model Tests
 
-      { productId: '2', quantity: 1 }
+```swift
+import Testing
+import SwiftData
+@testable import Alles_Teurer
 
-```kotlin    ]
+@Test("Receipt model creation and relationships")
+func testReceiptModelCreation() async throws {
+    // Create in-memory model container for testing
+    let schema = Schema([Receipt.self, Product.self, PriceRecord.self])
+    let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(for: schema, configurations: [configuration])
+    let context = ModelContext(container)
 
-// Test Structure
+    // Create test receipt
+    let receipt = Receipt(
+        storeName: "Test Store",
+        totalAmount: 25.99,
+        scanDate: Date()
+    )
 
-commonTest/          # Shared business logic tests    const result = await optimizer.optimize(
+    context.insert(receipt)
+    try context.save()
 
-├── kotlin/      items,
+    // Verify receipt was saved
+    let fetchDescriptor = FetchDescriptor<Receipt>()
+    let receipts = try context.fetch(fetchDescriptor)
 
-│   ├── data/        # Repository tests      OptimizationStrategy.COST_MINIMUM
+    #expect(receipts.count == 1)
+    #expect(receipts.first?.storeName == "Test Store")
+    #expect(receipts.first?.totalAmount == 25.99)
+}
 
-│   ├── domain/      # Use case tests    )
+@Test("Product price history tracking")
+func testProductPriceHistory() async throws {
+    let context = await createTestContext()
 
-│   └── presentation/ # ViewModel tests
+    // Create product with price records
+    let product = Product(name: "Test Product", category: .groceries)
+    let priceRecord1 = PriceRecord(price: 2.99, date: Date())
+    let priceRecord2 = PriceRecord(price: 3.49, date: Date().addingTimeInterval(86400))
 
-    expect(result.totalCost).toBeLessThan(manualTotal)
+    product.priceHistory.append(priceRecord1)
+    product.priceHistory.append(priceRecord2)
 
-androidUnitTest/     # Android-specific unit tests    expect(result.stores).toHaveLength(2)
+    context.insert(product)
+    try context.save()
 
-├── kotlin/    expect(result.savings).toBeGreaterThan(0)
-
-│   ├── ocr/         # ML Kit OCR tests  })
-
-│   └── platform/    # Android utilities tests})
-
-````
-
-androidInstrumentedTest/ # Android integration tests
-
-├── kotlin/## 🔄 DevOps & Deployment
-
-│ ├── database/ # SQLDelight Android tests
-
-│ └── ui/ # Compose UI tests### CI/CD Pipeline
-
-````yaml
-
-iosTest/            # iOS-specific testsname: Deploy Pipeline
-
-├── kotlin/
-
-│   ├── ocr/        # Vision Framework OCR testson:
-
-│   └── platform/   # iOS utilities tests  push:
-
-```    branches: [main, develop]
-
-
-
-## Shared Business Logic Tests (commonTest)jobs:
-
-  test:
-
-### Receipt Processing Tests    runs-on: ubuntu-latest
-
-    steps:
-
-```kotlin      - uses: actions/checkout@v3
-
-// commonTest/kotlin/domain/ReceiptProcessorTest.kt      - name: Install dependencies
-
-import kotlin.test.Test        run: npm ci
-
-import kotlin.test.assertEquals      - name: Run tests
-
-import kotlin.test.assertTrue        run: npm test
-
-import kotlinx.coroutines.test.runTest      - name: SonarCloud scan
-
-        uses: SonarSource/sonarcloud-github-action@master
-
-class ReceiptProcessorTest {
-
-    private val mockOcrService = MockOCRService()  build:
-
-    private val mockRepository = MockReceiptRepository()    needs: test
-
-    private val processor = ReceiptProcessor(mockOcrService, mockRepository)    strategy:
-
-      matrix:
-
-    @Test        platform: [ios, android, web, backend]
-
-    fun `should process receipt image successfully`() = runTest {    steps:
+    // Verify price history
+    #expect(product.priceHistory.count == 2)
+    #expect(product.priceHistory.first?.price == 2.99)
+    #expect(product.averagePrice == 3.24)
+}
+```
 
         // Given      - name: Build ${{ matrix.platform }}
 
@@ -166,9 +154,9 @@ class ReceiptProcessorTest {
 
     }
 
-}  # Redis Cache
+} # Redis Cache
 
-```  redis = {
+````redis = {
 
     node_type = "cache.t3.micro"
 
@@ -801,7 +789,7 @@ class MockReceiptRepository : ReceiptRepository {
 
 ### Run All Tests
 
-```bash
+````bash
 # Run all tests (common + platform-specific)
 ./gradlew test
 
@@ -809,48 +797,70 @@ class MockReceiptRepository : ReceiptRepository {
 ./gradlew :apps:composeApp:testDebugUnitTest
 
 # Run Android instrumented tests
-./gradlew :apps:composeApp:connectedDebugAndroidTest
+## iOS Testing Commands
 
-# Run iOS tests
-./gradlew :apps:composeApp:iosSimulatorArm64Test
+### Xcode Command Line Testing
+
+```bash
+# Run all unit tests
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
+
+# Run specific test class
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15" -only-testing:"Alles TeurerTests/OCRServiceTests"
+
+# Run UI tests only
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15" -only-testing:"Alles TeurerUITests"
 
 # Generate test coverage report
-./gradlew jacocoTestReport
-```
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15" -enableCodeCoverage YES -resultBundlePath TestResults.xcresult
+````
 
 ### Test-Specific Commands
 
 ```bash
-# Run specific test class
-./gradlew :apps:composeApp:testDebugUnitTest --tests "*ReceiptProcessorTest"
+# Run specific test method
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15" -only-testing:"Alles TeurerTests/OCRServiceTests/testGermanReceiptOCR"
 
-# Run tests with continuous mode
-./gradlew :apps:composeApp:testDebugUnitTest --continuous
+# Run tests on multiple devices
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15" -destination "platform=iOS Simulator,name=iPad Pro (12.9-inch)"
 
-# Run tests with detailed output
-./gradlew :apps:composeApp:testDebugUnitTest --info
+# Run tests with verbose output
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15" -verbose
 ```
 
 ## Testing Best Practices
 
-### KMP Testing Guidelines
+### iOS Testing Guidelines
 
-1. **Shared Logic First**: Test all business logic in `commonTest`
-2. **Platform-Specific Mocks**: Use expect/actual pattern for platform mocks
-3. **Database Testing**: Always test SQLDelight queries with real SQLite
-4. **UI Testing**: Test shared UI components, platform-specific adaptations separately
-5. **Integration Tests**: Focus on OCR→Database→UI workflows
+1. **SwiftData First**: Test all data operations with in-memory ModelContainer
+2. **Vision Framework Mocking**: Use test images and mock OCR results for consistent testing
+3. **SwiftUI Testing**: Test ViewModels separately from UI components
+4. **Accessibility First**: Every UI test should include accessibility validation
+5. **Performance Monitoring**: Include performance tests for memory and execution time
 
 ### Code Coverage Targets
 
-- **Shared Business Logic**: 90%+ coverage required
-- **Platform-Specific Code**: 70%+ coverage required
-- **UI Components**: 60%+ coverage required
+- **SwiftData Models & Services**: 90%+ coverage required
+- **ViewModels**: 85%+ coverage required
+- **SwiftUI Views**: 70%+ coverage required
 - **Integration Workflows**: 80%+ coverage required
 
 ### Test Naming Conventions
 
-- Use descriptive test names: `should_[expected_behavior]_when_[condition]`
-- Group related tests in inner classes
-- Use `@Test` annotation consistently
-- Prefer `kotlin.test` over platform-specific frameworks
+- Use descriptive test names: `test[MethodName][ExpectedBehavior]`
+- Group related tests in test classes by feature area
+- Use `@Test` annotation from Swift Testing framework
+- Prefer Swift Testing over XCTest for new unit tests
+
+## Conclusion
+
+This testing strategy ensures comprehensive coverage of the iOS application:
+
+- **Unit Tests**: Swift Testing framework for business logic and SwiftData operations
+- **UI Tests**: XCUITest for user interface and workflow validation
+- **Accessibility Tests**: VoiceOver, Dynamic Type, and WCAG compliance
+- **Performance Tests**: Memory usage, launch time, and scrolling performance
+- **Mock Data**: Consistent test data generation and in-memory contexts
+- **CI/CD Integration**: Automated testing in GitHub Actions with coverage reporting
+
+The testing approach focuses on iOS-native patterns while ensuring high quality, accessibility, and performance standards.

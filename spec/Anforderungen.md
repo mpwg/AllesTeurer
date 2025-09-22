@@ -43,10 +43,6 @@ Alles Teurer/
 │   ├── OCRService.swift   # Vision Framework integration
 │   ├── DataManager.swift  # SwiftData operations
 │   └── PriceAnalyzer.swift # Analytics calculations
-│       └── theme/           # Design system
-├── androidMain/kotlin/
-│   ├── ocr/                 # ML Kit OCR implementation
-│   ├── camera/              # Android camera integration
 └── Utils/                 # Extensions and helpers
 ```
 
@@ -74,6 +70,7 @@ Alles Teurer/
 - [ ] Automatische Kategorisierung mit Natural Language Framework
 - [ ] Preisverlauf-Charts mit Swift Charts
 - [ ] Alle Daten bleiben auf dem iPhone (SwiftData lokal)
+- [ ] Optional: CloudKit Sync zwischen eigenen Geräten
 
 ### 3. Privacy-First Analytics
 
@@ -82,9 +79,11 @@ Alles Teurer/
 **Akzeptanzkriterien:**
 
 - [ ] Lokale Berechnung von Ausgaben-Trends mit Swift
-- [ ] Inflation-Rate pro Kategorie mit interaktiven Charts
+- [ ] Inflation-Rate pro Kategorie mit interaktiven Swift Charts
 - [ ] Monatliche/wöchentliche Übersichten in nativer iOS UI
 - [ ] Export-Funktion für eigene Analysen (CSV/JSON)
+- [ ] Widgets für Home Screen und Lock Screen
+- [ ] Siri Shortcuts Integration
 
 ## Technische Anforderungen
 
@@ -92,92 +91,77 @@ Alles Teurer/
 
 - [ ] App-Start unter 1.5 Sekunden auf iPhone 12 oder neuer
 - [ ] OCR-Verarbeitung unter 3 Sekunden pro Receipt mit Vision Framework
-- [ ] Smooth 60fps Animationen (Compose Multiplatform)
-- [ ] SQLDelight Abfragen unter 100ms
+- [ ] Smooth 60fps Animationen mit SwiftUI
+- [ ] SwiftData Abfragen unter 100ms
+- [ ] Responsive UI auch bei großen Datenmengen (1000+ Receipts)
 
 ### Privacy & Security Requirements
 
-- [ ] Alle Daten bleiben lokal auf dem Gerät
-- [ ] Platform-specific sync nur optional (CloudKit iOS / Google Drive Android)
-- [ ] Keine Third-Party Analytics
+- [ ] Alle Daten bleiben lokal auf dem Gerät (SwiftData)
+- [ ] Optional: CloudKit private Sync nur zwischen eigenen Geräten
+- [ ] Keine Third-Party Analytics oder Tracking
 - [ ] Vollständige Daten-Exportierbarkeit
 - [ ] DSGVO-konforme Datenlöschung
+- [ ] App Sandbox Isolation
+- [ ] Keychain Services für sensible Einstellungen
 
-### Platform Integration Requirements
+### iOS Integration Requirements
 
-#### iOS Requirements
-
-- [ ] iOS 15.0+ Mindest-Version (für Compose Multiplatform)
-- [ ] VoiceOver Accessibility Support
-- [ ] Dynamic Type Support
+- [ ] iOS 17.0+ Mindest-Version (für SwiftData und moderne SwiftUI Features)
+- [ ] VoiceOver Accessibility Support (WCAG 2.2 Level AA)
+- [ ] Dynamic Type Support für Textgrößen
 - [ ] Dark Mode Support
 - [ ] Focus/Control Center Integration
-
-#### Android Requirements
-
-- [ ] Android API 24+ (Android 7.0+) Mindest-Version
-- [ ] TalkBack Accessibility Support
-- [ ] Material You Dynamic Colors (Android 12+)
-- [ ] Dark Mode Support
-- [ ] App Shortcuts Integration
+- [ ] Handoff zwischen iPhone, iPad, Mac (mit CloudKit Sync)
+- [ ] Spotlight Search Integration
+- [ ] iOS Share Extension
+- [ ] Widget Support (Home Screen, Lock Screen, StandBy)
+- [ ] Siri Shortcuts Integration
 
 ## Offline-First Funktionalität
 
-### Was funktioniert offline
+### Was funktioniert offline (alles!)
 
-- [ ] Receipt Scanning und OCR (platform-specific)
-- [ ] Alle Analytics und Charts (shared business logic)
-- [ ] Produkt-Suche und -Verwaltung (SQLDelight lokal)
-- [ ] Data Export
+- [ ] Receipt Scanning und OCR (Vision Framework lokal)
+- [ ] Alle Analytics und Charts (Swift Charts lokal)
+- [ ] Produkt-Suche und -Verwaltung (SwiftData lokal)
+- [ ] Data Export und Import
 - [ ] Vollständige App-Funktionalität ohne Internet
+- [ ] Alle Berechnungen und Analysen auf dem Gerät
 
-### Platform-Specific Sync (Optional)
+### Optional: CloudKit Sync
 
-- [ ] iOS: CloudKit Sync zwischen iPhone/iPad/Mac
-- [ ] Android: Google Drive Backup und Restore
-- [ ] Konflikterkennung und -lösung
-- [ ] Benutzer kann Sync deaktivieren
-- [ ] Lokale Backups zusätzlich zu Cloud-Sync
+- [ ] iOS: CloudKit Sync zwischen iPhone/iPad/Mac (private CloudKit container)
+- [ ] Konflikterkennung und -lösung mit CloudKit
+- [ ] Benutzer kann Sync komplett deaktivieren
+- [ ] Lokale Backups via iTunes/Finder zusätzlich zu CloudKit
+- [ ] End-to-End Verschlüsselung durch CloudKit
 
-## Future Backend Integration (Phase 2)
+## Future CloudKit Integration (Phase 2)
 
-### Vorbereitung für mögliche Backend-Erweiterung
+### Optional erweiterte Features mit CloudKit
 
-- [ ] Netzwerk-Layer Interface in shared module definiert
-- [ ] Offline-First Architektur beibehalten
-- [ ] Optional: Preisvergleich mit externen Quellen
-- [ ] Optional: Community Features
-- [ ] Migration von lokal zu hybrid möglich
+- [ ] Familien-Sharing von Ausgaben-Kategorien (CloudKit Sharing)
+- [ ] Automatische Backup-Wiederherstellung auf neuen Geräten
+- [ ] Synchronization zwischen iPhone, iPad, und Mac
+- [ ] Offline-First bleibt bestehen - CloudKit nur als Bonus
 
 ## Dependencies & Constraints
 
-### KMP Dependencies
+### iOS Native Dependencies
 
-- Kotlin Multiplatform 2.2.20+
-- Gradle 9+
-- Compose Multiplatform
-- SQLDelight (multiplatform database)
-- Kotlinx Serialization
-- Ktor (optional backend client)
-
-### Platform-Specific Dependencies
-
-#### iOS
-
+- SwiftUI (iOS 17.0+)
+- SwiftData (iOS 17.0+)
 - Vision Framework (OCR)
+- Swift Charts (für Visualisierung)
 - CloudKit (optional sync)
-- AVFoundation (Kamera)
-
-#### Android
-
-- ML Kit (OCR)
-- CameraX (Kamera)
-- Google Drive API (optional sync)
+- Natural Language Framework (Produktkategorisierung)
+- Core Image (Bildverarbeitung)
 
 ### Entwicklungs-Constraints
 
-- Kotlin 2.2.20+ (K2 compiler)
-- Gradle 9+ with Kotlin DSL
-- IntelliJ IDEA / Android Studio
-- iOS 15+ / Android 7+ Deployment Targets
-- Compose Multiplatform UI Architecture
+- Xcode 15.0+ mit Swift 5.9+
+- iOS 17.0+ Deployment Target
+- SwiftUI + SwiftData Architecture
+- Swift Testing Framework
+- Native iOS Development nur

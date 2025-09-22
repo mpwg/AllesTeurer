@@ -1,53 +1,88 @@
-## Executive Summary - AllesTeurer Kotlin Multiplatform
+# Executive Summary - AllesTeurer Native iOS App
 
-**AllesTeurer** ist eine datenschutzfokussierte Kotlin Multiplatform Mobile (KMP) Anwendung zur intelligenten Preisüberwachung durch lokales Receipt-Scanning. Die App nutzt plattformspezifische OCR-Implementierungen (Vision Framework für iOS, ML Kit für Android), baut eine persönliche Preisdatenbank mit SQLDelight auf und bietet lokale Analytik - alles ohne Backend-Abhängigkeiten bei maximaler Code-Wiederverwendung.
+**AllesTeurer** ist eine datenschutzfokussierte native iOS Anwendung zur intelligenten Preisüberwachung durch lokales Receipt-Scanning. Die App nutzt SwiftUI für die Benutzeroberfläche, SwiftData für Datenpersistenz, Apple Vision Framework für OCR-Texterkennung, und Swift Charts für Datenvisualisierung - alles ohne Backend-Abhängigkeiten bei vollständiger Privatsphäre-Kontrolle.
 
-## 🎯 Multiplatform-First Strategie
+## 🎯 iOS-First Strategie
 
-### Phase 1: KMP Foundation (3 Monate)
+### Phase 1: iOS Foundation (2-3 Monate)
 
-- **Geteilte Geschäftslogik**: 85%+ Code-Sharing zwischen iOS und Android
-- **Privacy-First**: Alle Daten bleiben auf dem Gerät (SQLDelight lokal)
-- **Platform-spezifische OCR**: Vision Framework (iOS) / ML Kit (Android) via expect/actual
-- **Compose Multiplatform**: Geteiltes UI mit nativen Adaptionen
+- **Native iOS Performance**: SwiftUI + SwiftData für optimale Geschwindigkeit
+- **Privacy-First**: Alle Daten bleiben auf dem Gerät (SwiftData lokal)
+- **Vision Framework OCR**: Apple's hochpräzise deutsche Texterkennung
+- **Swift Charts**: Native Datenvisualisierung mit System-Integration
 
-### Phase 2: Platform Extensions (nach Marktvalidierung)
+### Phase 2: iOS Erweiterungen (nach Marktvalidierung)
 
-- **Optional Backend**: Ktor server für erweiterte Features
-- **Desktop Platform**: Compose Desktop support
-- **Web Platform**: Kotlin/JS mit Compose for Web
-- **Community Features**: Wenn gewünscht von Nutzern
+- **CloudKit Sync**: Optional zwischen eigenen Apple-Geräten
+- **iOS Widgets**: Home Screen und Lock Screen Integration
+- **Siri Shortcuts**: Sprachsteuerung für häufige Aktionen
+- **Apple Intelligence**: Verbesserte Produktkategorisierung
 
-## 🏗️ Kotlin Multiplatform Architecture
+## 🏗️ Native iOS Architecture
 
 ```mermaid
 graph TB
-    subgraph "Compose Multiplatform UI"
-        UI[Shared UI Components]
-        NAV[Navigation]
-        THEME[Material Design 3]
+    subgraph "SwiftUI App"
+        APP[Alles_TeurerApp.swift]
+        MAIN[ContentView.swift]
+        TABS[TabView Navigation]
     end
 
-    subgraph "Shared Business Logic (commonMain)"
-        VM[ViewModels - MVVM]
-        REPOS[Repositories]
-        DOMAIN[Domain Logic & Use Cases]
-        MODELS[Data Models @Serializable]
+    subgraph "Views (SwiftUI)"
+        SCANNER[ScannerView]
+        PRODUCTS[ProductListView]
+        ANALYTICS[AnalyticsView]
+        SETTINGS[SettingsView]
     end
 
-    subgraph "Platform-Specific (expect/actual)"
-        subgraph "iOS (iosMain)"
-            VISION[Vision Framework<br/>OCR]
-            IOS_CAM[AVFoundation<br/>Camera]
-            CLOUDKIT[CloudKit Sync<br/>Optional]
-        end
-
-        subgraph "Android (androidMain)"
-            MLKIT[ML Kit<br/>OCR]
-            AND_CAM[CameraX<br/>Camera]
-            GDRIVE[Google Drive<br/>Backup Optional]
-        end
+    subgraph "ViewModels (@Observable)"
+        SCAN_VM[ScannerViewModel]
+        PROD_VM[ProductsViewModel]
+        ANAL_VM[AnalyticsViewModel]
     end
+
+    subgraph "Services (iOS Native)"
+        OCR[OCRService<br/>Vision Framework]
+        DATA[DataManager<br/>SwiftData]
+        ANALYZER[PriceAnalyzer<br/>Swift Algorithms]
+        CLOUD[CloudKitService<br/>Optional]
+    end
+
+    subgraph "Data Layer"
+        MODELS[SwiftData Models<br/>@Model macro]
+        CONTAINER[ModelContainer<br/>Core Data Backend]
+    end
+
+    subgraph "iOS System Integration"
+        VISION[Vision Framework<br/>German OCR]
+        CHARTS[Swift Charts<br/>Data Visualization]
+        CAMERA[AVFoundation<br/>Camera Capture]
+        KEYCHAIN[Keychain Services<br/>Secure Storage]
+    end
+
+    APP --> CONTAINER
+    MAIN --> TABS
+    TABS --> SCANNER
+    TABS --> PRODUCTS
+    TABS --> ANALYTICS
+
+    SCANNER --> SCAN_VM
+    PRODUCTS --> PROD_VM
+    ANALYTICS --> ANAL_VM
+
+    SCAN_VM --> OCR
+    PROD_VM --> DATA
+    ANAL_VM --> ANALYZER
+
+    OCR --> VISION
+    DATA --> MODELS
+    ANALYZER --> CHARTS
+    MODELS --> CONTAINER
+
+    CAMERA --> SCANNER
+    KEYCHAIN --> DATA
+    CLOUD --> CONTAINER
+```
 
     subgraph "Local Storage (SQLDelight)"
         DB[(Local SQLite<br/>Cross-Platform)]
@@ -66,7 +101,8 @@ graph TB
     VISION --> IOS_CAM
     MLKIT --> AND_CAM
     DB --> MIGRATIONS
-```
+
+````
 
 ## 🔒 Privacy & Local-First Vorteile
 
@@ -143,7 +179,7 @@ graph TB
 ✅ Basic Analytics (Compose Multiplatform Charts)
 ✅ Cross-Platform UI (Compose Multiplatform)
 ✅ App Store Launch (iOS + Android parallel)
-```
+````
 
 ### Short-term (3-6 Monate): Platform-Specific Enhancement
 

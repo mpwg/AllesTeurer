@@ -1,437 +1,342 @@
-# AllesTeurer - Native iOS System Architecture
+# AllesTeurer - Technical Architecture (iOS 26 Native)
 
-## 1. Executive Summary
+## Architecture Overview
 
-AllesTeurer is a privacy-focused native iOS application that helps users track product prices through local receipt scanning and price analysis. The system uses SwiftUI for the user interface, SwiftData for local data persistence, Apple's Vision Framework for OCR text recognition, and Swift Charts for data visualization, ensuring all data remains under user control while providing powerful analytics and insights.
+AllesTeurer is built as a native iOS 26 application using Swift 6's strict concurrency model, SwiftUI 6.0 for the user interface, and SwiftData 2.0 for persistence. The app leverages iOS 26's advanced Vision Framework for OCR and maintains a privacy-first, on-device processing approach.
 
-### Key Architectural Principles
+## Platform Architecture
 
-- **Privacy-First**: All data processing happens on-device using native iOS frameworks
-- **Local-First**: Full functionality without internet connectivity using SwiftData
-- **iOS-Native**: Single platform focus with deep iOS integration and optimization
-- **Accessibility**: WCAG 2.2 Level AA compliant using SwiftUI accessibility APIs
-- **Performance**: Native performance leveraging iOS system frameworks
-- **Extensible**: Clean architecture supporting future CloudKit integration
+### Swift 6 Language Features
 
-## 2. Native iOS Architecture Overview
+```swift
+// Strict concurrency with complete data isolation
+@MainActor
+final class ReceiptViewModel: ObservableObject {
+    // Automatically isolated to main actor
+}
 
-### 2.1 SwiftUI Architecture
+// Sendable conformance for thread-safe data
+struct PriceData: Sendable {
+    let price: Decimal
+    let date: Date
+}
+
+// Actor isolation for data operations
+actor DataProcessor {
+    // Guaranteed thread-safe operations
+}
+```
+
+### iOS 26 Platform Integration
+
+- **Deployment Target**: iOS 26.0+, iPadOS 26.0+, Mac Catalyst 26.0+
+- **Swift Version**: Swift 6.0 with strict concurrency checking
+- **Xcode Version**: Xcode 16.0+
+- **Architecture**: Universal Binary (ARM64)
+
+## Core Components
+
+### 1. Data Layer (SwiftData 2.0)
+
+SwiftData 2.0 provides type-safe, declarative data persistence with automatic CloudKit sync:
+
+```swift
+@Model
+final class Receipt {
+    @Attribute(.unique) let id: UUID
+    var storeName: String
+    var items: [ReceiptItem]
+    var totalAmount: Decimal
+
+    @Relationship(deleteRule: .cascade)
+    var priceRecords: [PriceRecord]
+}
+
+// Model Container Configuration
+let container = try ModelContainer(
+    for: Receipt.self, Product.self, Store.self,
+    configurations: ModelConfiguration(
+        isStoredInMemoryOnly: false,
+        allowsSave: true,
+        cloudKitDatabase: .automatic // iOS 26 automatic sync
+    )
+)
+```
+
+### 2. OCR Service (Vision Framework 4.0)
+
+iOS 26's Vision Framework with enhanced multilingual support:
+
+```swift
+@available(iOS 26.0, *)
+class VisionOCRService {
+    private let textRequest = VNRecognizeTextRequest()
+
+    init() {
+        textRequest.recognitionLevel = .accurate
+        textRequest.recognitionLanguages = ["de-DE"] // German priority
+        textRequest.usesLanguageCorrection = true
+        textRequest.automaticallyDetectsLanguage = true // iOS 26 feature
+    }
+
+    func processReceipt(_ image: UIImage) async throws -> StructuredReceipt {
+        // iOS 26 structured data extraction
+        let structuredRequest = VNRecognizeStructuredDocumentRequest()
+        structuredRequest.documentType = .receipt // New in iOS 26
+
+        // Returns pre-parsed receipt data
+        let results = try await performRequest(structuredRequest, on: image)
+        return StructuredReceipt(from: results)
+    }
+}
+```
+
+### 3. User Interface (SwiftUI 6.0)
+
+Modern SwiftUI with Observable macro and enhanced navigation:
+
+```swift
+@Observable
+@MainActor
+final class AppModel {
+    var selectedReceipt: Receipt?
+    var navigationPath = NavigationPath()
+    var scannerPresented = false
+
+    func navigateToReceipt(_ receipt: Receipt) {
+        selectedReceipt = receipt
+        navigationPath.append(receipt)
+    }
+}
+
+struct ContentView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    var body: some View {
+        AdaptiveNavigation(sizeClass: sizeClass) {
+            // Automatically adapts between NavigationStack and NavigationSplitView
+        }
+    }
+}
+```
+
+### 4. Analytics Engine (Swift Charts 2.0)
+
+Native charting with 3D visualizations:
+
+```swift
+struct InflationChart: View {
+    let data: [PricePoint]
+
+    var body: some View {
+        Chart3D(data) { point in
+            BarMark3D(
+                x: .value("Date", point.date),
+                y: .value("Price", point.price),
+                z: .value("Store", point.store),
+                width: .automatic,
+                depth: .automatic
+            )
+            .foregroundStyle(.linearGradient(
+                colors: [.blue, .red],
+                startPoint: .bottom,
+                endPoint: .top
+            ))
+        }
+        .chart3DStyle(.realistic)
+        .chartInteractivity(.all) // Gesture navigation
+    }
+}
+```
+
+## System Architecture Patterns
+
+### MVVM with Observation
+
+```swift
+// Model
+@Model
+final class Product: Identifiable {
+    let id: UUID
+    var name: String
+    var prices: [PriceRecord]
+}
+
+// ViewModel with Observation
+@Observable
+@MainActor
+final class ProductViewModel {
+    private let repository: ProductRepository
+    var products: [Product] = []
+    var isLoading = false
+
+    func loadProducts() async {
+        isLoading = true
+        products = await repository.fetchAll()
+        isLoading = false
+    }
+}
+
+// View
+struct ProductListView: View {
+    @State private var viewModel = ProductViewModel()
+
+    var body: some View {
+        List(viewModel.products) { product in
+            ProductRow(product: product)
+        }
+        .task {
+            await viewModel.loadProducts()
+        }
+    }
+}
+```
+
+### Actor-based Data Processing
+
+```swift
+@ModelActor
+actor ReceiptProcessor {
+    func processScannedReceipt(_ imageData: Data) async throws -> Receipt {
+        // Thread-safe processing with automatic isolation
+        let ocrResult = try await OCRService.shared.process(imageData)
+        let receipt = Receipt(from: ocrResult)
+
+        // SwiftData operations are automatically thread-safe
+        modelContext.insert(receipt)
+        try modelContext.save()
+
+        return receipt
+    }
+}
+```
+
+## Platform-Specific Features
+
+### iPhone
+
+- Compact layouts with gesture navigation
+- Camera-based receipt scanning
+- Live Activities for shopping sessions
+- Control Center quick actions
+
+### iPad
+
+- Multi-column layouts with NavigationSplitView
+- Drag & drop receipt import
+- Apple Pencil markup support
+- Stage Manager multi-window
+
+### Mac Catalyst
+
+- Native menu bar with keyboard shortcuts
+- File-based import/export
+- AppleScript automation support
+- Touch Bar integration
+
+## Data Flow Architecture
 
 ```mermaid
 graph TB
-    subgraph "SwiftUI App"
-        APP[Alles_TeurerApp.swift]
-        MAIN[ContentView.swift]
-        NAV[NavigationStack]
-        TABS[TabView]
-    end
-
-    subgraph "Feature Views"
-        SCANNER[ReceiptScannerView]
-        PRODUCTS[ProductListView]
-        ANALYTICS[AnalyticsView]
-        SETTINGS[SettingsView]
-    end
-
-    subgraph "ViewModels (@Observable)"
-        SCAN_VM[ScannerViewModel]
-        PROD_VM[ProductsViewModel]
-        ANAL_VM[AnalyticsViewModel]
-    end
-
-    subgraph "Services"
-        OCR[OCRService<br/>Vision Framework]
-        DATA_MGR[DataManager<br/>SwiftData]
-        MATCHER[ProductMatcher]
-        ANALYZER[PriceAnalyzer]
-    end
-
-    subgraph "Data Layer"
-        MODELS[SwiftData Models]
-        CONTAINER[ModelContainer]
-        CONTEXT[ModelContext]
-    end
-
-    subgraph "Local Processing"
-        VISION[Vision Framework<br/>Text Recognition]
-        PARSER[Receipt Parser]
-        CHARTS[Swift Charts<br/>Visualization]
-    end
-
-    APP --> CONTAINER
-    MAIN --> TABS
-    TABS --> SCANNER
-    TABS --> PRODUCTS
-    TABS --> ANALYTICS
-    TABS --> SETTINGS
-
-    SCANNER --> SCAN_VM
-    PRODUCTS --> PROD_VM
-    ANALYTICS --> ANAL_VM
-
-    SCAN_VM --> OCR
-    PROD_VM --> DATA_MGR
-    ANAL_VM --> ANALYZER
-
-    OCR --> VISION
-    DATA_MGR --> MODELS
-    MODELS --> CONTAINER
-    CONTAINER --> CONTEXT
-
-    VISION --> PARSER
-    PARSER --> MATCHER
-    MATCHER --> DATA_MGR
-    ANALYZER --> CHARTS
+    Camera[Camera/Gallery] --> Scanner[VisionKit Scanner]
+    Scanner --> OCR[Vision OCR Service]
+    OCR --> Parser[Receipt Parser]
+    Parser --> SwiftData[SwiftData Models]
+    SwiftData --> ViewModel[Observable ViewModels]
+    ViewModel --> SwiftUI[SwiftUI Views]
+    SwiftData --> Analytics[Analytics Engine]
+    Analytics --> Charts[Swift Charts]
+    Charts --> SwiftUI
+    SwiftData -.-> CloudKit[CloudKit Sync]
 ```
 
-### 2.2 Core Components
+## Performance Optimizations
 
-#### 2.2.1 SwiftData Persistence Layer
+### Swift 6 Concurrency
 
-- **Local Storage**: SwiftData for type-safe, native iOS data persistence
-- **Data Models**: Swift structs and classes with `@Model` macro
-- **Privacy**: All data stays on device with Core Data backend
-- **Schema Evolution**: Automatic and manual migration support
-- **CloudKit Integration**: Optional private cloud sync
+- **Structured Concurrency**: All async operations use Swift's structured concurrency
+- **Actor Isolation**: Data operations isolated to prevent race conditions
+- **MainActor**: UI updates automatically dispatched to main thread
+- **Task Groups**: Parallel processing for batch operations
 
-#### 2.2.2 Vision Framework OCR Layer
+### Memory Management
 
-- **iOS OCR Engine**: Vision Framework for receipt text extraction
-- **iOS OCR Engine**: Vision Framework for precise German text recognition
-- **Image Processing**: Core Image for receipt enhancement and preprocessing
-- **Local Analytics**: Swift algorithms for price trend analysis and inflation calculations
+- **Lazy Loading**: SwiftData relationships loaded on demand
+- **Image Caching**: Processed receipt images cached with automatic eviction
+- **Background Processing**: Heavy operations moved to background actors
 
-#### 2.2.3 SwiftUI Presentation Layer
+## Security & Privacy
 
-- **Declarative UI**: SwiftUI for modern, reactive user interfaces
-- **Native Performance**: Compiled Swift code with optimized rendering
-- **Accessibility**: Built-in VoiceOver and Dynamic Type support
-- **Platform Integration**: Native iOS patterns and behaviors
+### On-Device Processing
 
-## 3. Native iOS Technology Stack
+- All OCR processing happens locally using Vision Framework
+- No external API calls for core functionality
+- Optional CloudKit sync with end-to-end encryption
+- Privacy manifest declaring all data usage
 
-### 3.1 Core iOS Technologies
-
-- **Language**: Swift 5.9+ with modern async/await patterns
-- **UI Framework**: SwiftUI with Observation framework
-- **Architecture**: MVVM with Repository pattern
-- **Concurrency**: Swift Concurrency (async/await, actors)
-- **Storage**: SwiftData with Core Data backend
-- **Charts**: Swift Charts for native data visualization
-
-### 3.2 iOS System Integrations
-
-#### Vision Framework Integration
-
-- **OCR**: VNRecognizeTextRequest for receipt text extraction
-- **Language Support**: German language optimization
-- **Image Processing**: VNImageRequestHandler for preprocessing
-- **Error Handling**: Confidence scoring and correction workflows
-
-#### SwiftData Integration
-
-- **Models**: @Model macro for automatic Core Data mapping
-- **Queries**: @Query property wrapper for reactive data
-- **Relationships**: Automatic relationship handling
-- **Migration**: Schema versioning and data migration
-
-### 3.3 Development Tools
-
-- **IDE**: Xcode 15.0+ with Swift Package Manager
-- **Build System**: Xcode Build System with Swift Package integration
-- **CI/CD**: GitHub Actions with xcodebuild
-- **Testing**: Swift Testing framework + XCUITest
-- **Performance**: Instruments profiling for optimization
-
-## 6. Privacy & Security Architecture
-
-### 6.1 Privacy-First Design
-
-- **Local Processing**: All OCR and analytics happen on-device using iOS frameworks
-- **No User Tracking**: Zero third-party analytics or tracking
-- **Data Ownership**: User controls all data with complete export capability
-- **Minimal Permissions**: Only camera access required for receipt scanning
-- **Transparent Storage**: Users can see and export all data via SwiftData
-
-### 6.2 Data Security
-
-- **SwiftData Encryption**: Core Data encryption at rest with iOS security
-- **CloudKit Security**: End-to-end encryption for optional private sync
-- **Keychain Services**: Sensitive settings stored in iOS Keychain
-- **App Sandbox**: iOS app sandboxing for data isolation
-- **Code Signing**: App Store security validation and notarization
-
-### 6.3 GDPR Compliance
-
-- **Data Minimization**: Only collect necessary receipt data for price tracking
-- **Right to Export**: Built-in data export to CSV/JSON
-- **Right to Delete**: Complete data deletion with SwiftData cascade deletes
-- **Transparency**: Clear privacy policy and in-app data usage disclosure
-- **Consent**: Optional CloudKit sync requires explicit user consent
-
-## 7. Performance Optimization
-
-### 7.1 OCR Performance
+### Data Protection
 
 ```swift
-class OCROptimizer {
-    func preprocessImage(_ image: UIImage) async -> UIImage? {
-        // Optimize image for Vision Framework processing
-        let targetSize = CGSize(width: 1024, height: 1024)
+// Automatic encryption with SwiftData
+let configuration = ModelConfiguration(
+    url: containerURL,
+    cloudKitDatabase: .private(DatabaseScope.privateCloudDatabase),
+    fileProtection: .completeUnlessOpen // iOS 26 encryption
+)
+```
 
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let optimized = image
-                    .resized(to: targetSize)
-                    .enhanced(contrast: 1.2, brightness: 0.1)
-                    .sharpened()
-                continuation.resume(returning: optimized)
-            }
-        }
-    }
+## Testing Architecture
 
-    func performBatchOCR(_ images: [UIImage]) async -> [ReceiptData] {
-        // Process multiple receipts efficiently with Swift Concurrency
-        return await withTaskGroup(of: ReceiptData?.self, returning: [ReceiptData].self) { group in
-            for image in images {
-                group.addTask {
-                    await self.processReceipt(image)
-                }
-            }
+### Swift Testing Framework
 
-            var results: [ReceiptData] = []
-            for await result in group {
-                if let receiptData = result {
-                    results.append(receiptData)
-                }
-            }
-            return results
-        }
-    }
-                results.append(result)
-            }
-            return results
-        }
+```swift
+@Suite("OCR Processing", .serialized)
+struct OCRTests {
+    @Test("Receipt parsing accuracy",
+          arguments: TestData.germanReceipts)
+    func testReceiptParsing(testImage: UIImage) async throws {
+        let result = try await OCRService.shared.process(testImage)
+        #expect(result.accuracy > 0.95)
     }
 }
 ```
 
-### 7.2 Core Data Performance
+### UI Testing with XCUITest
 
 ```swift
-extension DataManager {
-    func fetchProductsEfficiently(limit: Int = 20) -> [Product] {
-        let request: NSFetchRequest<Product> = Product.fetchRequest()
-        request.fetchLimit = limit
-        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-        request.relationshipKeyPathsForPrefetching = ["priceRecords"]
-
-        return (try? persistentContainer.viewContext.fetch(request)) ?? []
-    }
-
-    func batchInsertReceipts(_ receipts: [ReceiptData]) async {
-        await persistentContainer.performBackgroundTask { context in
-            receipts.forEach { receiptData in
-                let receipt = Receipt(context: context)
-                // Set receipt properties
-            }
-
-            try? context.save()
-        }
-    }
-}
-```
-
-### 7.3 Memory Management
-
-- **Image Caching**: Smart caching for receipt images
-- **Lazy Loading**: Load data on-demand
-- **Background Processing**: Heavy operations off main thread
-- **Memory Warnings**: Handle low memory situations
-- **Resource Cleanup**: Proper cleanup of Vision requests
-
-## 8. Future Backend Integration
-
-### 8.1 Network Layer Preparation
-
-```swift
-// Prepared for future backend integration
-protocol NetworkServiceProtocol {
-    func syncReceipts() async throws -> [Receipt]
-    func uploadReceipt(_ receipt: Receipt) async throws
-    func downloadPriceData() async throws -> [PriceData]
-}
-
-class LocalNetworkService: NetworkServiceProtocol {
-    // Current: Local-only implementation
-    func syncReceipts() async throws -> [Receipt] {
-        return DataManager.shared.fetchReceipts()
-    }
-
-    func uploadReceipt(_ receipt: Receipt) async throws {
-        // No-op for local-only mode
-    }
-
-    func downloadPriceData() async throws -> [PriceData] {
-        return [] // No external data yet
-    }
-}
-
-class RemoteNetworkService: NetworkServiceProtocol {
-    // Future: Backend integration
-    func syncReceipts() async throws -> [Receipt] {
-        // API calls to backend
-    }
-}
-```
-
-### 8.2 Migration Strategy
-
-When adding backend services:
-
-1. **Add Network Layer**: Implement API client alongside local services
-2. **Hybrid Mode**: Local-first with optional cloud features
-3. **Gradual Migration**: Users opt-in to cloud features
-4. **Data Sync**: Bidirectional sync with conflict resolution
-5. **Offline Support**: Full functionality without internet
-
-## 9. Testing Architecture
-
-### 9.1 Unit Testing Strategy
-
-```swift
-// Test OCR Service
-class OCRServiceTests: XCTestCase {
-    var ocrService: OCRService!
-
-    override func setUp() {
-        super.setUp()
-        ocrService = OCRService()
-    }
-
-    func testReceiptProcessing() async throws {
-        let testImage = UIImage(named: "test_receipt")!
-        let result = try await ocrService.processReceipt(testImage)
-
-        XCTAssertFalse(result.items.isEmpty)
-        XCTAssertNotNil(result.storeName)
-        XCTAssertGreaterThan(result.totalAmount, 0)
-    }
-}
-
-// Test Data Manager
-class DataManagerTests: XCTestCase {
-    var dataManager: DataManager!
-
-    override func setUp() {
-        super.setUp()
-        // Use in-memory Core Data for testing
-        dataManager = DataManager(inMemory: true)
-    }
-
-    func testProductCreation() {
-        let product = dataManager.createProduct(name: "Test Product")
-
-        XCTAssertNotNil(product.id)
-        XCTAssertEqual(product.name, "Test Product")
-    }
-}
-```
-
-### 9.2 UI Testing Strategy
-
-```swift
-class AppUITests: XCTestCase {
-    var app: XCUIApplication!
-
-    override func setUp() {
-        super.setUp()
-        app = XCUIApplication()
+final class ReceiptScanningUITests: XCTestCase {
+    @MainActor
+    func testCompleteReceiptFlow() async throws {
+        let app = XCUIApplication()
         app.launch()
-    }
 
-    func testReceiptScanningFlow() {
-        // Test main tab navigation
-        app.tabBars.buttons["Scan"].tap()
-
-        // Test camera permission (if needed)
-        let cameraButton = app.buttons["Scan Receipt"]
-        XCTAssertTrue(cameraButton.exists)
-
-        // Test scan flow (with mock data in UI tests)
-        cameraButton.tap()
-
-        // Verify results screen
-        XCTAssertTrue(app.navigationBars["Scan Results"].exists)
-    }
-
-    func testAnalyticsView() {
-        app.tabBars.buttons["Analytics"].tap()
-
-        // Test chart visibility
-        XCTAssertTrue(app.otherElements["Price History Chart"].exists)
-
-        // Test data interaction
-        let spendingCard = app.buttons["Monthly Spending"]
-        XCTAssertTrue(spendingCard.exists)
+        // Test with iOS 26 UI testing improvements
+        try await app.scanReceipt()
+        #expect(app.receipts.count == 1)
     }
 }
 ```
 
-## 10. Deployment Architecture
+## Deployment Architecture
 
-### 10.1 App Store Configuration
+### App Store Distribution
 
-- **Bundle Identifier**: eu.mpwg.allesteuer
-- **Version Strategy**: Semantic versioning (1.0.0)
-- **Capabilities**:
-  - CloudKit
-  - Camera usage
-  - Background processing (for data sync)
-- **Privacy Permissions**: Camera usage description
-- **Target Audience**: 17+ (financial app)
+- **Universal Purchase**: Single purchase for iPhone, iPad, Mac
+- **TestFlight**: Beta testing across all platforms
+- **App Clips**: Quick receipt scanning without full app
+- **Widgets**: Home Screen and Lock Screen widgets
 
-### 10.2 CloudKit Configuration
+### Configuration
 
-```swift
-// CloudKit container setup
-extension CloudKitService {
-    func configureContainer() {
-        // Configure CloudKit schema
-        let schema = CKSchema()
-
-        // Receipt record type
-        let receiptRecord = CKRecordType(name: "Receipt")
-        receiptRecord.addField("storeName", type: .string)
-        receiptRecord.addField("totalAmount", type: .double)
-        receiptRecord.addField("purchaseDate", type: .dateTime)
-        receiptRecord.addField("imageAsset", type: .asset)
-
-        schema.add(receiptRecord)
-
-        // Deploy schema to development and production
-    }
-}
+```xml
+<!-- Info.plist iOS 26 Configuration -->
+<key>LSMinimumSystemVersion</key>
+<string>26.0</string>
+<key>UIRequiredDeviceCapabilities</key>
+<array>
+    <string>arm64</string>
+</array>
+<key>NSCameraUsageDescription</key>
+<string>Camera access is required to scan receipts</string>
 ```
-
-### 10.3 CI/CD Pipeline
-
-- **Development**: Automatic builds on feature branches
-- **Testing**: Run unit and UI tests on pull requests
-- **Beta Distribution**: TestFlight for internal testing
-- **Production**: Automated App Store release process
-- **Monitoring**: Crash reporting and performance metrics
-
-## Conclusion
-
-This Kotlin Multiplatform architecture provides:
-
-- **Privacy-First**: All data processing happens locally on user's device
-- **Cross-Platform Efficiency**: 85%+ code sharing between iOS and Android
-- **Native Performance**: Direct compilation to platform-native code
-- **Extensibility**: Clean architecture supporting future backend integration
-- **Accessibility**: Full WCAG compliance with platform accessibility features
-- **Security**: Platform-specific security with optional cloud sync encryption
-- **User Experience**: Native platform patterns with shared business logic
-
-The architecture is designed to deliver complete, functional apps that can launch simultaneously on both platforms while maintaining the flexibility to evolve into a full-stack solution as the product grows.
