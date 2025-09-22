@@ -135,28 +135,55 @@ platform :ios do
   private_lane :build_ios_platform do |options|
     UI.header("📱 Building iOS/iPadOS version")
     
-    # Get the provisioning profile name from Match environment variables
-    profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{options[:export_method]}_profile-name"]
+    export_method = options[:export_method] || "development"
+    
+    # Get the provisioning profile name from Match environment variables for the specific export method
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name"]
+    certificate_name = ENV["sigh_#{APP_IDENTIFIER}_#{export_method}_certificate-name"]
     
     # Debug information
-    UI.message("🔍 Debug: Building with export method: #{options[:export_method]}")
-    UI.message("🔍 Debug: Expected profile env var: sigh_#{APP_IDENTIFIER}_#{options[:export_method]}_profile-name")
+    UI.message("🔍 Debug: Building with export method: #{export_method}")
+    UI.message("🔍 Debug: Expected profile env var: sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name")
     UI.message("🔍 Debug: Profile name from env: #{profile_name}")
+    UI.message("🔍 Debug: Certificate name from env: #{certificate_name}")
+    
+    # Fallback to development if specific export method profile not found
+    if !profile_name && export_method != "development"
+      UI.warning("⚠️  No #{export_method} profile found, falling back to development")
+      profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
+      certificate_name = ENV["sigh_#{APP_IDENTIFIER}_development_certificate-name"]
+    end
+    
+    # Final fallback
+    profile_name ||= "match Development #{APP_IDENTIFIER}"
+    certificate_name ||= "Apple Development"
+    
+    # Use generic certificate identity to avoid character encoding issues
+    generic_identity = case export_method
+    when "appstore", "app-store"
+      "Apple Distribution"
+    else
+      "Apple Development"
+    end
+    
+    UI.message("🔍 Debug: Using profile: #{profile_name}")
+    UI.message("🔍 Debug: Using generic certificate identity: #{generic_identity}")
     
     # Build configuration with proper export options override
-    build_config = common_build_config.merge({
+    build_config = common_build_config(export_method: export_method).merge({
       configuration: options[:configuration] || "Release",
-      export_method: options[:export_method],
+      export_method: export_method,
       output_directory: options[:output_directory],
       output_name: "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa",
       skip_profile_detection: false,  # Allow profile detection for proper manual signing
       destination: "generic/platform=iOS"
+      # Don't override codesigning_identity - let common_build_config handle it
     })
     
     # Override export method in export_options and set proper provisioning profile
-    build_config[:export_options][:method] = options[:export_method]
+    build_config[:export_options][:method] = export_method
     build_config[:export_options][:provisioningProfiles] = {
-      APP_IDENTIFIER => profile_name || "match Development #{APP_IDENTIFIER}"
+      APP_IDENTIFIER => profile_name
     }
     
     UI.message("🔍 Debug: Final provisioning profiles config: #{build_config[:export_options][:provisioningProfiles]}")
@@ -194,7 +221,7 @@ platform :ios do
     export_method = options[:export_method] || "development"
     
     # Build configuration with proper export options override
-    build_config = common_build_config.merge({
+    build_config = common_build_config(export_method: export_method).merge({
       configuration: options[:configuration] || "Release",
       export_method: export_method,
       output_directory: options[:output_directory],
@@ -223,7 +250,7 @@ platform :ios do
 
     sync_certificates(type: "development")
 
-    build_app(common_build_config.merge({
+    build_app(common_build_config(export_method: "development").merge({
       configuration: "Debug",
       export_method: "development",
       output_directory: "./build/development",
@@ -429,7 +456,7 @@ platform :ios do
 
     sync_certificates(type: "development")
 
-    build_app(common_build_config.merge({
+    build_app(common_build_config(export_method: "development").merge({
       configuration: "Debug",
       export_method: "development",
       output_directory: "./build/validation",
@@ -447,7 +474,7 @@ platform :ios do
 
     sync_certificates(type: "development")
 
-    build_app(common_build_config.merge({
+    build_app(common_build_config(export_method: "development").merge({
       configuration: "Debug",
       export_method: "development",
       output_directory: "./build/validation",
@@ -503,10 +530,22 @@ platform :ios do
     end
   end
 
-  private_lane :common_build_config do
+  private_lane :common_build_config do |options = {}|
     # Get the current provisioning profile name from Match environment variables
     # Default to development profile name since most lanes use development signing
-    profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"] || "match Development #{APP_IDENTIFIER}"
+    export_method = options[:export_method] || "development"
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name"] || 
+                   ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"] || 
+                   "match Development #{APP_IDENTIFIER}"
+    
+    # Use generic code signing identity to avoid character encoding issues
+    # This lets Xcode automatically select the right certificate from the keychain
+    case export_method
+    when "appstore", "app-store"
+      codesigning_identity = "Apple Distribution"
+    else
+      codesigning_identity = "Apple Development"
+    end
     
     {
       scheme: SCHEME_NAME,
@@ -516,11 +555,11 @@ platform :ios do
       # Force manual code signing with Match profiles
       export_xcargs: "-allowProvisioningUpdates",
       # Performance optimizations
-      xcargs: build_xcargs,
-      # Manual code signing configuration
-      codesigning_identity: "Apple Development",
+      xcargs: build_xcargs(export_method: export_method),
+      # Manual code signing configuration using match certificate
+      codesigning_identity: codesigning_identity,
       export_options: {
-        method: "development", # This will be overridden by each lane
+        method: export_method, # This will be overridden by each lane
         provisioningProfiles: {
           APP_IDENTIFIER => profile_name
         }
@@ -528,7 +567,7 @@ platform :ios do
     }
   end
 
-  private_lane :build_xcargs do
+  private_lane :build_xcargs do |options = {}|
     args = []
     
     # Enable parallel builds for faster compilation
@@ -547,10 +586,23 @@ platform :ios do
       # Allow provisioning profile updates but use manual signing
       args << "-allowProvisioningUpdates"
       
+      # Determine the export method for certificate lookup (default to development)
+      export_method = options[:export_method] || "development"
+      
       # Set specific provisioning profile for the main app target
-      profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
+      profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name"] || 
+                     ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
       if profile_name
         args << "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\""
+      end
+      
+      # Use generic code signing identity to avoid character encoding issues
+      # This lets Xcode automatically select the right certificate from the keychain
+      case export_method
+      when "appstore", "app-store"
+        args << "CODE_SIGN_IDENTITY=\"Apple Distribution\""
+      else
+        args << "CODE_SIGN_IDENTITY=\"Apple Development\""
       end
     end
     
@@ -670,7 +722,7 @@ platform :ios do
     UI.message("Running clean build benchmark...")
     clean_start = Time.now
     
-    build_app(common_build_config.merge({
+    build_app(common_build_config(export_method: "development").merge({
       configuration: "Debug",
       export_method: "development",
       output_directory: "./build/benchmark",
@@ -686,7 +738,7 @@ platform :ios do
     UI.message("Running incremental build benchmark...")
     incremental_start = Time.now
     
-    build_app(common_build_config.merge({
+    build_app(common_build_config(export_method: "development").merge({
       configuration: "Debug",
       export_method: "development",
       output_directory: "./build/benchmark",
