@@ -33,18 +33,18 @@ struct OCRServiceTests {
     func testGermanTextRecognition() async throws {
         let ocrService = OCRService()
         let testImage = createGermanReceiptImage()
-        
+
         let result = try await ocrService.recognizeText(from: testImage)
-        
+
         #expect(!result.recognizedText.isEmpty)
         #expect(result.confidence > 0.8)
     }
-    
+
     @Test("OCR handles invalid image data")
     func testInvalidImageHandling() async throws {
         let ocrService = OCRService()
         let invalidImageData = Data()
-        
+
         await #expect(throws: OCRError.invalidImage) {
             try await ocrService.recognizeText(from: invalidImageData)
         }
@@ -57,17 +57,17 @@ struct ReceiptRepositoryTests {
     func testReceiptPersistence() async throws {
         let container = ModelContainer.inMemoryContainer()
         let repository = ReceiptRepository(modelContainer: container)
-        
+
         let receipt = Receipt(
             storeName: "REWE",
             scanDate: Date(),
             items: [ReceiptItem(name: "Milch", unitPrice: 1.29, totalPrice: 1.29)],
             totalAmount: 1.29
         )
-        
+
         try await repository.save(receipt)
         let savedReceipts = try await repository.fetchAll()
-        
+
         #expect(savedReceipts.count == 1)
         #expect(savedReceipts.first?.storeName == "REWE")
     }
@@ -81,19 +81,19 @@ import XCTest
 
 final class ReceiptScannerUITests: XCTestCase {
     var app: XCUIApplication!
-    
+
     override func setUp() {
         super.setUp()
         app = XCUIApplication()
         app.launch()
     }
-    
+
     func testReceiptScanningFlow() {
         // Test camera interface accessibility
         let cameraButton = app.buttons["Scan Receipt"]
         XCTAssertTrue(cameraButton.exists)
         XCTAssertTrue(cameraButton.isEnabled)
-        
+
         // Test accessibility labels
         XCTAssertEqual(cameraButton.label, "Scan Receipt")
         XCTAssertTrue(cameraButton.isAccessibilityElement)
@@ -106,18 +106,21 @@ final class ReceiptScannerUITests: XCTestCase {
 ### Core Functionality Testing
 
 #### Receipt Scanning (Vision Framework)
+
 - Text recognition accuracy for German receipts
 - Image preprocessing validation
 - Error handling for invalid images
 - Performance benchmarks for OCR processing
 
 #### Data Persistence (SwiftData)
+
 - Receipt CRUD operations
 - Data model relationships
 - Migration testing
 - Query performance
 
 #### Business Logic
+
 - Price calculation accuracy
 - Product matching algorithms
 - Analytics computations
@@ -126,12 +129,14 @@ final class ReceiptScannerUITests: XCTestCase {
 ### UI Testing
 
 #### SwiftUI Views
+
 - View state management
 - Data binding validation
 - Navigation flows
 - Accessibility compliance
 
 #### User Interactions
+
 - Receipt scanning workflow
 - Product list management
 - Settings configuration
@@ -140,21 +145,23 @@ final class ReceiptScannerUITests: XCTestCase {
 ### Performance Testing
 
 #### OCR Performance
+
 ```swift
 @Test("OCR processing performance")
 func testOCRPerformance() async throws {
     let ocrService = OCRService()
     let testImage = createLargeReceiptImage()
-    
+
     let startTime = CFAbsoluteTimeGetCurrent()
     _ = try await ocrService.recognizeText(from: testImage)
     let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
-    
+
     #expect(timeElapsed < 5.0) // OCR should complete within 5 seconds
 }
 ```
 
 #### Database Performance
+
 - Large dataset queries
 - Batch operations
 - Memory usage monitoring
@@ -162,6 +169,7 @@ func testOCRPerformance() async throws {
 ### Accessibility Testing
 
 #### WCAG 2.2 Compliance
+
 - VoiceOver navigation
 - Dynamic Type support
 - Color contrast validation
@@ -170,6 +178,7 @@ func testOCRPerformance() async throws {
 ## Test Organization
 
 ### Directory Structure
+
 ```
 Alles TeurerTests/
 ├── Unit/
@@ -195,6 +204,7 @@ Alles TeurerUITests/
 ### Test Data Management
 
 #### Mock Data Creation
+
 ```swift
 extension Receipt {
     static func mockGermanReceipt() -> Receipt {
@@ -212,6 +222,7 @@ extension Receipt {
 ```
 
 #### Test Image Assets
+
 - Sample German receipts for OCR testing
 - Various image qualities and formats
 - Edge cases (blurry, rotated, damaged receipts)
@@ -219,12 +230,14 @@ extension Receipt {
 ## Continuous Integration
 
 ### Xcode Cloud Integration
+
 - Automated test runs on commits
 - Performance regression detection
 - Accessibility validation
 - Device matrix testing (iPhone, iPad)
 
 ### Test Metrics
+
 - Code coverage targets (>80%)
 - Test execution time monitoring
 - Flaky test detection and remediation
@@ -232,6 +245,7 @@ extension Receipt {
 ## Privacy Testing
 
 ### On-Device Processing Validation
+
 - Network activity monitoring during OCR
 - Data encryption verification
 - Local storage security testing
@@ -239,11 +253,13 @@ extension Receipt {
 ## Platform-Specific Considerations
 
 ### iOS Version Compatibility
+
 - iOS 17.0+ for Swift Testing
 - Backward compatibility testing
 - Feature availability validation
 
 ### Device Testing
+
 - iPhone form factors (various sizes)
 - iPad compatibility
 - Camera hardware variations
