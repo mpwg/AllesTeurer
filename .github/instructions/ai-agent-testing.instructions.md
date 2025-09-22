@@ -1,13 +1,13 @@
 ---
-description: "AI agent test implementation guidelines for Brixie LEGO set browser app"
+description: "AI agent test implementation guidelines for Alles-Teurer LEGO set browser app"
 applyTo: "**/*Tests.swift"
 ---
 
-# AI Agent Test Implementation Instructions for Brixie App
+# AI Agent Test Implementation Instructions for Alles-Teurer App
 
 ## Overview
 
-This document provides detailed instructions for AI agents to implement comprehensive tests for the Brixie LEGO set browser app. The tests must verify UI interactions actually load and display data correctly, with particular focus on caching mechanisms.
+This document provides detailed instructions for AI agents to implement comprehensive tests for the Alles-Teurer LEGO set browser app. The tests must verify UI interactions actually load and display data correctly, with particular focus on caching mechanisms.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ Before implementing tests, ensure the following setup is complete:
 import Testing
 import SwiftData
 import SwiftUI
-@testable import Brixie
+@testable import Alles-Teurer
 ```
 
 ### Test Environment Setup
@@ -44,24 +44,24 @@ config.applyToServices()
 struct DataLoadingTests {
     var legoSetService: MockableLegoSetService
     var themeService: MockableThemeService
-    
+
     init() async throws {
         // Setup mock services with large datasets
         legoSetService = MockableLegoSetService.shared
         themeService = MockableThemeService.shared
-        
+
         // Enable mock data with large dataset
         legoSetService.toggleMockData(true)
         themeService.toggleMockData(true)
-        
+
         // Configure in-memory persistence
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
-            for: LegoSet.self, Theme.self, UserCollection.self, 
+            for: LegoSet.self, Theme.self, UserCollection.self,
             configurations: config
         )
         let context = ModelContext(container)
-        
+
         legoSetService.configure(with: context)
         themeService.configure(with: context)
     }
@@ -87,43 +87,43 @@ func themeSelectionLoadsActualData() async throws {
     let app = XCUIApplication()
     app.launchArguments = ["--use-mock-data", "--ui-testing"]
     app.launch()
-    
+
     // Wait for themes to load
     let themesList = app.collectionViews["ThemesList"]
     #expect(themesList.waitForExistence(timeout: 10.0))
-    
+
     // Verify themes are actually loaded (not just placeholders)
     let firstThemeCell = themesList.cells.firstMatch
     #expect(firstThemeCell.exists)
-    
+
     // Get theme name to verify it's real data
     let themeLabel = firstThemeCell.staticTexts.firstMatch
     let themeName = themeLabel.label
     #expect(!themeName.isEmpty)
     #expect(themeName != "Loading...")
     #expect(themeName != "Placeholder")
-    
+
     // Tap theme to load sets
     firstThemeCell.tap()
-    
+
     // Verify sets view appears with actual data
     let setsView = app.collectionViews["SetsListView"]
     #expect(setsView.waitForExistence(timeout: 5.0))
-    
+
     // Verify sets are loaded (check for multiple cells)
     let setCells = setsView.cells
     #expect(setCells.count > 0)
-    
+
     // Verify first set has actual data
     let firstSetCell = setCells.firstMatch
     #expect(firstSetCell.exists)
-    
+
     let setNameLabel = firstSetCell.staticTexts.firstMatch
     let setName = setNameLabel.label
     #expect(!setName.isEmpty)
     #expect(setName != "Loading...")
     #expect(setName.count > 3) // Realistic set names are longer
-    
+
     // Verify set number exists
     let setNumberLabels = firstSetCell.staticTexts.allElementsBoundByIndex
     let hasSetNumber = setNumberLabels.contains { $0.label.contains("-") }
@@ -142,24 +142,24 @@ func themeSelectionLoadsActualData() async throws {
 func cacheImprovesPerformance() async throws {
     let service = MockableLegoSetService.shared
     service.resetMetrics()
-    
+
     // First load - should be slow (cache miss)
     let startTime1 = CFAbsoluteTimeGetCurrent()
     let themes1 = try await service.fetchThemes()
     let duration1 = CFAbsoluteTimeGetCurrent() - startTime1
-    
+
     #expect(themes1.count >= 50) // Verify large dataset
     #expect(service.cacheHitRate == 0) // No cache hits yet
-    
+
     // Second load - should be faster (cache hit)
     let startTime2 = CFAbsoluteTimeGetCurrent()
     let themes2 = try await service.fetchThemes()
     let duration2 = CFAbsoluteTimeGetCurrent() - startTime2
-    
+
     #expect(themes2.count == themes1.count) // Same data
     #expect(duration2 < duration1) // Should be faster due to cache
     #expect(service.cacheHitRate > 0) // Should have cache hits now
-    
+
     // Verify cache contains expected data
     #expect(service.totalRequests >= 2)
     #expect(service.cacheHits >= 1)
@@ -176,18 +176,18 @@ func cacheImprovesPerformance() async throws {
 @Test("Handle large dataset scrolling and loading")
 func handleLargeDatasetScrolling() async throws {
     let app = XCUIApplication()
-    app.launchEnvironment["BRIXIE_MOCK_DATA_SIZE"] = "large"
+    app.launchEnvironment["Alles-Teurer_MOCK_DATA_SIZE"] = "large"
     app.launchArguments = ["--use-mock-data", "--ui-testing"]
     app.launch()
-    
+
     // Navigate to theme with many sets
     let themesList = app.collectionViews["ThemesList"]
     #expect(themesList.waitForExistence(timeout: 10.0))
-    
+
     // Find a theme with many sets (look for high set count)
     let themeCells = themesList.cells.allElementsBoundByIndex
     var selectedTheme: XCUIElement?
-    
+
     for cell in themeCells {
         let labels = cell.staticTexts.allElementsBoundByIndex
         for label in labels {
@@ -198,7 +198,7 @@ func handleLargeDatasetScrolling() async throws {
         }
         if selectedTheme != nil { break }
     }
-    
+
     // Tap theme with many sets
     if let theme = selectedTheme {
         theme.tap()
@@ -206,24 +206,24 @@ func handleLargeDatasetScrolling() async throws {
         // Fallback to first theme
         themeCells.first?.tap()
     }
-    
+
     // Verify sets list loads
     let setsView = app.collectionViews["SetsListView"]
     #expect(setsView.waitForExistence(timeout: 10.0))
-    
+
     // Verify many sets are loaded
     let setCells = setsView.cells
     #expect(setCells.count >= 20) // Should have many sets visible
-    
+
     // Test scrolling through large list
     setsView.swipeUp()
     setsView.swipeUp()
     setsView.swipeUp()
-    
+
     // Verify more sets loaded during scrolling (pagination)
     let newSetCells = setsView.cells
     #expect(newSetCells.count >= setCells.count) // Should have same or more
-    
+
     // Verify sets still have actual data after scrolling
     let randomCell = newSetCells.element(boundBy: min(10, newSetCells.count - 1))
     let randomSetName = randomCell.staticTexts.firstMatch.label
@@ -244,40 +244,40 @@ func completeDataFlow() async throws {
     let app = XCUIApplication()
     app.launchArguments = ["--use-mock-data", "--ui-testing"]
     app.launch()
-    
+
     // Step 1: Load themes
     let themesList = app.collectionViews["ThemesList"]
     #expect(themesList.waitForExistence(timeout: 10.0))
-    
+
     let firstTheme = themesList.cells.firstMatch
     let themeName = firstTheme.staticTexts.firstMatch.label
     firstTheme.tap()
-    
+
     // Step 2: Verify sets loaded for theme
     let setsView = app.collectionViews["SetsListView"]
     #expect(setsView.waitForExistence(timeout: 5.0))
-    
+
     let firstSet = setsView.cells.firstMatch
     #expect(firstSet.exists)
-    
+
     let setName = firstSet.staticTexts.firstMatch.label
     firstSet.tap()
-    
+
     // Step 3: Verify set details loaded
     let detailView = app.scrollViews["SetDetailView"]
     #expect(detailView.waitForExistence(timeout: 5.0))
-    
+
     // Verify detail view shows actual set data
     let detailTitle = app.navigationBars.firstMatch.identifier
     #expect(detailTitle.contains(setName) || !detailTitle.isEmpty)
-    
+
     // Verify key details are present
     let partCountLabel = detailView.staticTexts.matching(identifier: "PartCount").firstMatch
     if partCountLabel.exists {
         let partCount = partCountLabel.label
         #expect(partCount.contains("parts") || partCount.contains("pieces"))
     }
-    
+
     // Verify image loading
     let setImage = detailView.images.firstMatch
     if setImage.exists {
@@ -296,13 +296,13 @@ func completeDataFlow() async throws {
 @Test("Mock data provides sufficient test coverage")
 func mockDataCoverage() async throws {
     let stats = MockDataService.shared.getStatistics()
-    
+
     // Verify minimum data requirements
     #expect(stats.totalThemes >= 50)
     #expect(stats.totalSets >= 1000)
     #expect(stats.averageSetsPerTheme >= 10)
     #expect(stats.maxSetsPerTheme >= 50) // Some themes should have many sets
-    
+
     // Verify data quality
     #expect(stats.imagePercentage > 80.0) // Most sets should have images
     #expect(stats.pricePercentage > 60.0) // Many sets should have prices
@@ -320,17 +320,17 @@ func cachePersistsAcrossSession() async throws {
     let imageCache = ImageCacheService.shared
     let testURL = URL(string: "https://example.com/test-image.jpg")!
     let testImage = UIImage(systemName: "star.fill")!
-    
+
     // Store image in cache
     imageCache.setImage(testImage, for: testURL)
-    
+
     // Verify immediate retrieval
     let cachedImage1 = imageCache.image(for: testURL)
     #expect(cachedImage1 != nil)
-    
+
     // Simulate app restart by clearing memory cache only
     imageCache.clearMemoryCache()
-    
+
     // Should still retrieve from disk cache
     let cachedImage2 = imageCache.image(for: testURL)
     #expect(cachedImage2 != nil)
@@ -345,19 +345,19 @@ func cachePersistsAcrossSession() async throws {
 @Test("UI handles loading errors gracefully")
 func uiHandlesLoadingErrors() async throws {
     let app = XCUIApplication()
-    app.launchEnvironment["BRIXIE_NETWORK_ERRORS"] = "true"
+    app.launchEnvironment["Alles-Teurer_NETWORK_ERRORS"] = "true"
     app.launchArguments = ["--use-mock-data", "--network-errors"]
     app.launch()
-    
+
     // Attempt to load themes (may fail due to simulated errors)
     let themesList = app.collectionViews["ThemesList"]
-    
+
     // Either themes load successfully or error view appears
     let themesLoaded = themesList.waitForExistence(timeout: 5.0)
     let errorView = app.staticTexts["ErrorMessage"].waitForExistence(timeout: 5.0)
-    
+
     #expect(themesLoaded || errorView) // One of these should be true
-    
+
     if errorView {
         // Verify retry functionality if error occurred
         let retryButton = app.buttons["RetryButton"]
@@ -378,37 +378,37 @@ func uiHandlesLoadingErrors() async throws {
 func performanceBenchmarks() async throws {
     let service = MockableLegoSetService.shared
     service.resetMetrics()
-    
+
     // Configure large dataset
     let config = TestConfiguration.shared
     config.mockDataSize = .large
-    
+
     // Benchmark theme loading
     let themeStartTime = CFAbsoluteTimeGetCurrent()
     let themes = try await service.fetchThemes()
     let themeDuration = CFAbsoluteTimeGetCurrent() - themeStartTime
-    
+
     #expect(themes.count >= 50)
     #expect(themeDuration < 2.0) // Should load within 2 seconds
-    
+
     // Benchmark set loading
     let setStartTime = CFAbsoluteTimeGetCurrent()
     let result = try await service.fetchSetsWithPagination(
-        forThemeId: themes.first!.id, 
-        limit: 100, 
+        forThemeId: themes.first!.id,
+        limit: 100,
         offset: 0
     )
     let setDuration = CFAbsoluteTimeGetCurrent() - setStartTime
-    
+
     #expect(result.sets.count >= 50)
     #expect(result.totalCount >= 100)
     #expect(setDuration < 3.0) // Should load within 3 seconds
-    
+
     // Benchmark search
     let searchStartTime = CFAbsoluteTimeGetCurrent()
     let searchResult = try await service.searchSets(query: "Star", limit: 50)
     let searchDuration = CFAbsoluteTimeGetCurrent() - searchStartTime
-    
+
     #expect(searchResult.sets.count > 0)
     #expect(searchDuration < 1.0) // Search should be fast
 }
@@ -466,7 +466,7 @@ func performanceBenchmarks() async throws {
 ### Directory Organization
 
 ```
-BrixieTests/
+Alles-TeurerTests/
 ├── Models/
 │   ├── LegoSetTests.swift
 │   ├── ThemeTests.swift
@@ -501,7 +501,7 @@ BrixieTests/
 
 ## Summary
 
-When implementing tests for the Brixie app, AI agents MUST:
+When implementing tests for the Alles-Teurer app, AI agents MUST:
 
 1. **Use Swift Testing framework** with `@Test`, `#expect`, and `#require`
 2. **Test actual data loading** - verify UI interactions trigger real data operations
@@ -512,6 +512,6 @@ When implementing tests for the Brixie app, AI agents MUST:
 7. **Use mock data services** - leverage the comprehensive mock infrastructure
 8. **Follow testing patterns** - use the established patterns for consistency
 
-8. **Follow testing patterns** - use the established patterns for consistency
+9. **Follow testing patterns** - use the established patterns for consistency
 
 These instructions ensure comprehensive test coverage that verifies the app's core functionality: that clicking on UI elements actually loads and displays real data efficiently through proper caching mechanisms.

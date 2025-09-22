@@ -1,0 +1,96 @@
+version: 2
+updates:
+  # Swift Package Manager dependencies
+  - package-ecosystem: "swift"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "swift"
+
+  # Ruby dependencies for Fastlane
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ruby"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+        patterns:
+          - "*compose*"
+      # Group SQLDelight
+      sqldelight:
+        patterns:
+          - "app.cash.sqldelight:*"
+      # Group Koin DI
+      koin:
+        patterns:
+          - "io.insert-koin:*"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci"
+    groups:
+      # Group GitHub Actions updates
+      github-actions:
+        patterns:
+          - "actions/*"
+          - "gradle/actions/*"
+          - "github/codeql-action/*"
+
+  # Swift Package Manager (if you have Package.swift)
+  - package-ecosystem: "swift"
+    directory: "/iosApp"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "deps-ios"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ios"
+      - "swift"
+    groups:
+      # Group Swift dependencies
+      swift-packages:
+        patterns:
+          - "*"

@@ -1,176 +1,173 @@
-# AllesTeurer - Kotlin Multiplatform System Architecture
+# AllesTeurer - Native iOS System Architecture
 
 ## 1. Executive Summary
 
-AllesTeurer is a privacy-focused multiplatform application that helps users track product prices through local receipt scanning and price analysis. The system uses Kotlin Multiplatform Mobile (KMM) with Compose Multiplatform for shared business logic and UI, platform-specific OCR implementations (Vision Framework for iOS, ML Kit for Android), and SQLDelight for local storage, ensuring all data remains under user control while providing powerful analytics and insights.
+AllesTeurer is a privacy-focused native iOS application that helps users track product prices through local receipt scanning and price analysis. The system uses SwiftUI for the user interface, SwiftData for local data persistence, Apple's Vision Framework for OCR text recognition, and Swift Charts for data visualization, ensuring all data remains under user control while providing powerful analytics and insights.
 
 ### Key Architectural Principles
 
-- **Privacy-First**: All data processing happens on-device
-- **Local-First**: Full functionality without internet connectivity
-- **Multiplatform-Native**: Single codebase with platform-specific optimizations
-- **Accessibility**: WCAG 2.2 Level AA compliant
-- **Performance**: Native performance with zero-overhead abstractions
-- **Extensible**: Clean architecture supporting future backend integration
+- **Privacy-First**: All data processing happens on-device using native iOS frameworks
+- **Local-First**: Full functionality without internet connectivity using SwiftData
+- **iOS-Native**: Single platform focus with deep iOS integration and optimization
+- **Accessibility**: WCAG 2.2 Level AA compliant using SwiftUI accessibility APIs
+- **Performance**: Native performance leveraging iOS system frameworks
+- **Extensible**: Clean architecture supporting future CloudKit integration
 
-## 2. System Architecture Overview
+## 2. Native iOS Architecture Overview
 
-### 2.1 High-Level Architecture
-
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        UI[Web UI - SvelteKit]
-        PWA[Progressive Web App]
-    end
-```
-
-## 2. System Architecture Overview
-
-### 2.1 Kotlin Multiplatform Architecture
+### 2.1 SwiftUI Architecture
 
 ```mermaid
 graph TB
-    subgraph "Compose Multiplatform UI"
-        UI[Compose UI]
-        NAV[Navigation]
-        THEME[Theming]
+    subgraph "SwiftUI App"
+        APP[Alles_TeurerApp.swift]
+        MAIN[ContentView.swift]
+        NAV[NavigationStack]
+        TABS[TabView]
     end
 
-    subgraph "Shared Business Logic (KMP)"
-        VM[ViewModels]
-        REPOS[Repositories]
-        DOMAIN[Domain Logic]
-        MODELS[Data Models]
+    subgraph "Feature Views"
+        SCANNER[ReceiptScannerView]
+        PRODUCTS[ProductListView]
+        ANALYTICS[AnalyticsView]
+        SETTINGS[SettingsView]
     end
 
-    subgraph "Platform-Specific Implementations"
-        subgraph "iOS"
-            VISION[Vision Framework<br/>OCR]
-            IOS_DB[SQLDelight iOS]
-            IOS_CAM[Camera iOS]
-        end
+    subgraph "ViewModels (@Observable)"
+        SCAN_VM[ScannerViewModel]
+        PROD_VM[ProductsViewModel]
+        ANAL_VM[AnalyticsViewModel]
+    end
 
-        subgraph "Android"
-            MLKIT[ML Kit<br/>OCR]
-            AND_DB[SQLDelight Android]
-            AND_CAM[Camera Android]
-        end
+    subgraph "Services"
+        OCR[OCRService<br/>Vision Framework]
+        DATA_MGR[DataManager<br/>SwiftData]
+        MATCHER[ProductMatcher]
+        ANALYZER[PriceAnalyzer]
+    end
+
+    subgraph "Data Layer"
+        MODELS[SwiftData Models]
+        CONTAINER[ModelContainer]
+        CONTEXT[ModelContext]
     end
 
     subgraph "Local Processing"
-        OCR[Receipt Text<br/>Extraction]
-        PARSER[Text Parsing<br/>Engine]
-        MATCHER[Product<br/>Matching]
-        ANALYTICS[Price Analytics<br/>Engine]
+        VISION[Vision Framework<br/>Text Recognition]
+        PARSER[Receipt Parser]
+        CHARTS[Swift Charts<br/>Visualization]
     end
 
-    subgraph "Data Storage"
-        LOCAL[(Local Core Data)]
-        CLOUD[(CloudKit Private)]
-        IMAGES[Receipt Images<br/>On-Device]
-    end
+    APP --> CONTAINER
+    MAIN --> TABS
+    TABS --> SCANNER
+    TABS --> PRODUCTS
+    TABS --> ANALYTICS
+    TABS --> SETTINGS
 
-    UI --> VM
-    VM --> REPOS
-    REPOS --> DOMAIN
-    DOMAIN --> MODELS
+    SCANNER --> SCAN_VM
+    PRODUCTS --> PROD_VM
+    ANALYTICS --> ANAL_VM
 
-    VM --> VISION
-    VM --> MLKIT
-    REPOS --> IOS_DB
-    REPOS --> AND_DB
+    SCAN_VM --> OCR
+    PROD_VM --> DATA_MGR
+    ANAL_VM --> ANALYZER
 
-    VISION --> OCR
-    MLKIT --> OCR
-    OCR --> PARSER
+    OCR --> VISION
+    DATA_MGR --> MODELS
+    MODELS --> CONTAINER
+    CONTAINER --> CONTEXT
+
+    VISION --> PARSER
     PARSER --> MATCHER
-    MATCHER --> ANALYTICS
+    MATCHER --> DATA_MGR
+    ANALYZER --> CHARTS
 ```
 
 ### 2.2 Core Components
 
-#### 2.2.1 Shared Data Layer (SQLDelight)
+#### 2.2.1 SwiftData Persistence Layer
 
-- **Local Storage**: SQLDelight for type-safe, multiplatform SQL queries
-- **Data Models**: Kotlin data classes with @Serializable annotations
-- **Privacy**: All data stays on device, no cloud dependencies by default
-- **Migrations**: Version-controlled schema evolution
+- **Local Storage**: SwiftData for type-safe, native iOS data persistence
+- **Data Models**: Swift structs and classes with `@Model` macro
+- **Privacy**: All data stays on device with Core Data backend
+- **Schema Evolution**: Automatic and manual migration support
+- **CloudKit Integration**: Optional private cloud sync
 
-#### 2.2.2 Platform-Specific Processing Layer
+#### 2.2.2 Vision Framework OCR Layer
 
 - **iOS OCR Engine**: Vision Framework for receipt text extraction
-- **Android OCR Engine**: ML Kit for receipt text extraction
-- **Image Processing**: Platform-specific receipt enhancement
-- **Shared Analytics**: Kotlin algorithms for price trend analysis
+- **iOS OCR Engine**: Vision Framework for precise German text recognition
+- **Image Processing**: Core Image for receipt enhancement and preprocessing
+- **Local Analytics**: Swift algorithms for price trend analysis and inflation calculations
 
-#### 2.2.3 Compose Multiplatform UI Layer
+#### 2.2.3 SwiftUI Presentation Layer
 
-- **Cross-Platform**: Single UI codebase for iOS and Android
-- **Native Feel**: Platform-specific adaptations and theming
-- **Accessibility**: Built-in accessibility support across platforms
-- **Performance**: Native compilation with zero overhead
+- **Declarative UI**: SwiftUI for modern, reactive user interfaces
+- **Native Performance**: Compiled Swift code with optimized rendering
+- **Accessibility**: Built-in VoiceOver and Dynamic Type support
+- **Platform Integration**: Native iOS patterns and behaviors
 
-## 3. Kotlin Multiplatform Technology Stack
+## 3. Native iOS Technology Stack
 
-### 3.1 Core KMP Technologies
+### 3.1 Core iOS Technologies
 
-- **Language**: Kotlin 2.2.20+ with K2 compiler
-- **UI Framework**: Compose Multiplatform
+- **Language**: Swift 5.9+ with modern async/await patterns
+- **UI Framework**: SwiftUI with Observation framework
 - **Architecture**: MVVM with Repository pattern
-- **Concurrency**: Kotlin Coroutines + Flow
-- **Storage**: SQLDelight
-- **Serialization**: kotlinx.serialization
+- **Concurrency**: Swift Concurrency (async/await, actors)
+- **Storage**: SwiftData with Core Data backend
+- **Charts**: Swift Charts for native data visualization
 
-### 3.2 Platform-Specific Integrations
+### 3.2 iOS System Integrations
 
-#### iOS
+#### Vision Framework Integration
 
-- **OCR**: Vision Framework via expect/actual
-- **Camera**: AVFoundation via Compose integration
-- **Local Storage**: SQLDelight with native SQLite driver
-- **Navigation**: Native iOS navigation patterns
+- **OCR**: VNRecognizeTextRequest for receipt text extraction
+- **Language Support**: German language optimization
+- **Image Processing**: VNImageRequestHandler for preprocessing
+- **Error Handling**: Confidence scoring and correction workflows
 
-#### Android
+#### SwiftData Integration
 
-- **OCR**: ML Kit via expect/actual declarations
-- **Camera**: CameraX via Compose integration
-- **Local Storage**: SQLDelight with Android SQLite
-- **Navigation**: Compose Navigation
+- **Models**: @Model macro for automatic Core Data mapping
+- **Queries**: @Query property wrapper for reactive data
+- **Relationships**: Automatic relationship handling
+- **Migration**: Schema versioning and data migration
 
 ### 3.3 Development Tools
 
-- **IDE**: IntelliJ IDEA / Android Studio
-- **Build**: Gradle 9+ with Kotlin DSL
-- **CI/CD**: GitHub Actions with KMP
-- **Testing**: Kotlin Test + Compose UI Testing
-- **Performance**: Profiler plugins for each platform
+- **IDE**: Xcode 15.0+ with Swift Package Manager
+- **Build System**: Xcode Build System with Swift Package integration
+- **CI/CD**: GitHub Actions with xcodebuild
+- **Testing**: Swift Testing framework + XCUITest
+- **Performance**: Instruments profiling for optimization
 
 ## 6. Privacy & Security Architecture
 
 ### 6.1 Privacy-First Design
 
-- **Local Processing**: All OCR and analytics happen on-device
+- **Local Processing**: All OCR and analytics happen on-device using iOS frameworks
 - **No User Tracking**: Zero third-party analytics or tracking
-- **Data Ownership**: User controls all data export/import
-- **Minimal Permissions**: Only camera access required
-- **Transparent Storage**: Users can see and export all data via SQLDelight
+- **Data Ownership**: User controls all data with complete export capability
+- **Minimal Permissions**: Only camera access required for receipt scanning
+- **Transparent Storage**: Users can see and export all data via SwiftData
 
 ### 6.2 Data Security
 
-- **SQLDelight Encryption**: Database encryption at rest
-- **CloudKit Security**: End-to-end encryption for sync
-- **Secure Keychain**: Sensitive settings stored securely
-- **App Sandbox**: iOS app sandboxing for security
-- **Code Signing**: App Store security validation
+- **SwiftData Encryption**: Core Data encryption at rest with iOS security
+- **CloudKit Security**: End-to-end encryption for optional private sync
+- **Keychain Services**: Sensitive settings stored in iOS Keychain
+- **App Sandbox**: iOS app sandboxing for data isolation
+- **Code Signing**: App Store security validation and notarization
 
 ### 6.3 GDPR Compliance
 
-- **Data Minimization**: Only collect necessary receipt data
-- **Right to Export**: Built-in data export functionality
-- **Right to Delete**: Complete data deletion option
-- **Transparency**: Clear privacy policy and data usage
-- **Consent**: Optional CloudKit sync requires user consent
+- **Data Minimization**: Only collect necessary receipt data for price tracking
+- **Right to Export**: Built-in data export to CSV/JSON
+- **Right to Delete**: Complete data deletion with SwiftData cascade deletes
+- **Transparency**: Clear privacy policy and in-app data usage disclosure
+- **Consent**: Optional CloudKit sync requires explicit user consent
 
 ## 7. Performance Optimization
 
@@ -178,29 +175,39 @@ graph TB
 
 ```swift
 class OCROptimizer {
-    func preprocessImage(_ image: UIImage) -> UIImage? {
-        // Optimize image for OCR processing
+    func preprocessImage(_ image: UIImage) async -> UIImage? {
+        // Optimize image for Vision Framework processing
         let targetSize = CGSize(width: 1024, height: 1024)
 
-        return image
-            .resized(to: targetSize)
-            .enhanced(contrast: 1.2, brightness: 0.1)
-            .sharpened()
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let optimized = image
+                    .resized(to: targetSize)
+                    .enhanced(contrast: 1.2, brightness: 0.1)
+                    .sharpened()
+                continuation.resume(returning: optimized)
+            }
+        }
     }
 
     func performBatchOCR(_ images: [UIImage]) async -> [ReceiptData] {
-        // Process multiple receipts efficiently
-        let tasks = images.map { image in
-            Task { await processReceipt(image) }
-        }
-
-        return await withTaskGroup(of: ReceiptData.self) { group in
-            for task in tasks {
-                group.addTask { await task.value }
+        // Process multiple receipts efficiently with Swift Concurrency
+        return await withTaskGroup(of: ReceiptData?.self, returning: [ReceiptData].self) { group in
+            for image in images {
+                group.addTask {
+                    await self.processReceipt(image)
+                }
             }
 
             var results: [ReceiptData] = []
             for await result in group {
+                if let receiptData = result {
+                    results.append(receiptData)
+                }
+            }
+            return results
+        }
+    }
                 results.append(result)
             }
             return results

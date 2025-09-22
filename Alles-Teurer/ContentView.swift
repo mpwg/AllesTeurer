@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Alles Teurer
+//  Alles-Teurer
 //
 //  Created by Matthias Wallner-Géhri on 22.09.25.
 //

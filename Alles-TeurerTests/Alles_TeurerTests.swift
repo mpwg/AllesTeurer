@@ -1,6 +1,6 @@
 //
 //  Alles_TeurerTests.swift
-//  Alles TeurerTests
+//  Alles-TeurerTests
 //
 //  Created by Matthias Wallner-Géhri on 22.09.25.
 //

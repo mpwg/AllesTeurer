@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Gradle dependencies (Kotlin Multiplatform, Android, Compose)
-  - package-ecosystem: "gradle"
+  # Swift Package Manager dependencies
+  - package-ecosystem: "swift"
     directory: "/"
     schedule:
       interval: "daily"
@@ -13,70 +13,32 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
-      - "gradle"
-    groups:
-      # Group Kotlin ecosystem updates
-      kotlin-ecosystem:
-        patterns:
-          - "org.jetbrains.kotlin:*"
-          - "org.jetbrains.kotlinx:*"
-          - "org.jetbrains.compose:*"
-      # Group Android dependencies
-      android-ecosystem:
-        patterns:
-          - "androidx.*:*"
-          - "com.android.*:*"
-      # Group Compose Multiplatform
-      compose-multiplatform:
-        patterns:
-          - "*compose*"
-      # Group SQLDelight
-      sqldelight:
-        patterns:
-          - "app.cash.sqldelight:*"
-      # Group Koin DI
-      koin:
-        patterns:
-          - "io.insert-koin:*"
+      - "swift"
 
-  # GitHub Actions dependencies
-  - package-ecosystem: "github-actions"
+  # Ruby dependencies for Fastlane
+  - package-ecosystem: "bundler"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     assignees:
       - "mpwg"
     commit-message:
-      prefix: "ci"
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ruby"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "mpwg"
+    commit-message:
+      prefix: "deps"
       include: "scope"
     labels:
       - "dependencies"
       - "github-actions"
-      - "ci"
-    groups:
-      # Group GitHub Actions updates
-      github-actions:
-        patterns:
-          - "actions/*"
-          - "gradle/actions/*"
-          - "github/codeql-action/*"
-
-  # Swift Package Manager (if you have Package.swift)
-  - package-ecosystem: "swift"
-    directory: "/iosApp"
-    schedule:
-      interval: "daily"
-    assignees:
-      - "mpwg"
-    commit-message:
-      prefix: "deps-ios"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "ios"
-      - "swift"
-    groups:
-      # Group Swift dependencies
-      swift-packages:
-        patterns:
-          - "*"

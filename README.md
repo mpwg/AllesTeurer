@@ -1,97 +1,74 @@
 # AllesTeurer 📱💰
 
-> _"Alles wird teurer"_ - Eine plattformübergreifende App, die dabei hilft, Preisänderungen durch Scannen von Kassenbons zu verfolgen
+> _"Alles wird teurer"_ - Eine native iOS-App, die dabei hilft, Preisänderungen durch Scannen von Kassenbons zu verfolgen
 
-**AllesTeurer** ist eine datenschutzfokussierte Kotlin Multiplatform Mobile (KMP) Anwendung, die lokale Kassenbon-Verarbeitung mit leistungsstarken Preisanalysen kombiniert. Die App verwendet plattformspezifische OCR-Implementierungen (Vision Framework für iOS, ML Kit für Android) und SQLDelight für sichere lokale Datenspeicherung, um eine vollständige Preishistorie ohne Cloud-Abhängigkeiten zu erstellen.
+**AllesTeurer** ist eine datenschutzfokussierte native iOS-Anwendung, die lokale Kassenbon-Verarbeitung mit leistungsstarken Preisanalysen kombiniert. Die App verwendet SwiftUI für eine moderne Benutzeroberfläche, SwiftData für lokale Datenspeicherung, und Apples Vision Framework für präzise OCR-Texterkennung, um eine vollständige Preishistorie ohne Cloud-Abhängigkeiten zu erstellen.
 
 ## 🎯 Überblick
 
-Da steigende Kosten jeden betreffen, ermöglicht diese App den Nutzern:
+Da steigende Kosten jeden betreffen, ermöglicht diese native iOS-App den Nutzern:
 
-- **🔒 Privacy-First**: Alle Daten bleiben auf Ihrem Gerät - keine Cloud-Services erforderlich
+- **🔒 Privacy-First**: Alle Daten bleiben auf Ihrem iPhone - keine Cloud-Services erforderlich
 - **📊 Lokale Preisanalyse**: Verfolgen Sie Inflation und Ausgabenmuster mit On-Device-Berechnungen
 - **🔍 Intelligente Produkterkennung**: Automatische Zuordnung ähnlicher Produkte über verschiedene Kassenbons
-- **📈 Preistrends**: Visualisierung von Preisänderungen über Zeit und Händler hinweg
-- **🌍 Plattformübergreifend**: Native Leistung auf iOS und Android mit geteilter Geschäftslogik
+- **📈 Preistrends**: Visualisierung von Preisänderungen über Zeit und Händler hinweg mit Swift Charts
+- **� Native iOS Experience**: Optimiert für iOS mit SwiftUI, SwiftData und Apple Intelligence Integration
 
 ## ✨ Funktionen
 
 ### Kernfunktionalität
 
-- 📸 **Kassenbon-Scanning**: Plattformspezifische Kamera-Integration (iOS/Android)
-- � **OCR-Verarbeitung**: Vision Framework (iOS) / ML Kit (Android) für Texterkennung
-- 💾 **Lokale Datenspeicherung**: SQLDelight für typsichere, plattformübergreifende Datenbankoperationen
-- � **Produktabgleich**: Intelligente Algorithmen zur Erkennung gleicher Produkte
+- 📸 **Kassenbon-Scanning**: Native iOS Kamera-Integration mit AVFoundation
+- 👁️ **OCR-Verarbeitung**: Apple Vision Framework für präzise deutsche Texterkennung
+- 💾 **Lokale Datenspeicherung**: SwiftData für typsichere, native iOS-Datenpersistierung
+- 🔗 **Produktabgleich**: Intelligente Algorithmen zur Erkennung gleicher Produkte
 
 ### Analysen & Einblicke
 
-- � **Preishistorie**: Verfolgen Sie Preisänderungen für jedes Produkt über Zeit
-- � **Interaktive Diagramme**: Compose Multiplatform Charts für Trendvisualisierung
+- 📊 **Preishistorie**: Verfolgen Sie Preisänderungen für jedes Produkt über Zeit
+- 📈 **Interaktive Diagramme**: Swift Charts für native iOS-Trendvisualisierung
 - 🏪 **Händlervergleiche**: Preisunterschiede zwischen verschiedenen Geschäften analysieren
 - 💡 **Inflationsindikatoren**: Lokale Berechnungen von Preistrendstatistiken
 
-### Plattformspezifische Features
-
-#### iOS Features
+### Native iOS Features
 
 - 📱 **iOS Share Extension**: Kassenbon-Sharing von anderen Apps
 - 🔍 **Spotlight Integration**: Produktsuche über iOS-Systemsuche
-- 📋 **Widget Support**: Home Screen Widgets für Ausgabenübersicht
+- 📋 **Widget Support**: Home Screen und Lock Screen Widgets für Ausgabenübersicht
 - 🗣️ **Shortcuts Integration**: Siri Shortcuts für häufige Aktionen
-
-#### Android Features
-
-- 📤 **Share Intent**: Receipt-Sharing zwischen Apps
-- 🚀 **App Shortcuts**: Dynamische Shortcuts für schnellen Zugriff
-- 🎨 **Material Design**: Material You mit dynamischen Farben
-- 📱 **Adaptive Icons**: Native Android Icon-Unterstützung
+- 🤖 **Apple Intelligence**: Intelligente Produktkategorisierung mit dem Natural Language Framework
+- 🌙 **Dynamic Appearance**: Automatische Unterstützung für Light und Dark Mode
+- ♿ **Accessibility**: VoiceOver und Dynamic Type Unterstützung
 
 ## 🏗️ Projektstruktur
 
 ```text
-alles-teurer/
-├── apps/composeApp/         # Hauptanwendung (KMP)
-│   ├── src/
-│   │   ├── commonMain/      # Geteilte Geschäftslogik
-│   │   │   ├── kotlin/
-│   │   │   │   ├── data/        # Repositories und Datenquellen
-│   │   │   │   ├── domain/      # Geschäftslogik und Use Cases
-│   │   │   │   ├── presentation/# ViewModels und UI-State
-│   │   │   │   └── ui/          # Compose Multiplatform UI
-│   │   │   └── sqldelight/     # Datenbankschema und Queries
-│   │   ├── androidMain/     # Android-spezifische Implementierung
-│   │   │   └── kotlin/
-│   │   │       ├── ocr/         # ML Kit OCR
-│   │   │       └── platform/   # Android-spezifische Utilities
-│   │   └── iosMain/         # iOS-spezifische Implementierung
-│   │       └── kotlin/
-│   │           ├── ocr/         # Vision Framework OCR
-│   │           └── platform/   # iOS-spezifische Utilities
-├── spec/                   # Anforderungen und Architektur-Dokumentation
-└── tools/                  # Entwicklungstools und Scripts
+AllesTeurer/
+├── Alles Teurer/            # Native iOS App
+│   ├── Alles_TeurerApp.swift       # App Entry Point
+│   ├── ContentView.swift           # Main SwiftUI View
+│   ├── Item.swift                  # SwiftData Models
+│   ├── Info.plist                  # App Configuration
+│   ├── Alles_Teurer.entitlements  # App Capabilities
+│   └── Assets.xcassets/            # App Assets and Icons
+├── Alles Teurer.xcodeproj/  # Xcode Project
+├── Alles TeurerTests/       # Unit Tests
+├── Alles TeurerUITests/     # UI Tests
+├── spec/                    # Anforderungen und Architektur-Dokumentation
+├── docs/                    # Zusätzliche Dokumentation
+└── README.md               # Projekt-Übersicht
 ```
 
 ## 🚀 Erste Schritte
 
 ### Voraussetzungen
 
-**Kotlin Multiplatform Development:**
-
-- **Kotlin 2.2.20+** mit K2 Compiler
-- **Gradle 9.1+** mit Kotlin DSL
-- **JDK 21+** für Android-Entwicklung
-
 **iOS-Entwicklung:**
 
-- **Xcode 26.0+** für iOS-spezifische Entwicklung
-- **iOS 18.0+** als Mindest-Deployment-Version
-- **Apple Developer Account** für Gerätetests
-
-**Android-Entwicklung:**
-
-- **Android Studio Hedgehog+** mit Kotlin-Plugin
-- **Android API 24+** (Android 7.0+) als Mindest-Version
-- **Android SDK** mit neuesten Build-Tools
+- **Xcode 15.0+** mit Swift 5.9+
+- **iOS 17.0+** als Mindest-Deployment-Version (für SwiftData)
+- **macOS 13.0+** für Xcode-Entwicklung
+- **Apple Developer Account** für Gerätetests und App Store Distribution
 
 ### Installation
 
@@ -102,103 +79,76 @@ alles-teurer/
    cd AllesTeurer
    ```
 
-2. **Abhängigkeiten installieren**
+2. **iOS-Projekt öffnen**
 
    ```bash
-   # Gradle Wrapper für alle Plattformen verwenden
-   ./gradlew build
+   # Xcode-Projekt öffnen
+   open "Alles Teurer.xcodeproj"
    ```
 
-3. **Plattformspezifische Setups**
+3. **App auf Gerät oder Simulator ausführen**
 
-   **Für iOS-Entwicklung:**
-
-   ```bash
-   # iOS-Projekt in Xcode öffnen
-   open apps/composeApp/iosApp/iosApp.xcodeproj
-   ```
-
-   **Für Android-Entwicklung:**
-
-   ```bash
-   # Android Studio mit dem Projekt öffnen oder CLI verwenden
-   ./gradlew :apps:composeApp:installDebug
-   ```
+   - Zielgerät auswählen (iPhone/iPad oder Simulator)
+   - ⌘+R drücken oder auf "Build and Run" klicken
 
 ### Erforderliche Berechtigungen
 
-Die App benötigt folgende plattformspezifische Berechtigungen:
-
-**iOS:**
+Die App benötigt folgende iOS-Berechtigungen:
 
 - **Kamera-Zugriff**: Für Kassenbon-Scanning (NSCameraUsageDescription)
 - **Fotobibliothek**: Für Import bestehender Bilder (NSPhotoLibraryUsageDescription)
 
-**Android:**
+## 🛠️ Entwicklungsworkflow
 
-- **Kamera-Berechtigung**: `android.permission.CAMERA`
-- **Speicher-Zugriff**: `android.permission.READ_EXTERNAL_STORAGE`
-
-## �️ Entwicklungsworkflow
-
-### Gradle-Befehle
+### Xcode-Entwicklung
 
 ```bash
-# Projekt für alle Plattformen kompilieren
-./gradlew build
+# Projekt öffnen
+open "Alles Teurer.xcodeproj"
 
-# Tests auf allen Plattformen ausführen
-./gradlew test
+# Tests ausführen
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
 
-# Plattformspezifische Builds
-./gradlew :apps:composeApp:assembleDebug        # Android
-./gradlew :apps:composeApp:iosSimulatorArm64Test  # iOS Simulator
-
-# Code-Formatierung
-./gradlew ktlintFormat
+# Build für Distribution
+xcodebuild archive -scheme "Alles Teurer" -archivePath "AllesTeurer.xcarchive"
 ```
 
-### Multiplatform-Entwicklung
+### Swift Package Manager
 
-```bash
-# Shared Code testen
-./gradlew :apps:composeApp:testDebugUnitTest
+Das Projekt nutzt SwiftUI und SwiftData aus den iOS-System-Frameworks. Zusätzliche Dependencies können über Swift Package Manager hinzugefügt werden:
 
-# Platform-spezifische Tests
-./gradlew :apps:composeApp:connectedAndroidTest  # Android
-./gradlew :apps:composeApp:iosTest              # iOS
+```swift
+// In Package.swift
+dependencies: [
+    .package(url: "https://github.com/apple/swift-charts.git", from: "1.0.0")
+]
 ```
 
 ## 🏛️ Architektur
 
 ### Kerntechnologien
 
-- **Kotlin Multiplatform**: Geteilte Geschäftslogik zwischen iOS und Android
-- **Compose Multiplatform**: Geteiltes UI-Framework mit nativen Adaptionen
-- **SQLDelight**: Typsichere SQL-Datenbank für alle Plattformen
-- **Kotlin Coroutines + Flow**: Asynchrone Programmierung und reaktive Datenströme
-- **Expect/Actual**: Platform-spezifische Implementierungen (OCR, Kamera)
+- **SwiftUI**: Deklarative UI-Entwicklung mit nativer iOS-Performance
+- **SwiftData**: Typsichere Datenpersistierung mit Core Data-Backend
+- **Vision Framework**: Hochpräzise OCR-Texterkennung speziell für deutsche Texte
+- **Swift Charts**: Native Datenvisualisierung für Preisanalysen
+- **Async/Await**: Moderne asynchrone Programmierung
+- **Observation Framework**: Reaktive Datenflüsse und UI-Updates
 
 ### Design-Pattern
 
-- **MVVM**: Model-View-ViewModel-Architektur mit Compose
-- **Repository Pattern**: Datenbank-Zugriffsabstraktion
+- **MVVM**: Model-View-ViewModel-Architektur mit SwiftUI
+- **Repository Pattern**: Datenbank-Zugriffsabstraktion über SwiftData
 - **Use Cases**: Domain-Layer für Geschäftslogik-Kapselung
 - **Dependency Injection**: Testbarkeit und modularer Code
 
-### Platform-spezifische Integrationen
+### iOS-spezifische Integrationen
 
-**iOS:**
-
-- Vision Framework für OCR-Texterkennung
-- AVFoundation für Kamera-Integration
-- CloudKit für optionale Gerätesynchronisation
-
-**Android:**
-
-- ML Kit für OCR-Texterkennung
-- CameraX für Kamera-Integration
-- Google Drive für optionale Cloud-Synchronisation
+- **Vision Framework**: OCR-Texterkennung aus Kassenbon-Bildern
+- **AVFoundation**: Kamera-Integration für Receipt-Scanning
+- **CloudKit**: Optionale Private-Cloud-Synchronisation
+- **Natural Language**: Intelligente Produktkategorisierung
+- **Core Spotlight**: Systemweite Produktsuche
 
 ## 📖 Nutzung
 
@@ -252,42 +202,36 @@ Wir begrüßen Beiträge zur Entwicklung von AllesTeurer! Hier ist, wie Sie helf
 4. **Tests schreiben** für neue Features
 5. **Pull Request einreichen** mit ausführlicher Beschreibung
 
-### Gradle-Befehle für Entwicklung
+### Xcode-Befehle für Entwicklung
 
 ```bash
 # Tests vor Pull Request ausführen
-./gradlew check
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
 
-# Shared Code kompilieren
-./gradlew :apps:composeApp:compileKotlinMetadata
+# SwiftLint für Code-Qualität (falls installiert)
+swiftlint
 
-# Platform-spezifische Builds überprüfen
-./gradlew :apps:composeApp:compileDebugKotlinAndroid
-./gradlew :apps:composeApp:compileKotlinIosSimulatorArm64
+# Build überprüfen
+xcodebuild build -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
 ```
 
-## � Systemanforderungen
+## 📱 Systemanforderungen
 
 ### Minimum Requirements
 
 **iOS:**
 
-- iOS 15.0 oder neuer
-- iPhone 8 oder neuer (64-bit Prozessor)
+- iOS 17.0 oder neuer (für SwiftData-Unterstützung)
+- iPhone 12 oder neuer / iPad (9. Generation) oder neuer
+- 64-bit A-Series Prozessor (A12 Bionic oder neuer)
 - 100MB freier Speicherplatz
-
-**Android:**
-
-- Android 7.0 (API Level 24) oder neuer
-- 2GB RAM (empfohlen: 4GB+)
-- 100MB freier Speicherplatz
-- Kamera für Kassenbon-Scanning
 
 ### Empfohlene Spezifikationen
 
-- **Neuere Geräte**: Bessere OCR-Leistung und schnellere Verarbeitung
-- **Gute Kamera**: Für optimale Kassenbon-Erkennung
-- **Ausreichend Speicher**: Für lokale Speicherung der Preishistorie
+- **iPhone 14 oder neuer**: Optimierte Performance für Vision Framework
+- **Gute Kamera**: Für optimale Kassenbon-Erkennung mit automatischem Fokus
+- **Ausreichend Speicher**: 1GB+ für lokale Speicherung der Preishistorie
+- **Neural Engine**: A12 Bionic oder neuer für bessere OCR-Performance
 
 ## 📞 Support & Community
 
@@ -298,10 +242,9 @@ Wir begrüßen Beiträge zur Entwicklung von AllesTeurer! Hier ist, wie Sie helf
 
 ## 🙏 Danksagungen
 
-- **JetBrains**: Für Kotlin Multiplatform und Compose Multiplatform
-- **Google**: Für ML Kit und Android-Entwicklungstools
-- **Apple**: Für Vision Framework und iOS-Entwicklungsplattform
-- **Community**: Für Open-Source-Bibliotheken und Feedback
+- **Apple**: Für SwiftUI, SwiftData, Vision Framework und die hervorragenden iOS-Entwicklungstools
+- **Swift Community**: Für Open-Source-Swift-Pakete und Bibliotheken
+- **iOS Developer Community**: Für Best Practices und kontinuierliches Lernen
 
 ---
 

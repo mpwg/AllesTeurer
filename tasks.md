@@ -1,53 +1,27 @@
-# AllesTeurer - Implementation Tasks
+# AllesTeurer - iOS Implementation Tasks
 
-## Implementation Status: Phase 1 COMPLETED ✅
+## Implementation Status: iOS-First Restart
 
-**Generated**: 2025-09-20  
-**Updated**: 2025-09-20  
-**Confidence Score**: 95% (Very High - Foundation complete, ready for Phase 2)
+**Generated**: 2025-09-22  
+**Updated**: 2025-09-22  
+**Note**: Project restarted as iOS-first native application using SwiftUI and SwiftData
 
-## Phase 1: Foundation Setup (Priority: CRITICAL) ✅ COMPLETED
+## iOS-First Development Approach
 
-### Task 1.1: Initialize Kotlin Multiplatform Project Structure ✅ COMPLETED
+This project has been restructured as a native iOS application using:
 
-**Priority**: CRITICAL | **Effort**: 2 days | **Dependencies**: None
+- **SwiftUI** for declarative user interface
+- **SwiftData** for local data persistence
+- **Vision Framework** for OCR text recognition
+- **Swift Charts** for data visualization
+- **iOS 17.0+** minimum deployment target
 
-**Objective**: Set up the complete KMP project structure with proper build configuration for iOS, Android, and shared code.
+## Previous Implementation Notes
 
-**Acceptance Criteria**:
+The tasks below reflect the previous Kotlin Multiplatform approach and are kept for reference only. The current implementation focuses on native iOS development using Apple's frameworks.
 
-- [x] Root project with proper Gradle Kotlin DSL configuration
-- [x] `apps/composeApp/` structure with commonMain, androidMain, iosMain source sets
-- [x] Version catalog setup with all required dependencies
-- [x] iOS Xcode project wrapper configured
-- [x] Android application wrapper configured
-- [x] Successful compilation on both platforms
+---
 
-**Implementation Status**: ✅ COMPLETED
-
-- Complete KMP project structure established
-- All target platforms (Android, iOS, JVM) configured and compiling
-- Version catalog with KMP 2.2.20+, Compose Multiplatform 1.9.0, SQLDelight 2.0.2
-- Build system optimized for multiplatform development
-
-### Task 1.2: Configure SQLDelight Database Schema ✅ COMPLETED
-
-**Priority**: CRITICAL | **Effort**: 1.5 days | **Dependencies**: Task 1.1
-
-**Objective**: Set up type-safe, multiplatform database layer with core entities for receipts, products, and price history.
-
-**Acceptance Criteria**:
-
-- [x] SQLDelight configuration in build.gradle.kts
-- [x] Complete database schema with all required tables
-- [x] Type-safe query generation working
-- [x] Database initialization working on both platforms
-- [x] Migration strategy defined
-
-**Implementation Status**: ✅ COMPLETED
-
-- SQLDelight 2.0.2 plugin fully configured
-- Complete database schema: Store, Product, Receipt, PriceRecord tables
 - Platform-specific database drivers: Android SQLite, iOS Native, JVM JDBC
 - Type-safe query generation verified
 - Complex analytics queries implemented
