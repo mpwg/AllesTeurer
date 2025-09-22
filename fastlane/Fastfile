@@ -51,112 +51,274 @@ APP_IDENTIFIER = "eu.mpwg.Alles-Teurer"
 SCHEME_NAME = "Alles-Teurer"
 WORKSPACE_PATH = "./Alles-Teurer.xcodeproj"
 
-platform :ios do
-  before_all do
+# Custom keychain configuration
+FASTLANE_KEYCHAIN_NAME = "fastlane-alles-teurer"
+FASTLANE_KEYCHAIN_PASSWORD = ENV["KEYCHAIN_PASSWORD"]
 
-    # Setup keychain for CI
-    if is_ci
+platform :ios do
+  before_all do |lane|
+    UI.header("🚀 Starting lane: #{lane}")
+    UI.message("🔍 DEBUG: Environment Information")
+    UI.message("  • is_ci: #{is_ci}")
+    UI.message("  • Platform: #{RUBY_PLATFORM}")
+    UI.message("  • Ruby version: #{RUBY_VERSION}")
+    UI.message("  • Fastlane version: #{Fastlane::VERSION}")
+    UI.message("  • Working directory: #{Dir.pwd}")
+    UI.message("  • App identifier: #{APP_IDENTIFIER}")
+    UI.message("  • Scheme name: #{SCHEME_NAME}")
+    UI.message("  • Workspace path: #{WORKSPACE_PATH}")
+    
+    UI.message("🔍 DEBUG: Key Environment Variables")
+    debug_vars = [
+      "MATCH_GIT_URL", "MATCH_PASSWORD", "MATCH_GIT_BASIC_AUTHORIZATION",
+      "KEYCHAIN_PASSWORD", "FASTLANE_SESSION", "GITHUB_REF", "GITHUB_SHA"
+    ]
+    debug_vars.each do |var|
+      value = ENV[var]
+      if value
+        # Mask sensitive values for security
+        if var.include?("PASSWORD") || var.include?("TOKEN") || var.include?("AUTHORIZATION")
+          UI.message("  • #{var}: [SET - #{value.length} chars]")
+        else
+          UI.message("  • #{var}: #{value}")
+        end
+      else
+        UI.message("  • #{var}: [NOT SET]")
+      end
+    end
+
+    # Setup custom keychain for Fastlane operations (both CI and local)
+    UI.message("🔍 DEBUG: Setting up custom Fastlane keychain: #{FASTLANE_KEYCHAIN_NAME}")
+    UI.message("🔍 DEBUG: Keychain password source: #{ENV['KEYCHAIN_PASSWORD'] ? 'Environment variable' : 'NOT SET - will fail'}")
+    
+    begin
+      # Validate keychain password is provided
+      if !FASTLANE_KEYCHAIN_PASSWORD || FASTLANE_KEYCHAIN_PASSWORD.empty?
+        UI.error("❌ KEYCHAIN_PASSWORD environment variable is required for custom keychain")
+        UI.error("💡 Set KEYCHAIN_PASSWORD environment variable to continue")
+        raise "Missing KEYCHAIN_PASSWORD environment variable"
+      end
+      
+      # Try to delete existing keychain first (in case of previous failed runs)
+      begin
+        delete_keychain(name: FASTLANE_KEYCHAIN_NAME)
+        UI.message("🔍 DEBUG: Cleaned up existing keychain")
+      rescue => cleanup_error
+        UI.message("🔍 DEBUG: No existing keychain to cleanup (expected): #{cleanup_error.message}")
+      end
+      
+      # Create the custom keychain
       create_keychain(
-        name: "CI",
-        password: ENV["KEYCHAIN_PASSWORD"],
-        default_keychain: true,
+        name: FASTLANE_KEYCHAIN_NAME,
+        password: FASTLANE_KEYCHAIN_PASSWORD,
+        default_keychain: false,  # Don't make it the default to avoid interfering with user's keychain
         unlock: true,
         timeout: 3600,
         lock_when_sleeps: false
       )
+      
+      # Add the keychain to the search list
+      sh("security list-keychains -d user -s #{FASTLANE_KEYCHAIN_NAME} $(security list-keychains -d user | tr -d '\"')")
+      
+      UI.success("✅ Custom Fastlane keychain '#{FASTLANE_KEYCHAIN_NAME}' created and configured successfully")
+      UI.message("🔒 Keychain will be used for all certificate operations")
+    rescue => e
+      UI.error("❌ Failed to create custom keychain: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      raise e  # Don't allow fallback - require proper keychain setup
     end
   end
 
   # MARK: - Tag-based Version Management Helper Functions
   
   private_lane :get_tag_version do
+    UI.message("🔍 DEBUG: Getting tag version")
+    
     # Get version from git tag if available, otherwise return nil
     if is_ci && ENV['GITHUB_REF'] && ENV['GITHUB_REF'].include?('refs/tags/')
       # Extract tag name from GitHub ref (refs/tags/v1.0.0 -> v1.0.0)
       tag = ENV['GITHUB_REF'].split('refs/tags/').last
+      UI.message("🔍 DEBUG: Found GitHub tag from GITHUB_REF: #{tag}")
       # Remove 'v' prefix if present (v1.0.0 -> 1.0.0)
-      tag.start_with?('v') ? tag[1..-1] : tag
+      result = tag.start_with?('v') ? tag[1..-1] : tag
+      UI.message("🔍 DEBUG: Processed tag version: #{result}")
+      result
     else
       # Try to get tag from current commit
       begin
+        UI.message("🔍 DEBUG: Attempting to get tag from current commit")
         result = sh("git describe --tags --exact-match HEAD 2>/dev/null || echo ''", log: false).strip
+        UI.message("🔍 DEBUG: Git command result: '#{result}'")
+        
         # Return nil if empty string or if git command failed
-        result.empty? ? nil : (result.start_with?('v') ? result[1..-1] : result)
-      rescue
+        if result.empty?
+          UI.message("🔍 DEBUG: No tag found on current commit")
+          nil
+        else
+          processed = result.start_with?('v') ? result[1..-1] : result
+          UI.message("🔍 DEBUG: Found and processed tag: #{result} -> #{processed}")
+          processed
+        end
+      rescue => e
+        UI.message("🔍 DEBUG: Failed to get tag from git: #{e.message}")
         nil
       end
     end
   end
   
   private_lane :set_version_from_tag do
+    UI.message("🔍 DEBUG: Setting version from tag")
     tag_version = get_tag_version
+    
     if tag_version && !tag_version.empty?
+      UI.message("🔍 DEBUG: Tag version found: #{tag_version}")
+      
       # Remove 'v' prefix and any pre-release suffixes for the main version number
       clean_version = tag_version.gsub(/^v/, '').split('-').first
+      UI.message("🔍 DEBUG: Clean version: #{clean_version}")
       
       UI.message("📋 Setting version from tag: #{tag_version} -> #{clean_version}")
       
-      increment_version_number(
-        version_number: clean_version,
-        xcodeproj: WORKSPACE_PATH
-      )
+      begin
+        increment_version_number(
+          version_number: clean_version,
+          xcodeproj: WORKSPACE_PATH
+        )
+        UI.success("✅ Version number set successfully")
+      rescue => e
+        UI.error("❌ Failed to set version number: #{e.message}")
+        UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+        raise e
+      end
       
       # For build number, use timestamp or incremental approach
       if tag_version.include?('-')
         # Pre-release: use timestamp for uniqueness
         build_number = Time.now.strftime("%Y%m%d%H%M")
+        UI.message("🔍 DEBUG: Pre-release detected, using timestamp build number: #{build_number}")
       else
         # Production release: use incremental build number
+        UI.message("🔍 DEBUG: Production release, attempting to get incremental build number")
         begin
           latest_build = latest_testflight_build_number || 0
           build_number = latest_build + 1
-        rescue
+          UI.message("🔍 DEBUG: Latest TestFlight build: #{latest_build}, new build: #{build_number}")
+        rescue => e
+          UI.warning("⚠️  Failed to get latest TestFlight build number: #{e.message}")
           build_number = 1
+          UI.message("🔍 DEBUG: Falling back to build number: #{build_number}")
         end
       end
       
-      increment_build_number(
-        build_number: build_number,
-        xcodeproj: WORKSPACE_PATH
-      )
+      begin
+        increment_build_number(
+          build_number: build_number,
+          xcodeproj: WORKSPACE_PATH
+        )
+        UI.success("✅ Build number set successfully")
+      rescue => e
+        UI.error("❌ Failed to set build number: #{e.message}")
+        UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+        raise e
+      end
       
       UI.success("✅ Version set to #{clean_version} (#{build_number}) from tag #{tag_version}")
     else
       UI.message("📋 No tag found, keeping current version")
+      current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
+      current_build = get_build_number(xcodeproj: WORKSPACE_PATH)
+      UI.message("🔍 DEBUG: Current version: #{current_version} (#{current_build})")
     end
   end
 
   after_all do |lane|
-    # Clean up keychain on CI
-    if is_ci
-      delete_keychain(name: "CI")
+    UI.header("🎉 Lane completed successfully: #{lane}")
+    
+    # Clean up custom Fastlane keychain
+    UI.message("🔍 DEBUG: Cleaning up custom Fastlane keychain")
+    begin
+      delete_keychain(name: FASTLANE_KEYCHAIN_NAME)
+      UI.success("✅ Custom Fastlane keychain deleted successfully")
+    rescue => e
+      UI.warning("⚠️  Failed to delete custom keychain: #{e.message}")
+      UI.message("💡 You may need to manually delete the keychain '#{FASTLANE_KEYCHAIN_NAME}' from Keychain Access")
     end
+    
+    UI.success("✅ All operations completed successfully for lane: #{lane}")
   end
 
   error do |lane, exception|
-    # Clean up keychain on CI even if there's an error
-    if is_ci
-      delete_keychain(name: "CI") rescue nil
+    UI.header("❌ Error occurred in lane: #{lane}")
+    UI.error("Error message: #{exception.message}")
+    UI.error("Error class: #{exception.class}")
+    UI.error("Stack trace:")
+    exception.backtrace.each { |line| UI.error("  #{line}") }
+    
+    # Clean up custom Fastlane keychain even if there's an error
+    UI.message("🔍 DEBUG: Emergency cleanup of custom Fastlane keychain")
+    begin
+      delete_keychain(name: FASTLANE_KEYCHAIN_NAME)
+      UI.message("✅ Custom Fastlane keychain cleaned up after error")
+    rescue => cleanup_error
+      UI.error("❌ Failed to cleanup custom keychain: #{cleanup_error.message}")
+      UI.message("💡 You may need to manually delete the keychain '#{FASTLANE_KEYCHAIN_NAME}' from Keychain Access")
     end
+    
+    UI.error("❌ Lane '#{lane}' failed with error: #{exception.message}")
   end
 
   # MARK: - Multi-Platform Build Functions
   
   private_lane :build_multiplatform do |options|
-    # Build for iOS/iPadOS
-    ios_ipa = build_ios_platform(options)
+    UI.header("🚀 Building multi-platform release")
+    UI.message("🔍 DEBUG: Build options: #{options}")
     
-    # Build for macOS (Mac Catalyst) 
-    macos_app = build_macos_platform(options)
+    # Validate required options
+    required_options = [:configuration, :export_method, :output_directory]
+    missing_options = required_options.select { |opt| options[opt].nil? }
+    if missing_options.any?
+      UI.error("❌ Missing required options: #{missing_options.join(', ')}")
+      raise "Missing required build options"
+    end
     
-    {
-      ios_ipa: ios_ipa,
-      macos_app: macos_app
-    }
+    # Create output directory if it doesn't exist
+    output_dir = options[:output_directory]
+    UI.message("🔍 DEBUG: Ensuring output directory exists: #{output_dir}")
+    FileUtils.mkdir_p(output_dir)
+    
+    begin
+      # Build for iOS/iPadOS
+      UI.message("🔍 DEBUG: Starting iOS build")
+      ios_ipa = build_ios_platform(options)
+      UI.success("✅ iOS build completed: #{ios_ipa}")
+      
+      # Build for macOS (Mac Catalyst) 
+      UI.message("🔍 DEBUG: Starting macOS build")
+      macos_app = build_macos_platform(options)
+      
+      if macos_app
+        UI.success("✅ macOS build completed: #{macos_app}")
+      else
+        UI.warning("⚠️  macOS build skipped or failed")
+      end
+      
+      result = {
+        ios_ipa: ios_ipa,
+        macos_app: macos_app
+      }
+      
+      UI.message("🔍 DEBUG: Multi-platform build result: #{result}")
+      result
+    rescue => e
+      UI.error("❌ Multi-platform build failed: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      raise e
+    end
   end
   
   private_lane :build_ios_platform do |options|
     UI.header("📱 Building iOS/iPadOS version")
+    UI.message("🔍 DEBUG: iOS build options: #{options}")
     
     export_method = options[:export_method] || "development"
     
@@ -170,16 +332,28 @@ platform :ios do
     UI.message("🔍 Debug: Profile name from env: #{profile_name}")
     UI.message("🔍 Debug: Certificate name from env: #{certificate_name}")
     
+    # Show all Match environment variables for debugging
+    UI.message("🔍 DEBUG: All Match environment variables:")
+    ENV.each do |key, value|
+      if key.start_with?("sigh_#{APP_IDENTIFIER}")
+        UI.message("  • #{key}: #{value}")
+      end
+    end
+    
     # Fallback to development if specific export method profile not found
     if !profile_name && export_method != "development"
       UI.warning("⚠️  No #{export_method} profile found, falling back to development")
       profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
       certificate_name = ENV["sigh_#{APP_IDENTIFIER}_development_certificate-name"]
+      UI.message("🔍 Debug: Fallback profile: #{profile_name}")
+      UI.message("🔍 Debug: Fallback certificate: #{certificate_name}")
     end
     
     # Final fallback
-    profile_name ||= "match Development #{APP_IDENTIFIER}"
-    certificate_name ||= "Apple Development"
+    if !profile_name
+      profile_name = "match Development #{APP_IDENTIFIER}"
+      UI.message("🔍 Debug: Using final fallback profile: #{profile_name}")
+    end
     
     # Use generic certificate identity to avoid character encoding issues
     generic_identity = case export_method
@@ -193,6 +367,7 @@ platform :ios do
     UI.message("🔍 Debug: Using generic certificate identity: #{generic_identity}")
     
     # Build configuration with proper export options override
+    UI.message("🔍 DEBUG: Creating build configuration")
     build_config = common_build_config(export_method: export_method).merge({
       configuration: options[:configuration] || "Release",
       export_method: export_method,
@@ -209,41 +384,77 @@ platform :ios do
       APP_IDENTIFIER => profile_name
     }
     
+    UI.message("🔍 Debug: Final build configuration:")
+    build_config.each { |key, value| UI.message("  • #{key}: #{value}") }
     UI.message("🔍 Debug: Final provisioning profiles config: #{build_config[:export_options][:provisioningProfiles]}")
     
-    build_app(build_config)
-    
-    File.join(options[:output_directory], "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa")
+    begin
+      UI.message("🔍 DEBUG: Starting iOS build process")
+      build_app(build_config)
+      
+      output_path = File.join(options[:output_directory], "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa")
+      
+      # Verify the build output exists
+      if File.exist?(output_path)
+        UI.success("✅ iOS build completed successfully: #{output_path}")
+        UI.message("🔍 DEBUG: File size: #{File.size(output_path)} bytes")
+      else
+        UI.error("❌ iOS build output file not found: #{output_path}")
+        UI.error("💡 Contents of output directory:")
+        Dir.glob(File.join(options[:output_directory], "*")).each do |file|
+          UI.error("  • #{file}")
+        end
+        raise "iOS build output file not found"
+      end
+      
+      output_path
+    rescue => e
+      UI.error("❌ iOS build failed: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      UI.error("💡 Build configuration that failed:")
+      build_config.each { |key, value| UI.error("  • #{key}: #{value}") }
+      raise e
+    end
   end
   
   private_lane :build_macos_platform do |options|
     UI.header("🖥️ Building macOS (Mac Catalyst) version")
+    UI.message("🔍 DEBUG: macOS build options: #{options}")
     
     # Sync Mac Catalyst certificates specifically for macOS builds
     begin
+      UI.message("🔍 DEBUG: Syncing Mac Catalyst certificates")
       match(
         type: "development",
         platform: "catalyst",
         app_identifier: APP_IDENTIFIER,
         git_url: ENV["MATCH_GIT_URL"],
         git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
-        keychain_name: is_ci ? "CI" : nil,
-        keychain_password: is_ci ? ENV["KEYCHAIN_PASSWORD"] : nil,
+        keychain_name: FASTLANE_KEYCHAIN_NAME,
+        keychain_password: FASTLANE_KEYCHAIN_PASSWORD,
         readonly: is_ci,
         verbose: true,
         skip_confirmation: true,
         shallow_clone: true
       )
+      UI.success("✅ Mac Catalyst certificates synced successfully")
     rescue => e
-      UI.error("⚠️ Failed to sync Mac Catalyst certificates: #{e.message}")
-      UI.error("📱 Skipping macOS build")
+      UI.error("❌ Failed to sync Mac Catalyst certificates: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      UI.error("📱 Skipping macOS build due to certificate sync failure")
       return nil
     end
     
     # For Mac Catalyst, we use the same export method as iOS since it's an iOS app on macOS
     export_method = options[:export_method] || "development"
+    UI.message("🔍 DEBUG: Using export method: #{export_method}")
+    
+    # Get catalyst-specific profile name
+    catalyst_profile = ENV["sigh_#{APP_IDENTIFIER}_development_catalyst_profile-name"] || "match Development #{APP_IDENTIFIER} catalyst"
+    UI.message("🔍 DEBUG: Using Catalyst profile: #{catalyst_profile}")
     
     # Build configuration with proper export options override
+    UI.message("🔍 DEBUG: Creating macOS build configuration")
     build_config = common_build_config(export_method: export_method).merge({
       configuration: options[:configuration] || "Release",
       export_method: export_method,
@@ -257,67 +468,116 @@ platform :ios do
     # Override export method in export_options for Mac Catalyst
     build_config[:export_options][:method] = export_method
     build_config[:export_options][:provisioningProfiles] = {
-      APP_IDENTIFIER => ENV["sigh_#{APP_IDENTIFIER}_development_catalyst_profile-name"] || "match Development #{APP_IDENTIFIER} catalyst"
+      APP_IDENTIFIER => catalyst_profile
     }
     
-    build_app(build_config)
+    UI.message("🔍 DEBUG: Final macOS build configuration:")
+    build_config.each { |key, value| UI.message("  • #{key}: #{value}") }
     
-    File.join(options[:output_directory], "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app")
+    begin
+      UI.message("🔍 DEBUG: Starting macOS build process")
+      build_app(build_config)
+      
+      output_path = File.join(options[:output_directory], "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app")
+      
+      # Verify the build output exists
+      if File.exist?(output_path)
+        UI.success("✅ macOS build completed successfully: #{output_path}")
+        UI.message("🔍 DEBUG: Build output is a directory (app bundle)")
+      else
+        UI.error("❌ macOS build output not found: #{output_path}")
+        UI.error("💡 Contents of output directory:")
+        Dir.glob(File.join(options[:output_directory], "*")).each do |file|
+          UI.error("  • #{file}")
+        end
+        raise "macOS build output not found"
+      end
+      
+      output_path
+    rescue => e
+      UI.error("❌ macOS build failed: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      UI.error("💡 Build configuration that failed:")
+      build_config.each { |key, value| UI.error("  • #{key}: #{value}") }
+      raise e
+    end
   end
 
   # MARK: - Development Builds
 
   desc "Build development version for testing"
   lane :dev do
+    UI.header("🔨 Starting development build")
+    
     setup_ci_if_needed
 
     sync_certificates(type: "development")
 
-    build_app(common_build_config(export_method: "development").merge({
+    UI.message("🔍 DEBUG: Creating development build configuration")
+    build_config = common_build_config(export_method: "development").merge({
       configuration: "Debug",
       export_method: "development",
       output_directory: "./build/development",
       output_name: "#{SCHEME_NAME}-development.ipa",
       skip_profile_detection: false
-    }))
+    })
+    
+    UI.message("🔍 DEBUG: Development build configuration:")
+    build_config.each { |key, value| UI.message("  • #{key}: #{value}") }
 
-    UI.success("✅ Development build completed successfully!")
+    begin
+      build_app(build_config)
+      UI.success("✅ Development build completed successfully!")
+    rescue => e
+      UI.error("❌ Development build failed: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      raise e
+    end
   end
 
   # MARK: - Beta Builds (TestFlight)
 
   desc "Build and upload to TestFlight"
   lane :beta do
+    UI.header("🚀 Starting TestFlight beta build")
+    
     setup_ci_if_needed
 
     # Set version from tag if available
+    UI.message("🔍 DEBUG: Setting version from tag for beta")
     set_version_from_tag
     tag_version = get_tag_version
     
     # Create a meaningful version string for the build artifacts
     if tag_version && !tag_version.empty?
       version_string = tag_version
+      UI.message("🔍 DEBUG: Using tag version: #{version_string}")
     else
       # Use current app version with beta suffix and timestamp for uniqueness
       current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
       timestamp = Time.now.strftime("%Y%m%d-%H%M")
       version_string = "#{current_version}-beta-#{timestamp}"
+      UI.message("🔍 DEBUG: Generated beta version: #{version_string}")
     end
 
     UI.message("🏷️  Building beta version: #{version_string}")
 
+    UI.message("🔍 DEBUG: Syncing App Store certificates for TestFlight")
     sync_certificates(type: "appstore")
 
     # Build both platforms
     UI.header("🚀 Building multi-platform beta release")
     
-    builds = build_multiplatform({
+    build_options = {
       configuration: "Release",
       export_method: "app-store",
       output_directory: "./build/testflight",
       version: version_string,
       skip_profile_detection: true
-    })
+    }
+    UI.message("🔍 DEBUG: Beta build options: #{build_options}")
+    
+    builds = build_multiplatform(build_options)
 
     # Upload iOS version to TestFlight
     UI.header("📱 Uploading iOS version to TestFlight")
@@ -328,15 +588,25 @@ platform :ios do
     else
       "Bug fixes and improvements"
     end
+    
+    UI.message("🔍 DEBUG: Using changelog: #{changelog}")
+    UI.message("🔍 DEBUG: Uploading IPA: #{builds[:ios_ipa]}")
 
-    upload_to_testflight(
-      app_identifier: APP_IDENTIFIER,
-      ipa: builds[:ios_ipa],
-      skip_waiting_for_build_processing: true,
-      distribute_external: false,
-      notify_external_testers: false,
-      changelog: changelog
-    )
+    begin
+      upload_to_testflight(
+        app_identifier: APP_IDENTIFIER,
+        ipa: builds[:ios_ipa],
+        skip_waiting_for_build_processing: true,
+        distribute_external: false,
+        notify_external_testers: false,
+        changelog: changelog
+      )
+      UI.success("✅ TestFlight upload completed successfully!")
+    rescue => e
+      UI.error("❌ TestFlight upload failed: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      raise e
+    end
 
     UI.success("✅ TestFlight upload completed successfully!")
     UI.success("📱 iOS version: #{builds[:ios_ipa]}")
@@ -356,35 +626,44 @@ platform :ios do
 
   desc "Build alpha versions for GitHub Releases (no store upload)"
   lane :alpha do
+    UI.header("🚀 Starting alpha build for GitHub releases")
+    
     setup_ci_if_needed
 
     # Set version from tag if available
+    UI.message("🔍 DEBUG: Setting version from tag for alpha")
     set_version_from_tag
     tag_version = get_tag_version
     
     # Create a meaningful version string for the build artifacts
     if tag_version && !tag_version.empty?
       version_string = tag_version
+      UI.message("🔍 DEBUG: Using tag version: #{version_string}")
     else
       # Use current app version with alpha suffix and timestamp for uniqueness
       current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
       timestamp = Time.now.strftime("%Y%m%d-%H%M")
       version_string = "#{current_version}-alpha-#{timestamp}"
+      UI.message("🔍 DEBUG: Generated alpha version: #{version_string}")
     end
 
     UI.message("🏷️  Building alpha version: #{version_string}")
 
+    UI.message("🔍 DEBUG: Syncing development certificates for direct distribution")
     sync_certificates(type: "development")
 
     # Build both platforms for direct distribution
     UI.header("🚀 Building multi-platform alpha release")
     
-    builds = build_multiplatform({
+    build_options = {
       configuration: "Release",
       export_method: "development", # For direct distribution 
       output_directory: "./build/alpha",
       version: version_string
-    })
+    }
+    UI.message("🔍 DEBUG: Alpha build options: #{build_options}")
+    
+    builds = build_multiplatform(build_options)
 
     UI.success("✅ Alpha builds completed successfully!")
     UI.success("📱 iOS version: #{builds[:ios_ipa]}")
@@ -468,18 +747,39 @@ platform :ios do
 
   desc "Run unit tests and build for CI validation"
   lane :test do
-    UI.message("🧪 Running unit tests with Mac Catalyst for maximum speed")
+    UI.header("🧪 Running unit tests with Mac Catalyst")
+    UI.message("🔍 DEBUG: Running tests with Mac Catalyst for maximum speed")
     
     # Clean build directory first
+    UI.message("🔍 DEBUG: Cleaning test results directory")
     sh("rm -rf ../build/test-results || true")
     sh("mkdir -p ../build/test-results")
     
     # Build and test with Mac Catalyst using xcodebuild directly
     # This is 5x faster than iOS simulator as it runs natively on macOS
     # Only run unit tests, not UI tests, as UI tests don't work well with Mac Catalyst
-    sh("set -o pipefail && xcodebuild test -project ../#{WORKSPACE_PATH} -scheme #{SCHEME_NAME} -destination 'platform=macOS,variant=Mac Catalyst' -only-testing:Alles-TeurerTests -resultBundlePath ../build/test-results/Alles-Teurer-Catalyst.xcresult CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs} | xcpretty || true")
-
-    UI.success("✅ Mac Catalyst unit tests completed!")
+    test_command = "set -o pipefail && xcodebuild test -project ../#{WORKSPACE_PATH} -scheme #{SCHEME_NAME} -destination 'platform=macOS,variant=Mac Catalyst' -only-testing:Alles-TeurerTests -resultBundlePath ../build/test-results/Alles-Teurer-Catalyst.xcresult CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs} | xcpretty || true"
+    
+    UI.message("🔍 DEBUG: Test command: #{test_command}")
+    
+    begin
+      sh(test_command)
+      
+      # Check if result bundle was created
+      result_bundle_path = "../build/test-results/Alles-Teurer-Catalyst.xcresult"
+      if File.exist?(result_bundle_path)
+        UI.success("✅ Test results bundle created: #{result_bundle_path}")
+      else
+        UI.warning("⚠️  Test results bundle not found at: #{result_bundle_path}")
+      end
+      
+      UI.success("✅ Mac Catalyst unit tests completed!")
+    rescue => e
+      UI.error("❌ Unit tests failed: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
+      UI.error("💡 Check test results in: ../build/test-results/")
+      raise e
+    end
   end
 
   desc "Run tests on iOS Simulator (manual use for iOS-specific testing)"
@@ -573,6 +873,8 @@ platform :ios do
       app_identifier: APP_IDENTIFIER,
       git_url: ENV["MATCH_GIT_URL"],
       git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+      keychain_name: FASTLANE_KEYCHAIN_NAME,
+      keychain_password: FASTLANE_KEYCHAIN_PASSWORD,
       force_for_new_devices: true,
       readonly: false,
       verbose: true
@@ -583,6 +885,8 @@ platform :ios do
       app_identifier: APP_IDENTIFIER,
       git_url: ENV["MATCH_GIT_URL"],
       git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+      keychain_name: FASTLANE_KEYCHAIN_NAME,
+      keychain_password: FASTLANE_KEYCHAIN_PASSWORD,
       readonly: false,
       verbose: true
     )
@@ -593,17 +897,30 @@ platform :ios do
 
   private_lane :setup_ci_if_needed do
     if is_ci
+      UI.message("🔍 DEBUG: CI environment detected, running setup_ci")
       setup_ci
+    else
+      UI.message("🔍 DEBUG: Local environment detected, skipping CI setup")
     end
   end
 
   private_lane :common_build_config do |options = {}|
+    UI.message("🔍 DEBUG: Creating common build configuration")
+    UI.message("🔍 DEBUG: Input options: #{options}")
+    
     # Get the current provisioning profile name from Match environment variables
     # Default to development profile name since most lanes use development signing
     export_method = options[:export_method] || "development"
+    UI.message("🔍 DEBUG: Export method: #{export_method}")
+    
     profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name"] || 
                    ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"] || 
                    "match Development #{APP_IDENTIFIER}"
+    
+    UI.message("🔍 DEBUG: Profile search results:")
+    UI.message("  • sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name: #{ENV["sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name"]}")
+    UI.message("  • sigh_#{APP_IDENTIFIER}_development_profile-name: #{ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]}")
+    UI.message("  • Final profile_name: #{profile_name}")
     
     # Use generic code signing identity to avoid character encoding issues
     # This lets Xcode automatically select the right certificate from the keychain
@@ -613,6 +930,8 @@ platform :ios do
     else
       codesigning_identity = "Apple Development"
     end
+    
+    UI.message("🔍 DEBUG: Codesigning identity: #{codesigning_identity}")
     
     build_config = {
       scheme: SCHEME_NAME,
@@ -640,14 +959,22 @@ platform :ios do
       UI.message("🔧 Local build: Using Xcode automatic signing (no manual codesigning_identity)")
     end
     
+    UI.message("🔍 DEBUG: Final common build config:")
+    build_config.each { |key, value| UI.message("  • #{key}: #{value}") }
+    
     build_config
   end
 
   private_lane :build_xcargs do |options = {}|
+    UI.message("🔍 DEBUG: Building xcargs")
+    UI.message("🔍 DEBUG: Input options: #{options}")
+    
     args = []
     
     # Enable parallel builds for faster compilation
-    args << "-jobs #{ENV.fetch('FASTLANE_BUILD_JOBS', `sysctl -n hw.logicalcpu`.strip)}"
+    cpu_count = ENV.fetch('FASTLANE_BUILD_JOBS', `sysctl -n hw.logicalcpu`.strip)
+    args << "-jobs #{cpu_count}"
+    UI.message("🔍 DEBUG: Using #{cpu_count} parallel jobs")
     
     # Use optimized linker for faster linking
     args << "OTHER_LDFLAGS=\"-Wl,-no_deduplicate\""
@@ -660,6 +987,7 @@ platform :ios do
     
     # Determine the export method for certificate lookup (default to development)
     export_method = options[:export_method] || "development"
+    UI.message("🔍 DEBUG: Export method for xcargs: #{export_method}")
     
     # For CI builds, override to manual signing to ensure we use Match certificates
     # For local builds, respect Xcode's automatic signing configuration
@@ -674,16 +1002,22 @@ platform :ios do
                      ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
       if profile_name
         args << "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\""
+        UI.message("🔍 DEBUG: Using provisioning profile: #{profile_name}")
+      else
+        UI.warning("⚠️  No provisioning profile found for xcargs")
       end
       
       # Use generic code signing identity to avoid character encoding issues
       # This lets Xcode automatically select the right certificate from the keychain
       case export_method
       when "appstore", "app-store"
-        args << "CODE_SIGN_IDENTITY=\"Apple Distribution\""
+        identity = "Apple Distribution"
+        args << "CODE_SIGN_IDENTITY=\"#{identity}\""
       else
-        args << "CODE_SIGN_IDENTITY=\"Apple Development\""
+        identity = "Apple Development"
+        args << "CODE_SIGN_IDENTITY=\"#{identity}\""
       end
+      UI.message("🔍 DEBUG: Using code sign identity: #{identity}")
     else
       UI.message("🔧 Local build: Using Xcode automatic signing (project configured for automatic)")
       # For local builds, let Xcode handle signing automatically
@@ -692,21 +1026,41 @@ platform :ios do
     end
     
     # Swift compilation optimizations
-    args << "SWIFT_COMPILATION_MODE=incremental" if !is_ci
+    if !is_ci
+      args << "SWIFT_COMPILATION_MODE=incremental"
+      UI.message("🔍 DEBUG: Using incremental Swift compilation for local builds")
+    else
+      UI.message("🔍 DEBUG: Using default Swift compilation for CI builds")
+    end
     
-    args.join(" ")
+    final_args = args.join(" ")
+    UI.message("🔍 DEBUG: Final xcargs: #{final_args}")
+    final_args
   end
 
   private_lane :configure_app_store_connect do
+    UI.message("🔍 DEBUG: Configuring App Store Connect authentication")
+    
     if ENV["FASTLANE_SESSION"]
       UI.message("🔑 Using FASTLANE_SESSION for App Store Connect authentication")
+      UI.message("🔍 DEBUG: FASTLANE_SESSION length: #{ENV['FASTLANE_SESSION'].length} characters")
     else
       UI.message("⚠️  FASTLANE_SESSION not configured - some operations may require manual authentication")
+      UI.message("💡 Set FASTLANE_SESSION environment variable for automatic authentication")
+    end
+    
+    # Check for App Store Connect API key as alternative authentication method
+    if ENV["APP_STORE_CONNECT_API_KEY_ID"]
+      UI.message("🔑 App Store Connect API Key detected: #{ENV['APP_STORE_CONNECT_API_KEY_ID']}")
+    else
+      UI.message("🔍 DEBUG: No App Store Connect API Key configured")
     end
   end
 
   private_lane :sync_certificates do |options|
     type = options[:type]
+    UI.header("🔐 Syncing #{type} certificates")
+    UI.message("🔍 DEBUG: Certificate sync options: #{options}")
 
     # Validate required environment variables
     required_match_vars = ["MATCH_GIT_URL", "MATCH_PASSWORD"]
@@ -715,7 +1069,11 @@ platform :ios do
     if missing_vars.any?
       UI.error("❌ Missing required environment variables for fastlane match: #{missing_vars.join(', ')}")
       UI.error("💡 Please check your .env file or environment configuration")
+      UI.error("💡 Required variables:")
+      required_match_vars.each { |var| UI.error("  • #{var}") }
       raise "Missing required environment variables for code signing"
+    else
+      UI.success("✅ All required Match environment variables are set")
     end
 
     # Configure App Store Connect authentication if available (required for creating new certificates)
@@ -729,13 +1087,20 @@ platform :ios do
     end
 
     begin
+      UI.message("🔍 DEBUG: Starting Match with parameters:")
+      UI.message("  • type: #{type}")
+      UI.message("  • app_identifier: #{APP_IDENTIFIER}")
+      UI.message("  • git_url: #{ENV['MATCH_GIT_URL']}")
+      UI.message("  • keychain_name: #{FASTLANE_KEYCHAIN_NAME}")
+      UI.message("  • readonly: #{is_ci}")
+      
       match(
         type: type,
         app_identifier: APP_IDENTIFIER,
         git_url: ENV["MATCH_GIT_URL"],
         git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
-        keychain_name: is_ci ? "CI" : nil,
-        keychain_password: is_ci ? ENV["KEYCHAIN_PASSWORD"] : nil,
+        keychain_name: FASTLANE_KEYCHAIN_NAME,
+        keychain_password: FASTLANE_KEYCHAIN_PASSWORD,
         readonly: is_ci,
         verbose: true,
         # Ensure Fastlane manages signing, not Xcode
@@ -745,12 +1110,29 @@ platform :ios do
       
       # Verify that the provisioning profile was properly set in environment variables
       profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{type}_profile-name"]
+      certificate_name = ENV["sigh_#{APP_IDENTIFIER}_#{type}_certificate-name"]
+      
       if profile_name
         UI.success("✅ Successfully synced #{type} certificates")
         UI.success("🔒 Provisioning profile: #{profile_name}")
+        UI.message("🔒 Certificate: #{certificate_name || 'Not specified'}")
+        
+        # Show all Match-related environment variables for debugging
+        UI.message("🔍 DEBUG: Match environment variables set:")
+        ENV.each do |key, value|
+          if key.start_with?("sigh_#{APP_IDENTIFIER}_#{type}")
+            UI.message("  • #{key}: #{value}")
+          end
+        end
       else
-        UI.error("⚠️  Warning: Provisioning profile environment variable not set")
+        UI.error("❌ Warning: Provisioning profile environment variable not set")
         UI.error("Expected: sigh_#{APP_IDENTIFIER}_#{type}_profile-name")
+        UI.error("💡 Available Match environment variables:")
+        ENV.each do |key, value|
+          if key.start_with?("sigh_")
+            UI.error("  • #{key}: #{value}")
+          end
+        end
       end
       
       if is_ci
@@ -760,11 +1142,16 @@ platform :ios do
       end
     rescue => e
       UI.error("❌ Failed to sync certificates: #{e.message}")
+      UI.error("💡 Stack trace: #{e.backtrace.join("\n")}")
       UI.error("💡 Common solutions:")
       UI.error("   • Check MATCH_PASSWORD is correct")
       UI.error("   • Verify MATCH_GIT_URL is accessible")
       UI.error("   • Ensure certificates exist in match repository")
       UI.error("   • Run 'fastlane update_certificates' if certificates need to be created")
+      UI.error("💡 Environment diagnostic:")
+      UI.error("   • MATCH_GIT_URL: #{ENV['MATCH_GIT_URL'] ? 'SET' : 'NOT SET'}")
+      UI.error("   • MATCH_PASSWORD: #{ENV['MATCH_PASSWORD'] ? 'SET' : 'NOT SET'}")
+      UI.error("   • MATCH_GIT_BASIC_AUTHORIZATION: #{ENV['MATCH_GIT_BASIC_AUTHORIZATION'] ? 'SET' : 'NOT SET'}")
       raise e
     end
   end
