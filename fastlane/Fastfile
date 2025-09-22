@@ -300,7 +300,7 @@ platform :ios do
     args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
     
     # Swift compilation optimizations
-    args << "SWIFT_COMPILATION_MODE=incremental" if ENV["CI"] != "true"
+    args << "SWIFT_COMPILATION_MODE=incremental" if !is_ci
     
     args.join(" ")
   end

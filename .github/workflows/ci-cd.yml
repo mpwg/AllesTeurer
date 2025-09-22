@@ -27,8 +27,6 @@ env:
   FASTLANE_OPT_OUT_USAGE: 1
   # Build performance optimizations
   FASTLANE_BUILD_JOBS: 4
-  # Xcode build performance
-  XCODE_XCCONFIG_FILE: ""
   # Swift compilation performance
   SWIFT_DETERMINISTIC_HASHING: 1
 
