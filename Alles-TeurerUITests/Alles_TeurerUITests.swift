@@ -24,18 +24,20 @@ final class Alles_TeurerUITests: XCTestCase {
 
     @MainActor
     func testExample() throws {
-        // UI tests must launch the application that they test.
+        // Minimal UI test - just verify app can launch
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        // Quick assertion that app launched successfully
+        XCTAssertTrue(app.exists)
     }
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
-    }
+    // Removed performance test to speed up CI - this was taking unnecessary time
+    // @MainActor
+    // func testLaunchPerformance() throws {
+    //     // This measures how long it takes to launch your application.
+    //     measure(metrics: [XCTApplicationLaunchMetric()]) {
+    //         XCUIApplication().launch()
+    //     }
+    // }
 }

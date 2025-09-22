@@ -47,6 +47,14 @@ Build and upload to App Store
 
 Run unit tests and build for CI validation
 
+### ios test_ios
+
+```sh
+[bundle exec] fastlane ios test_ios
+```
+
+Run tests on iOS Simulator (manual use for iOS-specific testing)
+
 ### ios build
 
 ```sh
@@ -54,6 +62,14 @@ Run unit tests and build for CI validation
 ```
 
 Build app without distribution (for CI validation)
+
+### ios build_ios
+
+```sh
+[bundle exec] fastlane ios build_ios
+```
+
+Build app for iOS distribution
 
 ### ios clean_build
 
