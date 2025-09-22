@@ -1,20 +1,32 @@
 package eu.mpwg.allesteurer.domain.image
 
+import android.content.Context
 import eu.mpwg.allesteurer.platform.image.AndroidImageProcessor
+import kotlinx.coroutines.runBlocking
 
 /**
  * Android actual implementation of ImageProcessor using Canvas and Paint APIs.
  */
 actual class ImageProcessor actual constructor() {
     
-    private val androidImageProcessor = AndroidImageProcessor()
+    // TODO: Inject Context properly via DI framework
+    private val context: Context by lazy { 
+        // This is a temporary solution - should be injected via DI
+        error("Context must be injected for Android image processing")
+    }
+    
+    private val androidImageProcessor by lazy { AndroidImageProcessor(context) }
     
     actual fun preprocessImageForOCR(imageBytes: ByteArray): Result<ByteArray> {
-        return androidImageProcessor.preprocessImageForOCR(imageBytes)
+        return runBlocking {
+            androidImageProcessor.preprocessForOCR(imageBytes)
+        }
     }
     
     actual fun analyzeImageQuality(imageBytes: ByteArray): ImageQualityMetrics {
-        val androidMetrics = androidImageProcessor.analyzeImageQuality(imageBytes)
+        val androidMetrics = runBlocking { 
+            androidImageProcessor.analyzeQuality(imageBytes)
+        }
         
         // Convert Android-specific metrics to common format
         return ImageQualityMetrics(
