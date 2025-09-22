@@ -1,5 +1,8 @@
 import io.gitlab.arturbosch.detekt.Detekt
 
+// Load environment variables from .env file
+apply(from = "gradle/env-loader.gradle.kts")
+
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader
