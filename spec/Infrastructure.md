@@ -70,7 +70,7 @@ AllesTeurer/
     <true/>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
-        <string>armv7</string>
+        <string>arm64</string>
         <string>camera-flash</string>
     </array>
     <key>NSCameraUsageDescription</key>
