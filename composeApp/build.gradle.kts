@@ -34,6 +34,9 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.sqldelight.driver.android)
+            
+            // Google ML Kit for OCR
+            implementation("com.google.mlkit:text-recognition:16.0.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
