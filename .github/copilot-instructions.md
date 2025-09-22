@@ -254,38 +254,63 @@ struct ReceiptScannerView: View {
 
 ## Development Workflows
 
-### Xcode Commands
+### MANDATORY: Use Fastlane Commands Only
+
+**CRITICAL RULE - NEVER USE xcodebuild DIRECTLY:**
+
+- ALWAYS use fastlane commands for all build, test, and deployment operations
+- fastlane provides consistent, reliable automation with proper error handling
+- Direct xcodebuild usage is prohibited to ensure consistent CI/CD workflows
+
+### Fastlane Commands (MANDATORY)
 
 ```bash
-# Build all targets
-xcodebuild build -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
+# Build all targets (ALWAYS USE THIS)
+bundle exec fastlane build
 
-# Run tests across all platforms
-xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
+# Run all tests (ALWAYS USE THIS)
+bundle exec fastlane test
 
-# Archive for distribution
-xcodebuild archive -scheme "Alles Teurer" -archivePath "AllesTeurer.xcarchive"
+# Run unit tests only
+bundle exec fastlane unit_tests
+
+# Run UI tests only
+bundle exec fastlane ui_tests
+
+# Run tests on specific simulator
+bundle exec fastlane test device:"iPhone 17 Pro"
+
+# Build and archive for App Store
+bundle exec fastlane archive
+
+# Deploy to App Store Connect
+bundle exec fastlane deploy_to_app_store
 ```
 
-### Platform-Specific Commands
+### Development Setup Commands
 
 ```bash
-# Open iOS project (for debugging)
+# Install fastlane dependencies
+bundle install
+
+# Open iOS project (for debugging only)
 open "Alles Teurer.xcodeproj"
 
-# Run on specific simulators
-xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15 Pro"
-xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPad Pro (12.9-inch)"
+# Check fastlane configuration
+bundle exec fastlane --help
+```
 
-# Run on device
-xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS,id=[device-id]"
+### NEVER USE - Prohibited Commands
 
-# Run on specific simulators
-xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15 Pro"
-xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPad Pro (12.9-inch)"
+```bash
+# ❌ NEVER USE - Use 'bundle exec fastlane build' instead
+xcodebuild build -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 17 Pro"
 
-# Run on device
-xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS,id=[device-id]"
+# ❌ NEVER USE - Use 'bundle exec fastlane test' instead
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 17 Pro"
+
+# ❌ NEVER USE - Use 'bundle exec fastlane archive' instead
+xcodebuild archive -scheme "Alles Teurer" -archivePath "AllesTeurer.xcarchive"
 ```
 
 ### Feature Development Approach

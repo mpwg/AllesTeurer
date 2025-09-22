@@ -18,10 +18,12 @@ struct Alles_TeurerApp: App {
             PreisEintrag.self,
             Geschaeft.self,
         ])
+
+        // For development, use default container location
+        // App Groups will be enabled later for production with proper provisioning
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false,
-            groupContainer: .identifier("group.eu.mpwg.allesteurer.shared")
+            isStoredInMemoryOnly: false
         )
 
         do {
