@@ -1,14 +1,15 @@
 git_url(ENV["MATCH_GIT_URL"]) # The git URL where the certificates and profiles will be stored
+git_branch("master") # Use specific branch for certificates to avoid conflicts
 
 storage_mode("git")
 
 type("development") # The default type, can be: appstore, adhoc, enterprise or development
 
- app_identifier(["eu.mpwg.allesteurer"]) # The bundle identifier of your iOS app
- username(ENV["APPLE_ID"]) # Your Apple Developer Portal username
+app_identifier(["eu.mpwg.allesteurer"]) # The bundle identifier of your iOS app
+username(ENV["APPLE_ID"]) # Your Apple Developer Portal username
 
-# app_identifier(["tools.fastlane.app", "tools.fastlane.app2"])
-# username("user@fastlane.tools") # Your Apple Developer Portal username
+# Force Match to use existing certificates on CI to avoid creating new ones
+readonly(ENV["CI"] == "true") # Only create new certificates locally, read-only on CI
 
 # For all available options run `fastlane match --help`
 # Remove the # in the beginning of the line to enable the other options

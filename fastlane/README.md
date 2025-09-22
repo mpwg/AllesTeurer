@@ -96,23 +96,7 @@ Build iOS app without distribution (for CI validation)
 [bundle exec] fastlane ios certificates
 ```
 
-Sync iOS development certificates and provisioning profiles
-
-### ios update_certificates
-
-```sh
-[bundle exec] fastlane ios update_certificates
-```
-
-Update iOS certificates and push to git
-
-### ios version
-
-```sh
-[bundle exec] fastlane ios version
-```
-
-Show current iOS version and build number
+Sync iOS certificates and provisioning profiles
 
 ----
 
@@ -151,37 +135,13 @@ Build Android App Bundle and upload to Play Console
 
 Build Android app without distribution (for CI validation)
 
-### android setup_signing
+### android setup_keystore
 
 ```sh
-[bundle exec] fastlane android setup_signing
+[bundle exec] fastlane android setup_keystore
 ```
 
-Setup Android keystore using Fastlane Match
-
-### android generate_keystore
-
-```sh
-[bundle exec] fastlane android generate_keystore
-```
-
-Generate a new Android keystore
-
-### android update_keystore
-
-```sh
-[bundle exec] fastlane android update_keystore
-```
-
-Update Android keystore and push to Match repository
-
-### android version
-
-```sh
-[bundle exec] fastlane android version
-```
-
-Show current Android version info
+Setup Android keystore for signing (creates keystore if needed)
 
 ----
 

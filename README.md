@@ -78,13 +78,13 @@ alles-teurer/
 **Kotlin Multiplatform Development:**
 
 - **Kotlin 2.2.20+** mit K2 Compiler
-- **Gradle 9.0+** mit Kotlin DSL
-- **JDK 17+** für Android-Entwicklung
+- **Gradle 9.1+** mit Kotlin DSL
+- **JDK 21+** für Android-Entwicklung
 
 **iOS-Entwicklung:**
 
-- **Xcode 15.0+** für iOS-spezifische Entwicklung
-- **iOS 15.0+** als Mindest-Deployment-Version
+- **Xcode 26.0+** für iOS-spezifische Entwicklung
+- **iOS 18.0+** als Mindest-Deployment-Version
 - **Apple Developer Account** für Gerätetests
 
 **Android-Entwicklung:**
