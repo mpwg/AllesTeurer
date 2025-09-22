@@ -202,6 +202,20 @@ Wir begrüßen Beiträge zur Entwicklung von AllesTeurer! Hier ist, wie Sie helf
 4. **Tests schreiben** für neue Features
 5. **Pull Request einreichen** mit ausführlicher Beschreibung
 
+### Release-System
+
+AllesTeurer verwendet ein **tag-basiertes Release-System** für manuelle Kontrolle über Deployments:
+
+- **🏷️ Beta Releases**: `git tag v1.0.0-beta.1` → TestFlight
+- **🚀 Production Releases**: `git tag v1.0.0` → App Store
+- **📋 Builds & Tests**: Branch pushes → nur Build und Test
+
+Siehe [Tag-Based Releases Guide](docs/TAG_BASED_RELEASES.md) für detaillierte Anweisungen.
+2. **Entwicklungsumgebung einrichten** (siehe [Installation](#installation))
+3. **Unseren Coding-Standards folgen** (siehe `.github/instructions/`)
+4. **Tests schreiben** für neue Features
+5. **Pull Request einreichen** mit ausführlicher Beschreibung
+
 ### Xcode-Befehle für Entwicklung
 
 ```bash

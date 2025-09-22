@@ -1,10 +1,18 @@
 name: iOS CI/CD Pipeline
 
 on:
+  # Build and test on all branch pushes and PRs, plus tag-based releases
   push:
     branches: [main, develop]
+    tags:
+      - 'v*.*.*'           # Production releases (v1.0.0)
+      - 'v*.*.*-beta*'     # Beta releases (v1.0.0-beta.1)
+      - 'v*.*.*-rc*'       # Release candidates (v1.0.0-rc.1)
+      - 'v*.*.*-alpha*'    # Alpha releases (v1.0.0-alpha.1)
   pull_request:
     branches: [main, develop]
+  
+  # Manual workflow dispatch for emergency releases or testing
   workflow_dispatch:
     inputs:
       deploy_target:
@@ -16,6 +24,10 @@ on:
           - none
           - testflight
           - appstore
+      tag_override:
+        description: "Tag to use for version (optional, defaults to current commit)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -113,7 +125,7 @@ jobs:
             ./build/logs/**
 
       - name: Archive for Release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
@@ -125,14 +137,15 @@ jobs:
         run: bundle exec fastlane build
 
       - name: Upload IPA artifact
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: AllesTeurer-${{ github.sha }}.ipa
           path: ./build/validation/*.ipa
 
   deploy-testflight:
-    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'testflight')
+    # Deploy to TestFlight on beta/rc tags or manual dispatch
+    if: (startsWith(github.ref, 'refs/tags/v') && (contains(github.ref, '-beta') || contains(github.ref, '-rc'))) || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'testflight')
     needs: build-and-test
     runs-on: macos-26
     steps:
@@ -157,7 +170,8 @@ jobs:
         run: bundle exec fastlane beta
 
   deploy-appstore:
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'appstore')
+    # Deploy to App Store on production tags (vX.Y.Z without suffix) or manual dispatch
+    if: (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'appstore')
     needs: build-and-test
     runs-on: macos-26
     steps:

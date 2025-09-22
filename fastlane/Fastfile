@@ -46,6 +46,63 @@ platform :ios do
     end
   end
 
+  # MARK: - Tag-based Version Management Helper Functions
+  
+  private_lane :get_tag_version do
+    # Get version from git tag if available, otherwise return nil
+    if is_ci && ENV['GITHUB_REF'] && ENV['GITHUB_REF'].include?('refs/tags/')
+      # Extract tag name from GitHub ref (refs/tags/v1.0.0 -> v1.0.0)
+      tag = ENV['GITHUB_REF'].split('refs/tags/').last
+      # Remove 'v' prefix if present (v1.0.0 -> 1.0.0)
+      tag.start_with?('v') ? tag[1..-1] : tag
+    else
+      # Try to get tag from current commit
+      begin
+        sh("git describe --tags --exact-match HEAD 2>/dev/null || echo ''", log: false).strip
+      rescue
+        nil
+      end
+    end
+  end
+  
+  private_lane :set_version_from_tag do
+    tag_version = get_tag_version
+    if tag_version && !tag_version.empty?
+      # Remove 'v' prefix and any pre-release suffixes for the main version number
+      clean_version = tag_version.gsub(/^v/, '').split('-').first
+      
+      UI.message("📋 Setting version from tag: #{tag_version} -> #{clean_version}")
+      
+      increment_version_number(
+        version_number: clean_version,
+        xcodeproj: WORKSPACE_PATH
+      )
+      
+      # For build number, use timestamp or incremental approach
+      if tag_version.include?('-')
+        # Pre-release: use timestamp for uniqueness
+        build_number = Time.now.strftime("%Y%m%d%H%M")
+      else
+        # Production release: use incremental build number
+        begin
+          latest_build = latest_testflight_build_number || 0
+          build_number = latest_build + 1
+        rescue
+          build_number = 1
+        end
+      end
+      
+      increment_build_number(
+        build_number: build_number,
+        xcodeproj: WORKSPACE_PATH
+      )
+      
+      UI.success("✅ Version set to #{clean_version} (#{build_number}) from tag #{tag_version}")
+    else
+      UI.message("📋 No tag found, keeping current version")
+    end
+  end
+
   after_all do |lane|
     # Clean up keychain on CI
     if is_ci
@@ -85,18 +142,8 @@ platform :ios do
   lane :beta do
     setup_ci_if_needed
 
-    # Increment build number
-    # Safely get the latest TestFlight build number, default to 1 if none found
-    begin
-      latest_build = latest_testflight_build_number
-      next_build_number = (latest_build || 0) + 1
-    rescue
-      next_build_number = 1
-    end
-    increment_build_number(
-      build_number: next_build_number,
-      xcodeproj: WORKSPACE_PATH
-    )
+    # Set version from tag if available
+    set_version_from_tag
 
     sync_certificates(type: "appstore")
 
@@ -108,15 +155,26 @@ platform :ios do
       skip_profile_detection: true
     }))
 
+    # Create changelog from tag or use default
+    tag_version = get_tag_version
+    changelog = if tag_version && tag_version.include?('-')
+      "Beta release #{tag_version}"
+    else
+      "Bug fixes and improvements"
+    end
+
     upload_to_testflight(
       app_identifier: APP_IDENTIFIER,
       skip_waiting_for_build_processing: true,
       distribute_external: false,
       notify_external_testers: false,
-      changelog: "Bug fixes and improvements"
+      changelog: changelog
     )
 
     UI.success("✅ TestFlight upload completed successfully!")
+    if tag_version
+      UI.success("🏷️  Released from tag: #{tag_version}")
+    end
   end
 
   # MARK: - Production Builds (App Store)
@@ -125,20 +183,8 @@ platform :ios do
   lane :release do
     setup_ci_if_needed
 
-    # Ensure we're on main branch for releases
-    ensure_git_branch(branch: 'main')
-
-    # Increment version number (patch version)
-    increment_version_number(
-      bump_type: "patch",
-      xcodeproj: WORKSPACE_PATH
-    )
-
-    # Increment build number
-    increment_build_number(
-      build_number: latest_testflight_build_number + 1,
-      xcodeproj: WORKSPACE_PATH
-    )
+    # Set version from tag if available
+    set_version_from_tag
 
     sync_certificates(type: "appstore")
 
@@ -159,19 +205,14 @@ platform :ios do
       force: true
     )
 
-    # Commit version bump
-    commit_version_bump(
-      message: "Version bump for App Store release",
-      xcodeproj: WORKSPACE_PATH
-    )
-
-    # Add git tag
-    add_git_tag(
-      tag: get_version_number(xcodeproj: WORKSPACE_PATH)
-    )
+    tag_version = get_tag_version
+    current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
 
     UI.success("✅ App Store upload completed successfully!")
-    UI.success("🏷️  Tagged version: #{get_version_number(xcodeproj: WORKSPACE_PATH)}")
+    if tag_version
+      UI.success("🏷️  Released from tag: #{tag_version}")
+    end
+    UI.success("📱 Version uploaded: #{current_version}")
   end
 
   # MARK: - Testing
