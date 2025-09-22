@@ -58,7 +58,9 @@ platform :ios do
     else
       # Try to get tag from current commit
       begin
-        sh("git describe --tags --exact-match HEAD 2>/dev/null || echo ''", log: false).strip
+        result = sh("git describe --tags --exact-match HEAD 2>/dev/null || echo ''", log: false).strip
+        # Return nil if empty string or if git command failed
+        result.empty? ? nil : (result.start_with?('v') ? result[1..-1] : result)
       rescue
         nil
       end
@@ -269,7 +271,19 @@ platform :ios do
 
     # Set version from tag if available
     set_version_from_tag
-    tag_version = get_tag_version || "beta"
+    tag_version = get_tag_version
+    
+    # Create a meaningful version string for the build artifacts
+    if tag_version && !tag_version.empty?
+      version_string = tag_version
+    else
+      # Use current app version with beta suffix and timestamp for uniqueness
+      current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
+      timestamp = Time.now.strftime("%Y%m%d-%H%M")
+      version_string = "#{current_version}-beta-#{timestamp}"
+    end
+
+    UI.message("🏷️  Building beta version: #{version_string}")
 
     sync_certificates(type: "appstore")
 
@@ -280,7 +294,7 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       output_directory: "./build/testflight",
-      version: tag_version,
+      version: version_string,
       skip_profile_detection: true
     })
 
@@ -306,8 +320,11 @@ platform :ios do
     UI.success("✅ TestFlight upload completed successfully!")
     UI.success("📱 iOS version: #{builds[:ios_ipa]}")
     UI.success("🖥️  macOS version: #{builds[:macos_app]}")
+    UI.success("🏷️  Version: #{version_string}")
     if tag_version
       UI.success("🏷️  Released from tag: #{tag_version}")
+    else
+      UI.success("🏷️  Built from commit without tag")
     end
     
     # Return build paths for GitHub Release creation
@@ -322,7 +339,19 @@ platform :ios do
 
     # Set version from tag if available
     set_version_from_tag
-    tag_version = get_tag_version || "alpha"
+    tag_version = get_tag_version
+    
+    # Create a meaningful version string for the build artifacts
+    if tag_version && !tag_version.empty?
+      version_string = tag_version
+    else
+      # Use current app version with alpha suffix and timestamp for uniqueness
+      current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
+      timestamp = Time.now.strftime("%Y%m%d-%H%M")
+      version_string = "#{current_version}-alpha-#{timestamp}"
+    end
+
+    UI.message("🏷️  Building alpha version: #{version_string}")
 
     sync_certificates(type: "development")
 
@@ -333,14 +362,17 @@ platform :ios do
       configuration: "Release",
       export_method: "development", # For direct distribution 
       output_directory: "./build/alpha",
-      version: tag_version
+      version: version_string
     })
 
     UI.success("✅ Alpha builds completed successfully!")
     UI.success("📱 iOS version: #{builds[:ios_ipa]}")
     UI.success("🖥️  macOS version: #{builds[:macos_app]}")
+    UI.success("🏷️  Version: #{version_string}")
     if tag_version
       UI.success("🏷️  Built from tag: #{tag_version}")
+    else
+      UI.success("🏷️  Built from commit without tag")
     end
     
     # Return build paths for GitHub Release creation
@@ -355,7 +387,18 @@ platform :ios do
 
     # Set version from tag if available
     set_version_from_tag
-    tag_version = get_tag_version || "release"
+    tag_version = get_tag_version
+    
+    # Create a meaningful version string for the build artifacts
+    if tag_version && !tag_version.empty?
+      version_string = tag_version
+    else
+      # Use current app version for release builds
+      current_version = get_version_number(xcodeproj: WORKSPACE_PATH)
+      version_string = current_version
+    end
+
+    UI.message("🏷️  Building release version: #{version_string}")
 
     sync_certificates(type: "appstore")
 
@@ -366,7 +409,7 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       output_directory: "./build/appstore",
-      version: tag_version,
+      version: version_string,
       skip_profile_detection: true
     })
 
@@ -388,8 +431,11 @@ platform :ios do
     UI.success("✅ App Store upload completed successfully!")
     UI.success("📱 iOS version: #{builds[:ios_ipa]}")
     UI.success("🖥️  macOS version: #{builds[:macos_app]}")
+    UI.success("🏷️  Version: #{version_string}")
     if tag_version
       UI.success("🏷️  Released from tag: #{tag_version}")
+    else
+      UI.success("🏷️  Built from current app version")
     end
     UI.success("📱 Version uploaded: #{current_version}")
     
