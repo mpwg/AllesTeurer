@@ -1,194 +1,167 @@
-# Anforderungen - Kotlin Multiplatform AllesTeurer
+# Anforderungen - Native iOS AllesTeurer
 
 ## Funktionale Anforderungen
 
-### Core Features (Multiplatform)
+### Core Features (iOS Native)
 
-- [ ] **Receipt Scanning Interface** - Kamera-Integration für Kassenbons (iOS/Android)
-- [ ] **Local OCR Processing** - Vision Framework (iOS) / ML Kit (Android)
-- [ ] **Product Matching** - Automatische Produktzuordnung (shared logic)
-- [ ] **Price History Tracking** - Preisentwicklung per SQLDelight
-- [ ] **Local Analytics** - Inflation/Ausgaben-Trends ohne Backend
-- [ ] **Data Export** - CSV/PDF Export für eigene Analysen
+- [ ] **Receipt Scanning Interface** - AVFoundation Kamera-Integration für Kassenbons
+- [ ] **Local OCR Processing** - Vision Framework für deutsche Texterkennung
+- [ ] **Product Matching** - Automatische Produktzuordnung mit lokalen Algorithmen
+- [ ] **Price History Tracking** - Preisentwicklung mit SwiftData
+- [ ] **Local Analytics** - Inflation/Ausgaben-Trends mit Swift Charts
+- [ ] **Data Export** - CSV/JSON Export für eigene Analysen
 
-### Platform-Specific Features
+### iOS-Specific Features
 
-#### iOS Features
-
-- [ ] **CloudKit Sync** - Geräte-übergreifende Synchronisation (iOS-only)
+- [ ] **CloudKit Sync** - Geräte-übergreifende private Synchronisation
 - [ ] **iOS Share Extension** - Receipt-Sharing von anderen Apps
 - [ ] **Spotlight Integration** - Produkt-Suche über iOS Spotlight
-- [ ] **Widget Support** - Home Screen Widgets für Ausgaben-Übersicht
+- [ ] **Widget Support** - Home Screen und Lock Screen Widgets
 - [ ] **Shortcuts Integration** - Siri Shortcuts für häufige Aktionen
-
-#### Android Features
-
-- [ ] **Google Drive Backup** - Cloud-Synchronisation (Android-only)
-- [ ] **Share Intent** - Receipt-Sharing von anderen Apps
-- [ ] **App Shortcuts** - Dynamische Shortcuts für häufige Aktionen
-- [ ] **Widget Support** - Home Screen Widgets für Ausgaben-Übersicht
-- [ ] **Adaptive Icon** - Android 8+ adaptive Icons
+- [ ] **Apple Intelligence** - Intelligente Produktkategorisierung
+- [ ] **Dynamic Type Support** - Vollständige Accessibility-Unterstützung
+- [ ] **VoiceOver Integration** - Screen Reader Kompatibilität
 
 ## Technische Komponenten
 
-```
-apps/composeApp/src/
-├── commonMain/kotlin/
-│   ├── data/
-│   │   ├── local/           # SQLDelight database
-│   │   ├── repository/      # Repository implementations
-│   │   └── models/          # Data models (@Serializable)
-│   ├── domain/
-│   │   ├── models/          # Domain entities
-│   │   ├── repository/      # Repository interfaces
-│   │   └── usecase/         # Business logic use cases
-│   ├── presentation/
-│   │   ├── viewmodel/       # Shared ViewModels
-│   │   └── state/           # UI state classes
-│   └── ui/
-│       ├── screens/         # Compose screens
-│       ├── components/      # Reusable UI components
-│       └── theme/           # Design system
-├── androidMain/kotlin/
-│   ├── ocr/                 # ML Kit OCR implementation
-│   ├── camera/              # Android camera integration
-│   └── platform/           # Android-specific utilities
-├── iosMain/kotlin/
-│   ├── ocr/                 # Vision Framework OCR
-│   ├── camera/              # iOS camera integration
-│   └── platform/           # iOS-specific utilities
-└── commonMain/sqldelight/
-    └── database/           # SQL schema and queries
+```text
+Alles Teurer/
+├── Models/                 # SwiftData models
+│   ├── Receipt.swift       # Receipt entity
+│   ├── Product.swift       # Product entity
+│   └── PriceHistory.swift  # Price tracking
+├── ViewModels/            # Observable ViewModels
+│   ├── ScannerViewModel.swift
+│   ├── ProductsViewModel.swift
+│   └── AnalyticsViewModel.swift
+├── Views/                 # SwiftUI views
+│   ├── Scanner/           # Receipt scanning interface
+│   ├── Products/          # Product list and details
+│   ├── Analytics/         # Price charts and insights
+│   └── Settings/          # App configuration
+├── Services/              # Business logic
+│   ├── OCRService.swift   # Vision Framework integration
+│   ├── DataManager.swift  # SwiftData operations
+│   └── PriceAnalyzer.swift # Analytics calculations
+└── Utils/                 # Extensions and helpers
 ```
 
-## User Stories (Multiplatform)
+## User Stories (iOS Native)
 
 ### 1. Receipt Scanning
 
-**Als Nutzer** möchte ich einen Kassenbon fotografieren und automatisch alle Produkte und Preise extrahiert bekommen, damit ich meine Ausgaben einfach tracken kann.
+**Als iOS-Nutzer** möchte ich einen Kassenbon fotografieren und automatisch alle Produkte und Preise extrahiert bekommen, damit ich meine Ausgaben einfach tracken kann.
 
 **Akzeptanzkriterien:**
 
-- [ ] Kamera öffnet sich direkt beim Tippen auf "Scan" (iOS/Android)
-- [ ] Vision Framework (iOS) / ML Kit (Android) erkennt deutschen Text
+- [ ] Kamera öffnet sich direkt beim Tippen auf "Scan" mit AVFoundation
+- [ ] Vision Framework erkennt deutschen Text mit hoher Präzision
 - [ ] Automatische Extraktion von Produktnamen, Preisen, und Datum
-- [ ] Manuelle Korrektur-Möglichkeit bei OCR-Fehlern
-- [ ] Receipt wird lokal in SQLDelight-Datenbank gespeichert
+- [ ] Manuelle Korrektur-Möglichkeit bei OCR-Fehlern mit SwiftUI Interface
+- [ ] Receipt wird lokal in SwiftData-Datenbank gespeichert
 
 ### 2. Local Product Management
 
-**Als Nutzer** möchte ich, dass die App automatisch ähnliche Produkte erkennt und deren Preisverlauf lokal tracked, ohne dass Daten an externe Server gesendet werden.
+**Als iOS-Nutzer** möchte ich, dass die App automatisch ähnliche Produkte erkennt und deren Preisverlauf lokal tracked, ohne dass Daten an externe Server gesendet werden.
 
 **Akzeptanzkriterien:**
 
-- [ ] Fuzzy-Matching für ähnliche Produktnamen (shared Kotlin logic)
-- [ ] Automatische Kategorisierung (Lebensmittel, etc.)
-- [ ] Preisverlauf-Charts mit Compose Charts
-- [ ] Alle Daten bleiben auf dem Gerät (SQLDelight lokal)
+- [ ] Fuzzy-Matching für ähnliche Produktnamen mit lokalen Swift Algorithmen
+- [ ] Automatische Kategorisierung mit Natural Language Framework
+- [ ] Preisverlauf-Charts mit Swift Charts
+- [ ] Alle Daten bleiben auf dem iPhone (SwiftData lokal)
+- [ ] Optional: CloudKit Sync zwischen eigenen Geräten
 
 ### 3. Privacy-First Analytics
 
-**Als Nutzer** möchte ich Einblicke in meine Ausgaben und Inflation trends erhalten, ohne dass meine persönlichen Daten das Gerät verlassen.
+**Als iOS-Nutzer** möchte ich Einblicke in meine Ausgaben und Inflation trends erhalten, ohne dass meine persönlichen Daten das Gerät verlassen.
 
 **Akzeptanzkriterien:**
 
-- [ ] Lokale Berechnung von Ausgaben-Trends (shared business logic)
-- [ ] Inflation-Rate pro Kategorie
-- [ ] Monatliche/wöchentliche Übersichten
-- [ ] Export-Funktion für eigene Analysen
+- [ ] Lokale Berechnung von Ausgaben-Trends mit Swift
+- [ ] Inflation-Rate pro Kategorie mit interaktiven Swift Charts
+- [ ] Monatliche/wöchentliche Übersichten in nativer iOS UI
+- [ ] Export-Funktion für eigene Analysen (CSV/JSON)
+- [ ] Widgets für Home Screen und Lock Screen
+- [ ] Siri Shortcuts Integration
 
 ## Technische Anforderungen
 
 ### Performance Requirements
 
-- [ ] App-Start unter 2 Sekunden (Android/iOS)
-- [ ] OCR-Verarbeitung unter 5 Sekunden pro Receipt
-- [ ] Smooth 60fps Animationen (Compose Multiplatform)
-- [ ] SQLDelight Abfragen unter 100ms
+- [ ] App-Start unter 1.5 Sekunden auf iPhone 12 oder neuer
+- [ ] OCR-Verarbeitung unter 3 Sekunden pro Receipt mit Vision Framework
+- [ ] Smooth 60fps Animationen mit SwiftUI
+- [ ] SwiftData Abfragen unter 100ms
+- [ ] Responsive UI auch bei großen Datenmengen (1000+ Receipts)
 
 ### Privacy & Security Requirements
 
-- [ ] Alle Daten bleiben lokal auf dem Gerät
-- [ ] Platform-specific sync nur optional (CloudKit iOS / Google Drive Android)
-- [ ] Keine Third-Party Analytics
+- [ ] Alle Daten bleiben lokal auf dem Gerät (SwiftData)
+- [ ] Optional: CloudKit private Sync nur zwischen eigenen Geräten
+- [ ] Keine Third-Party Analytics oder Tracking
 - [ ] Vollständige Daten-Exportierbarkeit
 - [ ] DSGVO-konforme Datenlöschung
+- [ ] App Sandbox Isolation
+- [ ] Keychain Services für sensible Einstellungen
 
-### Platform Integration Requirements
+### iOS Integration Requirements
 
-#### iOS Requirements
-
-- [ ] iOS 15.0+ Mindest-Version (für Compose Multiplatform)
-- [ ] VoiceOver Accessibility Support
-- [ ] Dynamic Type Support
+- [ ] iOS 17.0+ Mindest-Version (für SwiftData und moderne SwiftUI Features)
+- [ ] VoiceOver Accessibility Support (WCAG 2.2 Level AA)
+- [ ] Dynamic Type Support für Textgrößen
 - [ ] Dark Mode Support
 - [ ] Focus/Control Center Integration
-
-#### Android Requirements
-
-- [ ] Android API 24+ (Android 7.0+) Mindest-Version
-- [ ] TalkBack Accessibility Support
-- [ ] Material You Dynamic Colors (Android 12+)
-- [ ] Dark Mode Support
-- [ ] App Shortcuts Integration
+- [ ] Handoff zwischen iPhone, iPad, Mac (mit CloudKit Sync)
+- [ ] Spotlight Search Integration
+- [ ] iOS Share Extension
+- [ ] Widget Support (Home Screen, Lock Screen, StandBy)
+- [ ] Siri Shortcuts Integration
 
 ## Offline-First Funktionalität
 
-### Was funktioniert offline
+### Was funktioniert offline (alles!)
 
-- [ ] Receipt Scanning und OCR (platform-specific)
-- [ ] Alle Analytics und Charts (shared business logic)
-- [ ] Produkt-Suche und -Verwaltung (SQLDelight lokal)
-- [ ] Data Export
+- [ ] Receipt Scanning und OCR (Vision Framework lokal)
+- [ ] Alle Analytics und Charts (Swift Charts lokal)
+- [ ] Produkt-Suche und -Verwaltung (SwiftData lokal)
+- [ ] Data Export und Import
 - [ ] Vollständige App-Funktionalität ohne Internet
+- [ ] Alle Berechnungen und Analysen auf dem Gerät
 
-### Platform-Specific Sync (Optional)
+### Optional: CloudKit Sync
 
-- [ ] iOS: CloudKit Sync zwischen iPhone/iPad/Mac
-- [ ] Android: Google Drive Backup und Restore
-- [ ] Konflikterkennung und -lösung
-- [ ] Benutzer kann Sync deaktivieren
-- [ ] Lokale Backups zusätzlich zu Cloud-Sync
+- [ ] iOS: CloudKit Sync zwischen iPhone/iPad/Mac (private CloudKit container)
+- [ ] Konflikterkennung und -lösung mit CloudKit
+- [ ] Benutzer kann Sync komplett deaktivieren
+- [ ] Lokale Backups via iTunes/Finder zusätzlich zu CloudKit
+- [ ] End-to-End Verschlüsselung durch CloudKit
 
-## Future Backend Integration (Phase 2)
+## Future CloudKit Integration (Phase 2)
 
-### Vorbereitung für mögliche Backend-Erweiterung
+### Optional erweiterte Features mit CloudKit
 
-- [ ] Netzwerk-Layer Interface in shared module definiert
-- [ ] Offline-First Architektur beibehalten
-- [ ] Optional: Preisvergleich mit externen Quellen
-- [ ] Optional: Community Features
-- [ ] Migration von lokal zu hybrid möglich
+- [ ] Familien-Sharing von Ausgaben-Kategorien (CloudKit Sharing)
+- [ ] Automatische Backup-Wiederherstellung auf neuen Geräten
+- [ ] Synchronization zwischen iPhone, iPad, und Mac
+- [ ] Offline-First bleibt bestehen - CloudKit nur als Bonus
 
 ## Dependencies & Constraints
 
-### KMP Dependencies
+### iOS Native Dependencies
 
-- Kotlin Multiplatform 2.2.20+
-- Gradle 9+
-- Compose Multiplatform
-- SQLDelight (multiplatform database)
-- Kotlinx Serialization
-- Ktor (optional backend client)
-
-### Platform-Specific Dependencies
-
-#### iOS
-
+- SwiftUI (iOS 17.0+)
+- SwiftData (iOS 17.0+)
 - Vision Framework (OCR)
+- Swift Charts (für Visualisierung)
 - CloudKit (optional sync)
-- AVFoundation (Kamera)
-
-#### Android
-
-- ML Kit (OCR)
-- CameraX (Kamera)
-- Google Drive API (optional sync)
+- Natural Language Framework (Produktkategorisierung)
+- Core Image (Bildverarbeitung)
 
 ### Entwicklungs-Constraints
 
-- Kotlin 2.2.20+ (K2 compiler)
-- Gradle 9+ with Kotlin DSL
-- IntelliJ IDEA / Android Studio
-- iOS 15+ / Android 7+ Deployment Targets
-- Compose Multiplatform UI Architecture
+- Xcode 15.0+ mit Swift 5.9+
+- iOS 17.0+ Deployment Target
+- SwiftUI + SwiftData Architecture
+- Swift Testing Framework
+- Native iOS Development nur

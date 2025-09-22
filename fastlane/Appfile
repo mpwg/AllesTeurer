@@ -1,4 +1,4 @@
- app_identifier("eu.mpwg.allesteurer") # The bundle identifier of your iOS app
+ app_identifier("eu.mpwg.Alles-Teurer") # The bundle identifier of your app
  apple_id(ENV["APPLE_ID"]) # Your Apple Developer Portal username
 team_id(ENV["APPSTORE_TEAM_ID"]) # Your Apple Developer Portal Team ID (optional)
 

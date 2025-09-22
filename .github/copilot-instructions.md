@@ -2,207 +2,189 @@
 
 ## Project Overview
 
-AllesTeurer is a privacy-first mobile app that tracks product price inflation through receipt scanning and local analytics. The app uses Kotlin Multiplatform Mobile (KMP) with Compose Multiplatform for shared business logic and UI, platform-specific OCR implementations (Vision Framework for iOS, ML Kit for Android), and SQLDelight for persistence, maintaining strict on-device processing.
+AllesTeurer is a privacy-first native iOS app that tracks product price inflation through receipt scanning and local analytics. The app uses SwiftUI for the user interface, SwiftData for persistence, Apple's Vision Framework for OCR text recognition, and Swift Charts for data visualization, maintaining strict on-device processing.
 
-**Architecture**: Mobile-first development using KMP and Compose Multiplatform targeting iOS and Android.
+**Architecture**: iOS-first development using SwiftUI, SwiftData, and native iOS frameworks.
 
-## KMM Project Structure
+## iOS Project Structure
 
 ```
-alles-teurer/
-├── gradle/                  # Gradle wrapper and version catalogs
-├── apps/
-│   └── composeApp/         # Main KMP application
-│       ├── src/
-│       │   ├── commonMain/ # Shared Kotlin code
-│       │   │   ├── kotlin/
-│       │   │   │   ├── data/        # Repositories and data sources
-│       │   │   │   ├── domain/      # Business logic and use cases
-│       │   │   │   ├── presentation/ # ViewModels and UI state
-│       │   │   │   └── ui/          # Compose Multiplatform UI
-│       │   │   └── sqldelight/     # Database schema and queries
-│       │   ├── androidMain/ # Android-specific implementations
-│       │   │   └── kotlin/
-│       │   │       ├── ocr/         # ML Kit OCR implementation
-│       │   │       └── platform/   # Android-specific utilities
-│       │   ├── iosMain/     # iOS-specific implementations
-│       │   │   └── kotlin/
-│       │   │       ├── ocr/         # Vision Framework OCR
-│       │   │       └── platform/   # iOS-specific utilities
-│       ├── androidApp/      # Android app wrapper
-│       └── iosApp/         # iOS app wrapper (Xcode project)
-├── shared/                 # Additional shared modules (if needed)
-├── spec/                  # Requirements and architecture docs
-├── tools/                 # Development tooling and scripts
-├── gradle.properties      # Gradle configuration
-├── settings.gradle.kts    # Module configuration
-└── build.gradle.kts       # Root build configuration
+AllesTeurer/
+├── Alles Teurer/            # Native iOS App
+│   ├── Alles_TeurerApp.swift       # App Entry Point with SwiftData ModelContainer
+│   ├── ContentView.swift           # Main SwiftUI View
+│   ├── Item.swift                  # SwiftData Models
+│   ├── Info.plist                  # App Configuration
+│   ├── Alles_Teurer.entitlements  # App Capabilities
+│   └── Assets.xcassets/            # App Assets and Icons
+├── Alles Teurer.xcodeproj/  # Xcode Project Configuration
+├── Alles TeurerTests/       # Unit Tests using Swift Testing
+├── Alles TeurerUITests/     # UI Tests using XCUITest
+├── spec/                    # Requirements and architecture docs
+├── docs/                    # Additional documentation
+├── README.md               # Project overview
+└── .github/                # GitHub configuration and instructions
+    ├── copilot-instructions.md     # AI agent development guidelines
+    └── instructions/               # Specific coding guidelines
+        ├── swift.instructions.md           # Swift coding conventions
+        ├── swiftui-observation.instructions.md  # SwiftUI Observable patterns
+        └── a11y.instructions.md           # Accessibility requirements
 ```
 
 ## Architecture & Key Patterns
 
-### Kotlin Multiplatform Strategy
+### Native iOS Strategy
 
-- **Shared Business Logic**: 100% business logic sharing via commonMain
-- **Platform-Specific OCR**: expect/actual declarations for native OCR implementations
-- **Compose Multiplatform UI**: Cross-platform UI with platform adaptations
-- **Native Performance**: Direct compilation to native code on all platforms
+- **SwiftUI**: Declarative UI framework with native performance
+- **SwiftData**: Type-safe data persistence with Core Data backend
+- **Vision Framework**: On-device OCR for precise German text recognition
+- **Swift Charts**: Native data visualization for price analytics
+- **iOS-First**: Single platform focus with deep iOS integration
 - **Privacy-First**: All processing happens on-device, optional sync only
 
 ### MVVM + Repository Pattern
 
-- **UI**: Compose Multiplatform with platform-aware components
-- **ViewModels**: Shared ViewModels handling UI state and business logic
-- **Repositories**: Data access abstraction with platform-specific implementations
+- **UI**: SwiftUI with Observable ViewModels and data binding
+- **ViewModels**: ObservableObject classes handling UI state and business logic
+- **Repositories**: Data access abstraction with SwiftData integration
 - **Use Cases**: Domain logic encapsulation for complex operations
-- **Local-First**: SQLDelight for type-safe, multiplatform database queries
+- **Local-First**: SwiftData for type-safe, native iOS data persistence
 
-### Multiplatform Code Organization
+### iOS Code Organization
 
-- **commonMain/**: Shared business logic, UI, and data models
-- **androidMain/**: Android-specific implementations (ML Kit OCR, Android APIs)
-- **iosMain/**: iOS-specific implementations (Vision Framework, iOS APIs)
-- **Expect/Actual**: Platform-specific implementations of shared interfaces
+```
+Alles Teurer/
+├── Models/                 # SwiftData models and entities
+├── ViewModels/            # Observable ViewModels for business logic
+├── Views/                 # SwiftUI views and screens
+│   ├── Scanner/           # Receipt scanning interface
+│   ├── Products/          # Product list and details
+│   ├── Analytics/         # Price charts and insights
+│   └── Settings/          # App configuration
+├── Services/              # Business logic and data processing
+│   ├── OCRService.swift   # Vision Framework integration
+│   ├── DataManager.swift  # Swift Data operations
+│   ├── ProductMatcher.swift # Local fuzzy matching algorithms
+│   └── PriceAnalyzer.swift # Local analytics calculations
+├── Views/                 # SwiftUI views organized by feature
+│   ├── Scanner/           # Receipt scanning interface
+│   ├── Products/          # Product list and details
+│   ├── Analytics/         # Price charts and insights
+│   └── Settings/          # App configuration
+├── Coordinators/          # Navigation flow management
+└── Utils/                 # Extensions and helper functions
+```
 
 ### Critical Technical Constraints
 
-- **SQLDelight ONLY**: Type-safe SQL database for all platforms
-- **Kotlin 2.2.20+**: Modern Kotlin with K2 compiler
-- **Gradle 9+**: Latest Gradle version with Kotlin DSL
-- **Compose Multiplatform**: Shared UI across iOS and Android
+- **SwiftData ONLY**: Native iOS data persistence
+- **iOS 17.0+**: Minimum deployment target for SwiftData
+- **Xcode 15.0+**: Development environment requirement
 - **Privacy-First**: No external API calls for core functionality, all data stays on device
 - **Accessibility**: WCAG 2.2 Level AA compliance required for all UI components
 
-## Essential File Structure
-
-```
-apps/composeApp/src/
-├── commonMain/kotlin/
-│   ├── data/
-│   │   ├── local/           # SQLDelight database and DAOs
-│   │   ├── repository/      # Repository implementations
-│   │   └── models/          # Data models with @Serializable
-│   ├── domain/
-│   │   ├── models/          # Domain entities
-│   │   ├── repository/      # Repository interfaces
-│   │   └── usecase/         # Business logic use cases
-│   ├── presentation/
-│   │   ├── viewmodel/       # Shared ViewModels
-│   │   └── state/           # UI state classes
-│   └── ui/
-│       ├── screens/         # Compose screens
-│       ├── components/      # Reusable UI components
-│       └── theme/           # Design system and theming
-├── androidMain/kotlin/
-│   ├── ocr/                 # ML Kit OCR implementation
-│   ├── camera/              # Android camera integration
-│   └── platform/           # Android-specific utilities
-├── iosMain/kotlin/
-│   ├── ocr/                 # Vision Framework OCR implementation
-│   ├── camera/              # iOS camera integration
-│   └── platform/           # iOS-specific utilities
-└── commonMain/sqldelight/
-    └── database/           # SQL schema and queries
-```
-
-│ ├── DataManager.swift # Swift Data operations
-│ ├── ProductMatcher.swift # Local fuzzy matching algorithms
-│ └── PriceAnalyzer.swift # Local analytics calculations
-├── Views/ # SwiftUI views organized by feature
-│ ├── Scanner/ # Receipt scanning interface
-│ ├── Products/ # Product list and details
-│ ├── Analytics/ # Price charts and insights
-│ └── Settings/ # App configuration
-├── Coordinators/ # Navigation flow management
-└── Utils/ # Extensions and helper functions
-
-```
-
-### Shared Package Structure
-
-```
-
-packages/shared/
-├── models/ # Platform-agnostic data models
-│ ├── Receipt.ts # TypeScript definitions
-│ ├── Product.ts # Shared product model
-│ └── PriceHistory.ts # Price tracking models
-├── analytics/ # Business logic algorithms
-│ ├── PriceAnalyzer.ts # Price trend calculations
-│ ├── InflationCalc.ts # Inflation rate algorithms
-│ └── StatUtils.ts # Statistical utilities
-├── matching/ # Product matching logic
-│ ├── FuzzyMatcher.ts # Product name matching
-│ └── Categorizer.ts # Product categorization
-└── utils/ # Common utilities
-├── DateUtils.ts # Date formatting and parsing
-└── TextProcessor.ts # Text processing utilities
-
-````
-
 ## Core Development Patterns
 
-### Data Models (Kotlin Serialization)
+### SwiftData Models
 
-```kotlin
-@Serializable
-data class Receipt(
-    val id: String = UUID.randomUUID().toString(),
-    val storeName: String,
-    val scanDate: Instant,
-    val items: List<ReceiptItem>,
-    val totalAmount: Double
-)
+```swift
+@Model
+class Receipt {
+    let id: String
+    let storeName: String
+    let scanDate: Date
+    var items: [ReceiptItem]
+    let totalAmount: Double
 
-@Serializable
-data class ReceiptItem(
-    val name: String,
-    val quantity: Int = 1,
-    val unitPrice: Double,
-    val totalPrice: Double
-)
-````
+    init(id: String = UUID().uuidString, storeName: String, scanDate: Date, items: [ReceiptItem], totalAmount: Double) {
+        self.id = id
+        self.storeName = storeName
+        self.scanDate = scanDate
+        self.items = items
+        self.totalAmount = totalAmount
+    }
+}
 
-### ViewModels (Shared)
+@Model
+class ReceiptItem {
+    let name: String
+    let quantity: Int
+    let unitPrice: Double
+    let totalPrice: Double
 
-```kotlin
-class ReceiptScannerViewModel(
-    private val ocrService: OCRService,
-    private val receiptRepository: ReceiptRepository
-) : ViewModel() {
-    private val _scanState = MutableStateFlow<ScanState>(ScanState.Idle)
-    val scanState = _scanState.asStateFlow()
-
-    suspend fun processReceipt(imageBytes: ByteArray) {
-        _scanState.value = ScanState.Processing
-        try {
-            val receipt = ocrService.processReceiptImage(imageBytes)
-            receiptRepository.saveReceipt(receipt)
-            _scanState.value = ScanState.Success(receipt)
-        } catch (e: Exception) {
-            _scanState.value = ScanState.Error(e.message ?: "Unknown error")
-        }
+    init(name: String, quantity: Int = 1, unitPrice: Double, totalPrice: Double) {
+        self.name = name
+        self.quantity = quantity
+        self.unitPrice = unitPrice
+        self.totalPrice = totalPrice
     }
 }
 ```
 
-### Compose Multiplatform Views
+### Observable ViewModels
 
-```kotlin
-@Composable
-fun ProductListScreen(
-    viewModel: ProductListViewModel = koinViewModel(),
-    modifier: Modifier = Modifier
-) {
-    val products by viewModel.products.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+```swift
+@MainActor
+@Observable
+class ReceiptScannerViewModel {
+    private let ocrService: OCRService
+    private let receiptRepository: ReceiptRepository
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        items(products) { product ->
-            ProductItem(
-                product = product,
-                onClick = { viewModel.onProductClick(product) }
-            )
+    var scanState: ScanState = .idle
+
+    init(ocrService: OCRService, receiptRepository: ReceiptRepository) {
+        self.ocrService = ocrService
+        self.receiptRepository = receiptRepository
+    }
+
+    func processReceipt(from imageData: Data) async {
+        scanState = .processing
+        do {
+            let receipt = try await ocrService.processReceiptImage(imageData)
+            try await receiptRepository.save(receipt)
+            scanState = .success(receipt)
+        } catch {
+            scanState = .error(error.localizedDescription)
+        }
+    }
+}
+
+enum ScanState {
+    case idle
+    case processing
+    case success(Receipt)
+    case error(String)
+}
+```
+
+### SwiftUI Views
+
+```swift
+struct ReceiptScannerView: View {
+    @State private var viewModel = ReceiptScannerViewModel(
+        ocrService: OCRService(),
+        receiptRepository: ReceiptRepository()
+    )
+
+    var body: some View {
+        NavigationStack {
+            VStack {
+                switch viewModel.scanState {
+                case .idle:
+                    CameraView { imageData in
+                        Task {
+                            await viewModel.processReceipt(from: imageData)
+                        }
+                    }
+                case .processing:
+                    ProgressView("Processing receipt...")
+                case .success(let receipt):
+                    ReceiptResultView(receipt: receipt)
+                case .error(let message):
+                    ErrorView(message: message)
+                }
+            }
+            .navigationTitle("Scan Receipt")
         }
     }
 }
@@ -210,34 +192,38 @@ fun ProductListScreen(
 
 ## Development Workflows
 
-### Gradle Commands
+### Xcode Commands
 
 ```bash
 # Build all targets
-./gradlew build
+xcodebuild build -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
 
 # Run tests across all platforms
-./gradlew test
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15"
 
-# Format Kotlin code
-./gradlew ktlintFormat
-
-# Format code across entire monorepo
-pnpm format
+# Archive for distribution
+xcodebuild archive -scheme "Alles Teurer" -archivePath "AllesTeurer.xcarchive"
 ```
 
 ### Platform-Specific Commands
 
 ```bash
-# Open iOS project (for platform-specific debugging)
-open apps/composeApp/iosApp/iosApp.xcodeproj
+# Open iOS project (for debugging)
+open "Alles Teurer.xcodeproj"
 
-# Run platform-specific tests
-./gradlew :apps:composeApp:testDebugUnitTest        # Android
-./gradlew :apps:composeApp:iosSimulatorArm64Test    # iOS
+# Run on specific simulators
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15 Pro"
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPad Pro (12.9-inch)"
 
-# Run on specific platforms
-./gradlew :composeApp:installDebug             # Android
+# Run on device
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS,id=[device-id]"
+
+# Run on specific simulators
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15 Pro"
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPad Pro (12.9-inch)"
+
+# Run on device
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS,id=[device-id]"
 ```
 
 ### Feature Development Approach
@@ -245,69 +231,38 @@ open apps/composeApp/iosApp/iosApp.xcodeproj
 1. **Follow spec-driven workflow**: Reference `/spec/` directory for requirements and architecture
 2. **EARS notation**: Requirements written as "WHEN [condition], THE SYSTEM SHALL [behavior]"
 3. **Privacy validation**: Ensure no data leaves device except optional backend sync
-4. **Accessibility first**: Use semantic markup and proper accessibility support in Compose
+4. **Accessibility first**: Use semantic markup and proper accessibility support in SwiftUI
 
 ## Technology-Specific Conventions
 
-### OCR Integration (Platform-Specific)
-
-#### iOS (Vision Framework)
+### OCR Integration (iOS Vision Framework)
 
 - Preprocess images for optimal OCR (resize to 1024x1024, enhance contrast)
 - Handle German text recognition specifically
 - Implement user correction flows for OCR errors
 - Use async/await for all Vision operations
 
-#### Android (ML Kit)
+### Swift Charts Implementation
 
-- Configure ML Kit for German language support
-- Implement camera capture with CameraX
-- Handle OCR result processing with error correction
-- Use Kotlin coroutines for async operations
+- Create interactive price trend visualizations
 
-#### Web (Tesseract.js fallback)
+```
 
-- Load German language pack for better accuracy
-- Implement client-side image preprocessing
-- Provide manual text input as fallback
-- Handle progressive enhancement gracefully
+### Feature Development Approach
 
-### Database Integration (SQLDelight)
+1. **Follow spec-driven workflow**: Reference `/spec/` directory for requirements and architecture
+2. **EARS notation**: Requirements written as "WHEN [condition], THE SYSTEM SHALL [behavior]"
+3. **Privacy validation**: Ensure no data leaves device except optional backend sync
+4. **Accessibility first**: Use semantic markup and proper accessibility support in SwiftUI
 
-- Use type-safe SQL queries across all platforms
-- Implement proper schema migration strategies
-- Handle complex relationships with foreign keys
-- Write platform-specific database drivers when needed
+## Technology-Specific Conventions
 
-### Testing Framework
+### OCR Integration (iOS Vision Framework)
 
-- **KMP Testing**: Kotlin Test for shared business logic
-- **Platform Testing**: Platform-specific UI and integration tests
-- **OCR Testing**: Mock OCR services for consistent test results
-- **Database Testing**: In-memory database for fast test execution
-
-## Critical "Don'ts"
-
-- **Never use platform-specific databases** - SQLDelight only for consistency
-- **No external OCR services** - All OCR must be on-device
-- **No shared UI state across platforms** - Keep platform UI independent when needed
-- **Don't skip expect/actual implementations** - Always provide platform-specific code
-- **Don't break accessibility** - Every UI element must be accessible
-
-## Testing Approach
-
-- **Unit Testing**: Test shared business logic, OCR processing, and price analytics
-- **Integration Testing**: Verify OCR-to-database workflows across platforms
-- **UI Testing**: Platform-specific UI testing (Compose testing, XCUITest for iOS)
-- **Privacy Testing**: Ensure no network calls in core functionality
-
-## References
-
-- `/spec/Anforderungen.md` - Functional requirements in German
-- `/spec/architecture.md` - Technical architecture decisions
-- `/.github/instructions/kotlin.instructions.md` - Kotlin coding conventions
-- `/.github/instructions/a11y.instructions.md` - Accessibility requirements
-- `/.github/instructions/compose-multiplatform.instructions.md` - UI development patterns
+- Preprocess images for optimal OCR (resize to 1024x1024, enhance contrast)
+- Handle German text recognition specifically
+- Implement user correction flows for OCR errors
+- Use async/await for all Vision operations
 
 ### Swift Charts Implementation
 
@@ -353,3 +308,4 @@ open apps/composeApp/iosApp/iosApp.xcodeproj
 - `/.github/instructions/a11y.instructions.md` - Accessibility requirements
 - `/.github/instructions/swiftui-observation.instructions.md` - SwiftUI Observable patterns
 - `/.github/instructions/ai-agent-testing.instructions.md` - AI agent test implementation guidelines
+```

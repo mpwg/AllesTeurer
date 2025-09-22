@@ -1,165 +1,257 @@
-# AllesTeurer - Kotlin Multiplatform Implementation Plan
+# AllesTeurer - Native iOS Implementation Plan
 
 ## Executive Summary
 
-This document provides a comprehensive implementation plan for AllesTeurer, a privacy-focused Kotlin Multiplatform Mobile (KMP) application that enables users to track product prices through receipt scanning and local price monitoring. The app uses shared business logic across iOS and Android platforms, platform-specific OCR implementations (Vision Framework for iOS, ML Kit for Android), and SQLDelight for type-safe database operations, ensuring maximum code reuse while maintaining native performance and user experience.
+This document provides a comprehensive implementation plan for AllesTeurer, a privacy-focused native iOS application that enables users to track product prices through receipt scanning and local price monitoring. The app uses SwiftUI for the user interface, SwiftData for local data persistence, Apple's Vision Framework for OCR text recognition, and Swift Charts for data visualization, ensuring maximum performance while maintaining complete user privacy.
 
 ## 1. Project Architecture Overview
 
-### 1.1 Kotlin Multiplatform Technology Stack
+### 1.1 Native iOS Technology Stack
 
-**Shared Components (commonMain):**
+**Core Technologies:**
 
-- **Language:** Kotlin 2.2.20+ with K2 compiler
-- **UI Framework:** Compose Multiplatform
+- **Language:** Swift 5.9+ with modern async/await patterns
+- **UI Framework:** SwiftUI with Observation framework
 - **Architecture:** MVVM with Repository pattern
-- **Database:** SQLDelight for type-safe, cross-platform SQL
-- **Concurrency:** Kotlin Coroutines + Flow
-- **Serialization:** kotlinx.serialization
-- **Navigation:** Compose Navigation (shared)
+- **Database:** SwiftData with Core Data backend
+- **Concurrency:** Swift Concurrency (async/await, actors)
+- **Charts:** Swift Charts for native data visualization
 
-**Platform-Specific Implementations:**
+**iOS System Integrations:**
 
-**iOS (iosMain):**
+**Core Services:**
 
-- **OCR:** Vision Framework via expect/actual
-- **Camera:** AVFoundation via Compose integration
-- **Local Storage:** SQLDelight with native SQLite driver
-- **Sync:** CloudKit for optional device synchronization
+- **OCR:** Vision Framework for German text recognition
+- **Camera:** AVFoundation for receipt capture
+- **Local Storage:** SwiftData for type-safe data persistence
+- **Sync:** Optional CloudKit for device synchronization
+- **Analytics:** Local Swift algorithms for price analysis
 
-**Android (androidMain):**
-
-- **OCR:** ML Kit via expect/actual declarations
-- **Camera:** CameraX via Compose integration
-- **Local Storage:** SQLDelight with Android SQLite
-- **Sync:** Google Drive for optional cloud backup
-
-**Future Expansion (Phase 2+):**
-
-- **Backend Services:** Ktor server (when needed)
-- **Desktop:** Compose Desktop support
-- **Web:** Kotlin/JS with Compose for Web
-
-### 1.2 KMP Project Structure
+### 1.2 iOS Project Structure
 
 ```text
-alles-teurer/
-├── gradle/                  # Gradle wrapper and version catalogs
-├── apps/
-│   └── composeApp/         # Main KMP application
-│       ├── src/
-│       │   ├── commonMain/ # Shared Kotlin code
-│       │   │   ├── kotlin/
-│       │   │   │   ├── data/        # Repositories and data sources
-│       │   │   │   │   ├── local/       # SQLDelight database access
-│       │   │   │   │   ├── repository/  # Repository implementations
-│       │   │   │   │   └── models/      # Data models (@Serializable)
-│       │   │   │   ├── domain/      # Business logic and use cases
-│       │   │   │   │   ├── models/      # Domain entities
-│       │   │   │   │   ├── repository/  # Repository interfaces
-│       │   │   │   │   └── usecase/     # Business logic use cases
-│       │   │   │   ├── presentation/ # ViewModels and UI state
-│       │   │   │   │   ├── viewmodel/   # Shared ViewModels
-│       │   │   │   │   └── state/       # UI state classes
-│       │   │   │   └── ui/          # Compose Multiplatform UI
-│       │   │   │       ├── screens/     # Compose screens
-│       │   │   │       ├── components/  # Reusable UI components
-│       │   │   │       └── theme/       # Design system and theming
-│       │   │   └── sqldelight/     # Database schema and queries
-│       │   │       └── database/       # SQL schema definitions
-│       │   ├── androidMain/ # Android-specific implementations
-│       │   │   └── kotlin/
-│       │   │       ├── ocr/         # ML Kit OCR implementation
-│       │   │       ├── camera/      # Android camera integration
-│       │   │       └── platform/   # Android-specific utilities
-│       │   └── iosMain/     # iOS-specific implementations
-│       │       └── kotlin/
-│       │           ├── ocr/         # Vision Framework OCR
-│       │           ├── camera/      # iOS camera integration
-│       │           └── platform/   # iOS-specific utilities
-│       ├── androidApp/      # Android app wrapper
-│       └── iosApp/         # iOS app wrapper (Xcode project)
-├── shared/                 # Additional shared modules (if needed)
-├── backend/               # Optional backend services (Ktor)
-├── spec/                  # Requirements and architecture docs
-├── tools/                 # Development tooling and scripts
-├── gradle.properties      # Gradle configuration
-├── settings.gradle.kts    # Module configuration
-└── build.gradle.kts       # Root build configuration
+Alles Teurer/
+├── Alles Teurer/              # Main iOS App
+│   ├── Alles_TeurerApp.swift       # App Entry Point with SwiftData ModelContainer
+│   ├── ContentView.swift           # Main SwiftUI View with TabView
+│   ├── Models/                     # SwiftData Models
+│   │   ├── Receipt.swift           # Receipt entity with @Model
+│   │   ├── Product.swift           # Product entity with @Model
+│   │   ├── PriceHistory.swift      # Price tracking entity
+│   │   └── Category.swift          # Product categories
+│   ├── ViewModels/                 # Observable ViewModels
+│   │   ├── ScannerViewModel.swift  # Receipt scanning logic
+│   │   ├── ProductsViewModel.swift # Product management
+│   │   ├── AnalyticsViewModel.swift # Price analytics
+│   │   └── SettingsViewModel.swift # App settings
+│   ├── Views/                      # SwiftUI Views
+│   │   ├── Scanner/                # Receipt scanning interface
+│   │   │   ├── ScannerView.swift
+│   │   │   ├── CameraView.swift
+│   │   │   └── ResultsView.swift
+│   │   ├── Products/               # Product list and details
+│   │   │   ├── ProductListView.swift
+│   │   │   ├── ProductDetailView.swift
+│   │   │   └── ProductEditView.swift
+│   │   ├── Analytics/              # Price charts and insights
+│   │   │   ├── AnalyticsView.swift
+│   │   │   ├── ChartViews.swift
+│   │   │   └── TrendView.swift
+│   │   └── Settings/               # App configuration
+│   │       ├── SettingsView.swift
+│   │       ├── ExportView.swift
+│   │       └── CloudKitView.swift
+│   ├── Services/                   # Business Logic
+│   │   ├── OCRService.swift        # Vision Framework integration
+│   │   ├── DataManager.swift       # SwiftData operations
+│   │   ├── PriceAnalyzer.swift     # Local analytics calculations
+│   │   ├── CloudKitService.swift   # Optional CloudKit sync
+│   │   └── ExportService.swift     # Data export functionality
+│   ├── Extensions/                 # Swift Extensions
+│   │   ├── View+Extensions.swift
+│   │   ├── Date+Extensions.swift
+│   │   └── String+Extensions.swift
+│   └── Resources/                  # Assets and Configuration
+│       ├── Assets.xcassets/        # App icons and images
+│       ├── Info.plist              # App configuration
+│       └── Alles_Teurer.entitlements # App capabilities
+├── Alles Teurer.xcodeproj/        # Xcode Project Configuration
+├── Alles TeurerTests/             # Unit Tests using Swift Testing
+├── Alles TeurerUITests/           # UI Tests using XCUITest
+└── fastlane/                      # App Store deployment automation
 ```
 
 ## 2. Implementation Phases
 
-### Phase 1: KMP Foundation & Project Setup (Weeks 1-2)
+### Phase 1: iOS Foundation & Core Features (Weeks 1-4)
 
-#### 2.1 KMP Project Initialization
+#### 2.1 iOS Project Setup & SwiftData Foundation
 
 **Timeline:** Week 1  
 **Effort:** 5 days  
 **Dependencies:** None
 
-**Tasks:**
+**Deliverables:**
 
-1. **Initialize Kotlin Multiplatform project**
+- [ ] Xcode project configuration with proper bundle identifier
+- [ ] SwiftData ModelContainer setup with proper schema
+- [ ] Core SwiftData models (Receipt, Product, PriceRecord)
+- [ ] Basic SwiftUI app structure with TabView
+- [ ] iOS deployment configuration (iOS 17.0+ target)
+
+**Implementation Tasks:**
+
+1. **Initialize Xcode Project**
 
    ```bash
-   # Create new KMP project with Compose Multiplatform
-   mkdir alles-teurer && cd alles-teurer
-
-   # Initialize with KMP wizard or template
-   # Set up build.gradle.kts for multiplatform
+   # Create new iOS App project in Xcode 15.0+
+   # Configure bundle identifier: eu.mpwg.allesteurer
+   # Set deployment target: iOS 17.0
+   # Enable SwiftData capability
    ```
 
-2. **Configure gradle build scripts**
+2. **Setup SwiftData Foundation**
 
-   ```kotlin
-   // build.gradle.kts (root)
-   plugins {
-       alias(libs.plugins.kotlin.multiplatform) apply false
-       alias(libs.plugins.kotlin.serialization) apply false
-       alias(libs.plugins.sqldelight) apply false
-       alias(libs.plugins.compose.multiplatform) apply false
-   }
+   ```swift
+   // Alles_TeurerApp.swift - Main app entry point
+   import SwiftUI
+   import SwiftData
 
-   // apps/composeApp/build.gradle.kts
-   kotlin {
-       androidTarget()
+   @main
+   struct Alles_TeurerApp: App {
+       var sharedModelContainer: ModelContainer = {
+           let schema = Schema([
+               Receipt.self,
+               Product.self,
+               PriceRecord.self
+           ])
+           let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
-       listOf(
-           iosX64(),
-           iosArm64(),
-           iosSimulatorArm64()
-       ).forEach { iosTarget ->
-           iosTarget.binaries.framework {
-               baseName = "ComposeApp"
-               isStatic = true
+           do {
+               return try ModelContainer(for: schema, configurations: [modelConfiguration])
+           } catch {
+               fatalError("Could not create ModelContainer: \(error)")
            }
-       }
+       }()
 
-       sourceSets {
-           val commonMain by getting {
-               dependencies {
-                   implementation(compose.runtime)
-                   implementation(compose.foundation)
-                   implementation(compose.material3)
-                   implementation(compose.components.resources)
-                   implementation(libs.kotlinx.coroutines.core)
-                   implementation(libs.kotlinx.serialization.json)
-                   implementation(libs.sqldelight.runtime)
-                   implementation(libs.sqldelight.coroutines.extensions)
-               }
+       var body: some Scene {
+           WindowGroup {
+               ContentView()
            }
+           .modelContainer(sharedModelContainer)
        }
    }
    ```
 
-3. **Set up module structure**
-   - Configure commonMain, androidMain, iosMain source sets
-   - Set up proper package structure following Clean Architecture
-   - Initialize SQLDelight configuration
-   - Set up Compose Multiplatform integration
+3. **Core SwiftData Models**
 
-#### 2.2 SQLDelight Database Setup
+   ```swift
+   import SwiftData
+   import Foundation
+
+   @Model
+   final class Receipt {
+       let id: UUID
+       let storeName: String
+       let scanDate: Date
+       let totalAmount: Double
+       @Relationship(deleteRule: .cascade) var items: [ReceiptItem]
+
+       init(storeName: String, totalAmount: Double, scanDate: Date = Date()) {
+           self.id = UUID()
+           self.storeName = storeName
+           self.totalAmount = totalAmount
+           self.scanDate = scanDate
+           self.items = []
+       }
+   }
+
+   @Model
+   final class Product {
+       let id: UUID
+       let name: String
+       let category: ProductCategory
+       let createdDate: Date
+       @Relationship(deleteRule: .cascade) var priceHistory: [PriceRecord]
+
+       init(name: String, category: ProductCategory) {
+           self.id = UUID()
+           self.name = name
+           self.category = category
+           self.createdDate = Date()
+           self.priceHistory = []
+       }
+   }
+
+   @Model
+   final class PriceRecord {
+       let id: UUID
+       let productName: String
+       let price: Double
+       let storeName: String
+       let recordDate: Date
+
+       init(productName: String, price: Double, storeName: String, recordDate: Date = Date()) {
+           self.id = UUID()
+           self.productName = productName
+           self.price = price
+           self.storeName = storeName
+           self.recordDate = recordDate
+       }
+   }
+   ```
+
+**Tasks:**
+
+1. **Initialize iOS Project Structure**
+
+   ```bash
+   # Create proper iOS project structure in Xcode
+   # Configure bundle identifier: eu.mpwg.allesteurer
+   # Set deployment target: iOS 17.0
+   # Enable required capabilities (Camera, Photo Library)
+   ```
+
+2. **Configure SwiftData Stack**
+
+   ```swift
+   // DataManager.swift - Central data management
+   import SwiftData
+   import Foundation
+
+   @MainActor
+   class DataManager: ObservableObject {
+       static let shared = DataManager()
+
+       private let modelContainer: ModelContainer
+       private var modelContext: ModelContext { modelContainer.mainContext }
+
+       init() {
+           let schema = Schema([Receipt.self, Product.self, PriceRecord.self])
+           let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+           do {
+               modelContainer = try ModelContainer(for: schema, configurations: [configuration])
+           } catch {
+               fatalError("Failed to initialize ModelContainer: \(error)")
+           }
+       }
+
+       func save() throws {
+           if modelContext.hasChanges {
+               try modelContext.save()
+           }
+       }
+   }
+   ```
+
+3. **Set up iOS module structure**
+   - Configure SwiftUI Views organized by feature
+   - Set up proper View Models following MVVM pattern
+   - Initialize Vision Framework integration
+   - Set up Swift Charts for analytics
+
+#### 2.2 SwiftData Database Operations
 
 **Timeline:** Week 2  
 **Effort:** 4 days  

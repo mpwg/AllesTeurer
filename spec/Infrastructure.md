@@ -1,206 +1,124 @@
-# Kotlin Multiplatform Infrastructure Setup for AllesTeurer# Kotlin Multiplatform Infrastructure Setup for AllesTeurer
+# Native iOS Infrastructure Setup for AllesTeurer
 
-## Overview## Overview
+## Overview
 
-Configure a complete Kotlin Multiplatform Mobile (KMP) setup with shared business logic, platform-specific implementations, and Gradle build system for managing iOS, Android, and optional backend services.Configure a complete Kotlin Multiplatform Mobile (KMP) setup with shared business logic, platform-specific implementations, and Gradle build system for managing iOS, Android, and optional backend services.
+Configure a complete native iOS development setup with Xcode project configuration, SwiftData persistence, Vision Framework integration, and App Store deployment pipeline for AllesTeurer price tracking application.
 
-## Directory Structure## Directory Structure
+## Directory Structure
 
+```text
+AllesTeurer/
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml                  # iOS CI/CD pipeline
+│   │   └── deploy-ios.yml          # App Store deployment
+├── Alles Teurer/                   # Main iOS App
+│   ├── Alles_TeurerApp.swift       # App Entry Point with SwiftData ModelContainer
+│   ├── ContentView.swift           # Main SwiftUI View with TabView
+│   ├── Models/                     # SwiftData Models
+│   │   ├── Receipt.swift           # Receipt entity with @Model
+│   │   ├── Product.swift           # Product entity with @Model
+│   │   └── PriceHistory.swift      # Price tracking entity
+│   ├── ViewModels/                 # Observable ViewModels
+│   │   ├── ScannerViewModel.swift  # Receipt scanning logic
+│   │   ├── ProductsViewModel.swift # Product management
+│   │   └── AnalyticsViewModel.swift # Price analytics
+│   ├── Views/                      # SwiftUI Views
+│   │   ├── Scanner/                # Receipt scanning interface
+│   │   ├── Products/               # Product list and details
+│   │   ├── Analytics/              # Price charts and insights
+│   │   └── Settings/               # App configuration
+│   ├── Services/                   # Business Logic
+│   │   ├── OCRService.swift        # Vision Framework integration
+│   │   ├── DataManager.swift       # SwiftData operations
+│   │   └── CloudKitService.swift   # Optional CloudKit sync
+│   ├── Extensions/                 # Swift Extensions
+│   └── Resources/                  # Assets and Configuration
+│       ├── Assets.xcassets/        # App icons and images
+│       ├── Info.plist              # App configuration
+│       └── Alles_Teurer.entitlements # App capabilities
+├── Alles Teurer.xcodeproj/        # Xcode Project Configuration
+├── Alles TeurerTests/             # Unit Tests using Swift Testing
+├── Alles TeurerUITests/           # UI Tests using XCUITest
+├── fastlane/                      # App Store deployment automation
+│   ├── Appfile                    # App Store Connect configuration
+│   ├── Fastfile                   # Deployment lanes
+│   └── Matchfile                  # Code signing certificates
+├── docs/                          # Documentation
+└── spec/                          # Requirements and architecture docs
 ```
 
-alles-teurer/alles-teurer/
+## Configuration Files
 
-├── .github/├── .github/
+### Xcode Project Configuration
 
-│   ├── workflows/│   ├── workflows/
-
-│   │   ├── ci.yml│   │   ├── ci.yml
-
-│   │   ├── deploy-ios.yml│   │   ├── deploy-ios.yml
-
-│   │   └── deploy-android.yml│   │   └── deploy-android.yml
-
-├── gradle/├── gradle/
-
-│   ├── wrapper/│   ├── wrapper/
-
-│   └── libs.versions.toml        # Version catalog for dependencies│   └── libs.versions.toml        # Version catalog for dependencies
-
-├── apps/├── apps/
-
-│   └── composeApp/               # Main KMP application│   └── composeApp/               # Main KMP application
-
-│       ├── src/│       ├── src/
-
-│       │   ├── commonMain/       # Shared Kotlin code│       │   ├── commonMain/       # Shared Kotlin code
-
-│       │   │   ├── kotlin/│       │   │   ├── kotlin/
-
-│       │   │   │   ├── data/     # Repositories and data sources│       │   │   │   ├── data/     # Repositories and data sources
-
-│       │   │   │   ├── domain/   # Business logic and use cases│       │   │   │   ├── domain/   # Business logic and use cases
-
-│       │   │   │   ├── presentation/ # ViewModels and UI state│       │   │   │   ├── presentation/ # ViewModels and UI state
-
-│       │   │   │   └── ui/       # Compose Multiplatform UI│       │   │   │   └── ui/       # Compose Multiplatform UI
-
-│       │   │   └── sqldelight/  # Database schema and queries│       │   │   └── sqldelight/  # Database schema and queries
-
-│       │   ├── androidMain/      # Android-specific implementations│       │   ├── androidMain/      # Android-specific implementations
-
-│       │   │   └── kotlin/│       │   │   └── kotlin/
-
-│       │   │       ├── ocr/      # ML Kit OCR implementation│       │   │       ├── ocr/      # ML Kit OCR implementation
-
-│       │   │       └── platform/ # Android-specific utilities│       │   │       └── platform/ # Android-specific utilities
-
-│       │   ├── iosMain/          # iOS-specific implementations│       │   ├── iosMain/          # iOS-specific implementations
-
-│       │   │   └── kotlin/│       │   │   └── kotlin/
-
-│       │   │       ├── ocr/      # Vision Framework OCR│       │   │       ├── ocr/      # Vision Framework OCR
-
-│       │   │       └── platform/ # iOS-specific utilities│       │   │       └── platform/ # iOS-specific utilities
-
-│       │   └── desktopMain/      # Desktop-specific (optional)│       │   └── desktopMain/      # Desktop-specific (optional)
-
-│       ├── androidApp/           # Android app wrapper│       ├── androidApp/           # Android app wrapper
-
-│       └── iosApp/              # iOS app wrapper (Xcode project)│       └── iosApp/              # iOS app wrapper (Xcode project)
-
-├── shared/                      # Additional shared modules (if needed)├── shared/                      # Additional shared modules (if needed)
-
-├── backend/                     # Optional Ktor backend services├── backend/                     # Optional Ktor backend services
-
-│   ├── src/│   ├── src/
-
-│   │   ├── main/kotlin/│   │   ├── main/kotlin/
-
-│   │   └── test/kotlin/│   │   └── test/kotlin/
-
-│   └── build.gradle.kts│   └── build.gradle.kts
-
-├── gradle.properties            # Gradle configuration├── gradle.properties            # Gradle configuration
-
-├── settings.gradle.kts          # Module configuration├── settings.gradle.kts          # Module configuration
-
-└── build.gradle.kts            # Root build configuration└── build.gradle.kts            # Root build configuration
-
+```xml
+<!-- Info.plist -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>Alles Teurer</string>
+    <key>CFBundleIdentifier</key>
+    <string>eu.mpwg.allesteurer</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+        <string>camera-flash</string>
+    </array>
+    <key>NSCameraUsageDescription</key>
+    <string>Used to scan and extract text from receipts for price tracking</string>
+    <key>UILaunchStoryboardName</key>
+    <string>Launch Screen</string>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+</dict>
+</plist>
 ```
 
-## Configuration Files## Configuration Files
+### App Entitlements
 
-### Root build.gradle.kts### Root build.gradle.kts
+```xml
+<!-- Alles_Teurer.entitlements -->
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.developer.icloud-container-identifiers</key>
+    <array>
+        <string>iCloud.eu.mpwg.allesteurer</string>
+    </array>
+    <key>com.apple.developer.ubiquity-kvstore-identifier</key>
+    <string>$(TeamIdentifierPrefix)eu.mpwg.allesteurer</string>
+    <key>com.apple.developer.icloud-services</key>
+    <array>
+        <string>CloudKit</string>
+    </array>
+</dict>
+</plist>
+```
 
-`kotlin`kotlin
+} mavenContent {
 
-plugins {plugins {
-
-    alias(libs.plugins.kotlin.multiplatform) apply false    alias(libs.plugins.kotlin.multiplatform) apply false
-
-    alias(libs.plugins.kotlin.android) apply false    alias(libs.plugins.kotlin.android) apply false
-
-    alias(libs.plugins.android.application) apply false    alias(libs.plugins.android.application) apply false
-
-    alias(libs.plugins.android.library) apply false    alias(libs.plugins.android.library) apply false
-
-    alias(libs.plugins.compose.multiplatform) apply false    alias(libs.plugins.compose.multiplatform) apply false
-
-    alias(libs.plugins.sqldelight) apply false    alias(libs.plugins.sqldelight) apply false
-
-}}
-
-allprojects {allprojects {
-
-    repositories {    repositories {
-
-        google()        google()
-
-        mavenCentral()        mavenCentral()
-
-        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-
-    }    }
-
-}}
-
-tasks.register("clean", Delete::class) {tasks.register("clean", Delete::class) {
-
-    delete(rootProject.buildDir)    delete(rootProject.buildDir)
-
-}}
-
-````
-
-  "name": "alles-teuer",
-
-### settings.gradle.kts  "private": true,
-
-  "workspaces": [
-
-```kotlin    "apps/*",
-
-rootProject.name = "AllesTeurer"    "packages/*"
-
-include(":apps:composeApp")  ],
-
-include(":shared")  "scripts": {
-
-    "dev": "turbo run dev",
-
-pluginManagement {    "build": "turbo run build",
-
-    repositories {    "test": "turbo run test",
-
-        google {    "lint": "turbo run lint",
-
-            mavenContent {    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,md}\"",
-
-                includeGroupAndSubgroups("androidx")    "db:generate": "turbo run db:generate",
-
-                includeGroupAndSubgroups("com.android")    "db:migrate": "turbo run db:migrate",
-
-                includeGroupAndSubgroups("com.google")    "db:seed": "turbo run db:seed"
-
-            }  },
-
-        }  "devDependencies": {
-
-        mavenCentral()    "turbo": "latest",
-
-        gradlePluginPortal()    "prettier": "^3.0.0",
-
-    }    "eslint": "^8.0.0",
-
-}    "@typescript-eslint/parser": "^6.0.0",
-
-    "@typescript-eslint/eslint-plugin": "^6.0.0"
-
-dependencyResolutionManagement {  }
-
-    repositories {### settings.gradle.kts
-
-        google {
-
-            mavenContent {```kotlin
-
-                includeGroupAndSubgroups("androidx")rootProject.name = "AllesTeurer"
-
-                includeGroupAndSubgroups("com.android")include(":apps:composeApp")
-
-                includeGroupAndSubgroups("com.google")include(":shared")
-
-            }
-
-        }pluginManagement {
-
-        mavenCentral()    repositories {
-
-    }        google {
-
-}            mavenContent {
-
-```                includeGroupAndSubgroups("androidx")
+````includeGroupAndSubgroups("androidx")
 
                 includeGroupAndSubgroups("com.android")
 

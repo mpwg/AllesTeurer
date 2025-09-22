@@ -2,17 +2,17 @@
 
 [![Build and Test](https://github.com/mpwg/AllesTeurer/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/mpwg/AllesTeurer/actions/workflows/build-and-test.yml)
 
-This repository includes a comprehensive CI/CD pipeline using GitHub Actions for building, testing, and deploying the AllesTeurer Kotlin Multiplatform Mobile (KMP) app.
+This repository includes a comprehensive CI/CD pipeline using GitHub Actions for building, testing, and deploying the AllesTeurer native iOS app.
 
 ---
 
 ## 🚀 Features
 
-- **Multi-platform builds**: Supports both iOS and Android
-- **Automated testing**: Runs unit tests and static analysis (Detekt)
-- **Build artifacts**: Saves build outputs for debugging and distribution
+- **iOS-focused builds**: Native iOS app with Xcode build system
+- **Automated testing**: Runs Swift Testing and XCUITest suites
+- **Build artifacts**: Saves .ipa files for TestFlight and App Store distribution
 - **Smart triggers**: Different workflows for PRs, feature branches, and releases
-- **Manual deployment**: Staging and production deploys via workflow dispatch
+- **Manual deployment**: Staging and production deploys to TestFlight/App Store
 
 ---
 
@@ -20,20 +20,19 @@ This repository includes a comprehensive CI/CD pipeline using GitHub Actions for
 
 ### Build Matrix
 
-| Platform   | Runner          | Tools                | Output                     |
-| ---------- | --------------- | -------------------- | -------------------------- |
-| iOS        | `macos-26`      | Xcode 26.0, Java 21  | Simulator build logs       |
-| Android    | `ubuntu-latest` | Java 21, Android SDK | APK files                  |
-| Validation | `ubuntu-latest` | Java 21, Gradle      | Lint reports, test results |
+| Platform   | Runner     | Tools              | Output                     |
+| ---------- | ---------- | ------------------ | -------------------------- |
+| iOS        | `macos-14` | Xcode 15.0+, Swift | .ipa files, test reports   |
+| Validation | `macos-14` | SwiftLint, Tests   | Lint reports, test results |
 
 ### Triggers
 
-| Event             | iOS Build | Android Build | Deploy             |
-| ----------------- | --------- | ------------- | ------------------ |
-| Push to `main`    | ✅        | ✅            | 🚀 Production      |
-| Push to `develop` | ✅        | ✅            | 🧪 Staging         |
-| Pull Request      | ❌        | ✅            | ✅ Validation only |
-| Manual dispatch   | 🎛️        | 🎛️            | ⚙️ Configurable    |
+| Event             | iOS Build | Tests | Deploy             |
+| ----------------- | --------- | ----- | ------------------ |
+| Push to `main`    | ✅        | ✅    | 🚀 App Store       |
+| Push to `develop` | ✅        | ✅    | 🧪 TestFlight      |
+| Pull Request      | ✅        | ✅    | ✅ Validation only |
+| Manual dispatch   | 🎛️        | 🎛️    | ⚙️ Configurable    |
 
 ---
 
@@ -41,11 +40,13 @@ This repository includes a comprehensive CI/CD pipeline using GitHub Actions for
 
 ### 1. GitHub Secrets Setup
 
-Configure repository secrets for signing credentials and API keys. See [docs/CI_SETUP.md](docs/CI_SETUP.md).
+Configure repository secrets for iOS signing credentials and App Store Connect API. See [docs/CI_SETUP.md](docs/CI_SETUP.md).
 
-### 2. Fastlane Match Setup (iOS only)
+### 2. App Store Connect API Key
 
-Manage iOS code signing certificates with Fastlane Match.
+Set up API key for automated TestFlight and App Store deployments.
+
+---
 
 ---
 
@@ -53,44 +54,44 @@ Manage iOS code signing certificates with Fastlane Match.
 
 ### Submitting Test Builds
 
-- **Android**: On every push/PR to `main` or `develop`, the workflow builds the APK and uploads it as an artifact (`android-debug-apk`).
-  - To download: Go to the relevant workflow run in GitHub Actions → Artifacts → Download `android-debug-apk`.
-  - For PRs, a comment is posted with a link to the APK artifact.
-- **iOS**: On push to `main`/`develop` or manual trigger, the workflow builds the iOS simulator app. Build logs are uploaded as artifacts on failure.
+- **iOS TestFlight**: On every push/PR to `main` or `develop`, the workflow builds the iOS app and uploads it to TestFlight for testing.
+  - Test builds are automatically distributed to internal testers
+  - External testers require manual approval in App Store Connect
+- **Local Testing**: For PRs, the workflow builds for iOS Simulator and uploads build logs as artifacts
 
 ### Submitting Release Builds / Deployments
 
 - **Manual Trigger Required**: Go to GitHub → Actions → Build and Test → Run workflow. Select `deploy_target`:
-  - `staging`: Deploys Android APK to Firebase App Distribution (testers group). Requires secrets: `FIREBASE_APP_ID_ANDROID`, `FIREBASE_SERVICE_ACCOUNT`.
-  - `production`: Manual steps required (see workflow output):
-    1. Download APK artifact
-    2. Sign APK locally
-    3. Upload to Google Play Console
-    4. Build iOS release on local Mac
-    5. Submit to App Store Connect
+  - `testflight`: Deploys iOS app to TestFlight for beta testing. Requires secrets: `APP_STORE_CONNECT_API_KEY`, `MATCH_PASSWORD`.
+  - `appstore`: Submits to App Store for review and release. Manual steps required (see workflow output):
+    1. Download .ipa artifact
+    2. Upload to App Store Connect via Xcode or Transporter
+    3. Submit for App Store review
 
 ---
 
 ## 📊 Monitoring & Artifacts
 
-- **Artifacts**: APKs, test reports, and iOS build logs are uploaded for each run. Access via the workflow run page.
+- **Artifacts**: .ipa files, test reports, and build logs are uploaded for each run. Access via the workflow run page.
 - **Status**: Build status and summary are posted in the workflow summary and PR comments.
+- **TestFlight**: Automatic upload to TestFlight for main/develop branches with build notifications
 
 ---
 
 ## 🛠️ Development Workflow
 
-- **Feature branches**: Validation builds only (no deploy)
-- **Develop branch**: Deploys to staging (Firebase testers)
-- **Main branch**: Deploys to production (manual steps)
+- **Feature branches**: Validation builds only (Simulator builds + tests)
+- **Develop branch**: Deploys to TestFlight internal testing
+- **Main branch**: Deploys to TestFlight external testing and App Store submission
 
 ---
 
 ## 🆘 Troubleshooting
 
-- Check workflow logs and artifacts for errors.
-- For deployment, ensure all required secrets are set.
-- For manual production deploy, follow the steps in the workflow output.
+- Check Xcode build logs and test reports in workflow artifacts
+- For TestFlight deployment, ensure App Store Connect API key is configured
+- For local development issues, verify Xcode version compatibility (15.0+)
+- Check iOS deployment target matches project settings (iOS 17.0+)
 
 ---
 
@@ -100,8 +101,8 @@ MIT License - see [LICENSE](LICENSE)
 
 ---
 
-### Last updated: 2025-09-21
+### Last updated: 2025-09-22
 
 ---
 
-> This documentation was updated to reflect the current CI workflow. For questions, see [CI Setup](./CI_SETUP.md) or ask in the [repository discussions](https://github.com/mpwg/AllesTeurer/discussions)
+> This documentation was updated to reflect the iOS-first workflow. For questions, see [CI Setup](./CI_SETUP.md) or ask in the [repository discussions](https://github.com/mpwg/AllesTeurer/discussions)

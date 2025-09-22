@@ -10,7 +10,7 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
-# Load environment variables from .env file if it exists
+# Load environment variables from .env file if it exists, otherwise use system environment variables
 env_file_path = File.join(File.dirname(__FILE__), '..', '.env')
 if File.exist?(env_file_path)
   require 'dotenv'
@@ -25,125 +25,18 @@ end
 
 default_platform(:ios)
 
-# Helper function to setup Google Play JSON key from base64 or file path
-def setup_google_play_json_key
-  if ENV["GOOGLE_PLAY_JSON_KEY_BASE64"] && !ENV["GOOGLE_PLAY_JSON_KEY_BASE64"].empty?
-    # Create temporary file from base64-encoded JSON
-    require 'base64'
-    require 'tempfile'
-    
-    json_content = Base64.decode64(ENV["GOOGLE_PLAY_JSON_KEY_BASE64"])
-    temp_file = Tempfile.new(['google-play-key', '.json'])
-    temp_file.write(json_content)
-    temp_file.close
-    
-    UI.message("🔑 Using base64-encoded Google Play JSON key")
-    return { 
-      path: temp_file.path, 
-      cleanup: -> { temp_file.unlink }
-    }
-  elsif ENV["GOOGLE_PLAY_JSON_KEY_PATH"] && File.exist?(ENV["GOOGLE_PLAY_JSON_KEY_PATH"])
-    UI.message("🔑 Using Google Play JSON key from file path")
-    return { 
-      path: ENV["GOOGLE_PLAY_JSON_KEY_PATH"], 
-      cleanup: -> { } # No cleanup needed for file path
-    }
-  else
-    return nil
-  end
-end
-
-# Global configuration for KMP AllesTeurer project
-APP_IDENTIFIER = "eu.mpwg.allesteurer"
-SCHEME_NAME = "iosApp"
-WORKSPACE_PATH = "iosApp/iosApp.xcodeproj"
-ANDROID_PROJECT_PATH = "./"
-ANDROID_MODULE = "composeApp"
-
 # Global configuration
-fastlane_require 'dotenv'
-
-before_all do |lane|
-  # Ensure .env is loaded for all lanes
-  Dotenv.load('.env') if File.exist?('.env')
-end
-
-# Cross-platform lanes
-desc "Build both iOS and Android for development"
-lane :dev_all do
-  UI.header("🚀 Building AllesTeurer for all platforms - Development")
-  
-  UI.message("📱 Building iOS development...")
-  begin
-    # Note: This will only work on macOS with iOS development environment
-    Fastlane::LaneManager.cruise_lane("ios", "dev") if Helper.mac?
-  rescue => e
-    UI.error("iOS development build failed: #{e.message}")
-  end
-  
-  UI.message("🤖 Building Android development...")
-  Fastlane::LaneManager.cruise_lane("android", "dev")
-  
-  UI.success("✅ All development builds completed!")
-end
-
-desc "Build both iOS and Android for beta testing"
-lane :beta_all do
-  UI.header("🚀 Building AllesTeurer for all platforms - Beta")
-  
-  UI.message("📱 Building iOS beta...")
-  begin
-    Fastlane::LaneManager.cruise_lane("ios", "beta") if Helper.mac?
-  rescue => e
-    UI.error("iOS beta build failed: #{e.message}")
-  end
-  
-  UI.message("🤖 Building Android beta...")
-  Fastlane::LaneManager.cruise_lane("android", "beta")
-  
-  UI.success("✅ All beta builds completed!")
-end
-
-desc "Build both iOS and Android for release"
-lane :release_all do
-  UI.header("🚀 Building AllesTeurer for all platforms - Release")
-  
-  UI.message("📱 Building iOS release...")
-  begin
-    Fastlane::LaneManager.cruise_lane("ios", "release") if Helper.mac?
-  rescue => e
-    UI.error("iOS release build failed: #{e.message}")
-  end
-  
-  UI.message("🤖 Building Android release...")
-  Fastlane::LaneManager.cruise_lane("android", "release")
-  
-  UI.success("✅ All release builds completed!")
-end
-
-desc "Build both platforms for CI validation"
-lane :build_all do
-  UI.header("🔨 Building AllesTeurer for CI validation")
-  
-  UI.message("📱 Building iOS...")
-  begin
-    Fastlane::LaneManager.cruise_lane("ios", "build") if Helper.mac?
-  rescue => e
-    UI.error("iOS build failed: #{e.message}")
-  end
-  
-  UI.message("🤖 Building Android...")
-  Fastlane::LaneManager.cruise_lane("android", "build")
-  
-  UI.success("✅ All validation builds completed!")
-end
+APP_IDENTIFIER = "eu.mpwg.Alles-Teurer"
+SCHEME_NAME = "Alles-Teurer"
+WORKSPACE_PATH = "./Alles-Teurer.xcodeproj"
 
 platform :ios do
   before_all do
+
     # Setup keychain for CI
     if is_ci
       create_keychain(
-        name: "build.keychain",
+        name: "CI",
         password: ENV["KEYCHAIN_PASSWORD"],
         default_keychain: true,
         unlock: true,
@@ -156,430 +49,429 @@ platform :ios do
   after_all do |lane|
     # Clean up keychain on CI
     if is_ci
-      delete_keychain(name: "build.keychain") rescue nil
+      delete_keychain(name: "CI")
     end
   end
 
   error do |lane, exception|
     # Clean up keychain on CI even if there's an error
     if is_ci
-      delete_keychain(name: "build.keychain") rescue nil
+      delete_keychain(name: "CI") rescue nil
     end
   end
 
-  desc "Build iOS development version for testing"
+  # MARK: - Development Builds
+
+  desc "Build development version for testing"
   lane :dev do
-    setup_ios_signing(type: "development")
-    
-    build_ios_app(
-      scheme: SCHEME_NAME,
+    setup_ci_if_needed
+
+    sync_certificates(type: "development")
+
+    build_app(common_build_config.merge({
       configuration: "Debug",
       export_method: "development",
-      output_directory: "./build/ios/development",
-      output_name: "#{SCHEME_NAME}-development.ipa"
-    )
-    
-    UI.success("✅ iOS Development build completed!")
+      output_directory: "./build/development",
+      output_name: "#{SCHEME_NAME}-development.ipa",
+      skip_profile_detection: false
+    }))
+
+    UI.success("✅ Development build completed successfully!")
   end
 
-  desc "Build iOS and upload to TestFlight"
+  # MARK: - Beta Builds (TestFlight)
+
+  desc "Build and upload to TestFlight"
   lane :beta do
-    setup_ios_signing(type: "appstore")
-    
-    # Increment build number for TestFlight
-    increment_build_number(xcodeproj: WORKSPACE_PATH)
-    
-    build_ios_app(
-      scheme: SCHEME_NAME,
+    setup_ci_if_needed
+
+    # Increment build number
+    # Safely get the latest TestFlight build number, default to 1 if none found
+    begin
+      latest_build = latest_testflight_build_number
+      next_build_number = (latest_build || 0) + 1
+    rescue
+      next_build_number = 1
+    end
+    increment_build_number(
+      build_number: next_build_number,
+      xcodeproj: WORKSPACE_PATH
+    )
+
+    sync_certificates(type: "appstore")
+
+    build_app(common_build_config.merge({
       configuration: "Release",
       export_method: "app-store",
-      output_directory: "./build/ios/testflight",
-      output_name: "#{SCHEME_NAME}-testflight.ipa"
-    )
-    
+      output_directory: "./build/testflight",
+      output_name: "#{SCHEME_NAME}-testflight.ipa",
+      skip_profile_detection: true
+    }))
+
     upload_to_testflight(
+      app_identifier: APP_IDENTIFIER,
       skip_waiting_for_build_processing: true,
       distribute_external: false,
-      notify_external_testers: false
+      notify_external_testers: false,
+      changelog: "Bug fixes and improvements"
     )
-    
-    UI.success("✅ iOS Beta uploaded to TestFlight!")
+
+    UI.success("✅ TestFlight upload completed successfully!")
   end
 
-  desc "Build iOS and upload to App Store"
+  # MARK: - Production Builds (App Store)
+
+  desc "Build and upload to App Store"
   lane :release do
-    setup_ios_signing(type: "appstore")
-    
-    build_ios_app(
-      scheme: SCHEME_NAME,
+    setup_ci_if_needed
+
+    # Ensure we're on main branch for releases
+    ensure_git_branch(branch: 'main')
+
+    # Increment version number (patch version)
+    increment_version_number(
+      bump_type: "patch",
+      xcodeproj: WORKSPACE_PATH
+    )
+
+    # Increment build number
+    increment_build_number(
+      build_number: latest_testflight_build_number + 1,
+      xcodeproj: WORKSPACE_PATH
+    )
+
+    sync_certificates(type: "appstore")
+
+    build_app(common_build_config.merge({
       configuration: "Release",
       export_method: "app-store",
-      output_directory: "./build/ios/appstore",
-      output_name: "#{SCHEME_NAME}-appstore.ipa"
-    )
-    
+      output_directory: "./build/appstore",
+      output_name: "#{SCHEME_NAME}-appstore.ipa",
+      skip_profile_detection: true
+    }))
+
     upload_to_app_store(
-      force: true,
-      reject_if_possible: true,
-      skip_metadata: false,
+      app_identifier: APP_IDENTIFIER,
+      skip_metadata: true,
       skip_screenshots: true,
-      submit_for_review: false
+      submit_for_review: false, # Manual submission for production
+      automatic_release: false,
+      force: true
     )
-    
-    UI.success("✅ iOS Release uploaded to App Store!")
+
+    # Commit version bump
+    commit_version_bump(
+      message: "Version bump for App Store release",
+      xcodeproj: WORKSPACE_PATH
+    )
+
+    # Add git tag
+    add_git_tag(
+      tag: get_version_number(xcodeproj: WORKSPACE_PATH)
+    )
+
+    UI.success("✅ App Store upload completed successfully!")
+    UI.success("🏷️  Tagged version: #{get_version_number(xcodeproj: WORKSPACE_PATH)}")
   end
 
-  desc "Build iOS app without distribution (for CI validation)"
+  # MARK: - Testing
+
+  desc "Run unit tests and build for CI validation"
+  lane :test do
+    UI.message("🧪 Running unit tests with Mac Catalyst for maximum speed")
+    
+    # Clean build directory first
+    sh("rm -rf ../build/test-results || true")
+    sh("mkdir -p ../build/test-results")
+    
+    # Build and test with Mac Catalyst using xcodebuild directly
+    # This is 5x faster than iOS simulator as it runs natively on macOS
+    sh("set -o pipefail && xcodebuild test -project ../#{WORKSPACE_PATH} -scheme #{SCHEME_NAME} -destination 'platform=macOS,variant=Mac Catalyst' -resultBundlePath ../build/test-results/Alles-Teurer-Catalyst.xcresult CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs} | xcpretty || true")
+
+    UI.success("✅ Mac Catalyst tests completed!")
+  end
+
+  desc "Run tests on iOS Simulator (manual use for iOS-specific testing)"
+  lane :test_ios do
+    UI.message("🧪 Running tests on iOS Simulator for iOS-specific testing")
+    
+    # iOS Simulator testing for iOS-specific functionality
+    run_tests(
+      project: WORKSPACE_PATH,
+      scheme: SCHEME_NAME,
+      devices: ["iPhone 17"],  # Keep iPhone 17 as requested
+      clean: false,  # Keep incremental builds for speed
+      code_coverage: false,  # Disable coverage for faster execution
+      skip_build: false,
+      result_bundle: true,
+      output_directory: "./build/test-results-ios",
+      buildlog_path: "./build/logs",
+      xcargs: "CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs}"
+    )
+
+    UI.success("✅ iOS Simulator tests completed successfully!")
+  end
+
+  # MARK: - Build Only (for CI validation)
+
+  desc "Build app without distribution (for CI validation)"
   lane :build do
-    # For CI validation, just build the KMP shared framework for iOS simulator
-    UI.message("🔨 Building iOS framework for simulator...")
+    setup_ci_if_needed
+
+    # Use Mac Catalyst for faster builds (no code signing needed for validation)
+    UI.message("🏗️ Building with Mac Catalyst for fast CI validation")
     
-    # Get the project root directory
-    project_root = File.expand_path('..', __dir__)
-    
-    gradle(
-      task: "compileKotlinIosSimulatorArm64",
-      project_dir: project_root,
-      gradle_path: File.join(project_root, "gradlew")
-    )
-    
-    UI.success("✅ iOS framework build validation completed!")
+    sh("set -o pipefail && xcodebuild build -project ../#{WORKSPACE_PATH} -scheme #{SCHEME_NAME} -destination 'platform=macOS,variant=Mac Catalyst' CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs} | xcpretty")
+
+    UI.success("✅ Mac Catalyst build validation completed successfully!")
   end
 
-  desc "Sync iOS certificates and provisioning profiles"
+  desc "Build app for iOS distribution"
+  lane :build_ios do
+    setup_ci_if_needed
+
+    sync_certificates(type: "development")
+
+    build_app(common_build_config.merge({
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/validation",
+      output_name: "#{SCHEME_NAME}-validation.ipa",
+      skip_profile_detection: true,
+      skip_archive: false
+    }))
+
+    UI.success("✅ iOS build validation completed successfully!")
+  end
+
+  desc "Clean build when incremental builds are causing issues"
+  lane :clean_build do
+    setup_ci_if_needed
+
+    sync_certificates(type: "development")
+
+    build_app(common_build_config.merge({
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/validation",
+      output_name: "#{SCHEME_NAME}-clean-build.ipa",
+      skip_profile_detection: true,
+      skip_archive: false,
+      clean: true  # Force clean build
+    }))
+
+    UI.success("✅ Clean build completed successfully!")
+  end
+
+  # MARK: - Code Signing
+
+  desc "Sync development certificates and provisioning profiles"
   lane :certificates do
-    setup_ios_signing(type: "development")
-    setup_ios_signing(type: "appstore")
-    UI.success("✅ iOS certificates synced!")
+    setup_ci_if_needed
+    sync_certificates(type: "development")
+    sync_certificates(type: "appstore")
   end
 
-  private_lane :setup_ios_signing do |options|
-    # Set up Git authentication for Match repository access
-    if is_ci && ENV["MATCH_GIT_BASIC_AUTHORIZATION"]
-      # Use basic auth for CI
-      UI.message("🔐 Using Git basic authentication for Match")
-    end
-    
+  desc "Update certificates and push to git"
+  lane :update_certificates do
+    configure_app_store_connect
+    UI.success("DEBUG: Before updating certificates")
+
     match(
-      type: options[:type],
-      readonly: is_ci?,
-      keychain_name: is_ci? ? "build.keychain" : nil,
-      keychain_password: is_ci? ? ENV["KEYCHAIN_PASSWORD"] : nil,
+      type: "development",
+      app_identifier: APP_IDENTIFIER,
+      git_url: ENV["MATCH_GIT_URL"],
       git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
-      verbose: false,
-      force_for_new_devices: !is_ci # Allow device updates locally, readonly on CI
+      force_for_new_devices: true,
+      readonly: false,
+      verbose: true
     )
-  end
-end
-
-platform :android do
-  desc "Setup Android keystore for signing"
-  private_lane :setup_android_keystore do
-    # Check if keystore environment variables are configured
-    keystore_password = ENV["ANDROID_KEYSTORE_PASSWORD"]
-    key_alias = ENV["ANDROID_KEY_ALIAS"]
-    key_password = ENV["ANDROID_KEY_PASSWORD"]
-    keystore_base64 = ENV["ANDROID_KEYSTORE_BASE64"]
-    
-    # Define keystore path (always use the same location)
-    project_root = File.expand_path("..", __dir__)  # Parent directory of fastlane folder
-    absolute_keystore_path = File.join(project_root, "composeApp", "keystore", "release.keystore")
-    
-    keystore_configured = false
-    
-    if keystore_password.nil? || key_alias.nil? || key_password.nil?
-      UI.message("⚠️  Android keystore environment variables not fully configured")
-      UI.message("   Missing one or more of: ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD")
-      UI.message("   Builds will use debug signing...")
-      keystore_configured = false
-    elsif keystore_base64.nil? || keystore_base64.empty?
-      UI.message("⚠️  ANDROID_KEYSTORE_BASE64 not configured")
-      UI.message("   Builds will use debug signing...")
-      keystore_configured = false
-    else
-      # Create keystore from base64-encoded content
-      require 'base64'
-      require 'fileutils'
-      
-      # Decode and write keystore file
-      keystore_content = Base64.decode64(keystore_base64)
-      keystore_dir = File.dirname(absolute_keystore_path)
-      FileUtils.mkdir_p(keystore_dir) unless Dir.exist?(keystore_dir)
-      
-      File.open(absolute_keystore_path, 'wb') { |f| f.write(keystore_content) }
-      UI.message("🔐 Android keystore created from base64 content")
-      keystore_configured = true
-    end
-    
-    keystore_configured
-  end
-
-  desc "Build Android debug APK"
-  lane :dev do
-    UI.message("🔨 Building Android debug APK...")
-    
-    gradle(
-      task: "assembleDebug",
-      project_dir: ANDROID_PROJECT_PATH
+    UI.success("DEBUG: After updating development certificates")
+    match(
+      type: "appstore",
+      app_identifier: APP_IDENTIFIER,
+      git_url: ENV["MATCH_GIT_URL"],
+      git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+      readonly: false,
+      verbose: true
     )
-    
-    # Copy APK to output directory
-    sh("mkdir -p ./build/android/development")
-    sh("find #{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/apk/debug/ -name '*.apk' -exec cp {} ./build/android/development/ \\;")
-    
-    UI.success("✅ Android debug APK built!")
-    UI.message("📱 APK location: ./build/android/development/")
+    UI.success("✅ Certificates updated and pushed to git!")
   end
 
-  desc "Build Android release APK and upload to Internal App Sharing"
-  lane :beta do
-    UI.message("🔨 Building Android release APK...")
-    
-    # Setup keystore for release signing
-    keystore_configured = setup_android_keystore
-    
-    if keystore_configured
-      gradle(
-        task: "assembleRelease",
-        project_dir: ANDROID_PROJECT_PATH
-      )
-      UI.message("✅ Android release APK built with release signing!")
-    else
-      gradle(
-        task: "assembleDebug",
-        project_dir: ANDROID_PROJECT_PATH
-      )
-      UI.message("⚠️  Android debug APK built (keystore not configured)")
-    end
-    
-    # Copy APK to output directory
-    sh("mkdir -p ./build/android/beta")
-    
-    # First try to use Gradle's provided APK path (absolute path from context)
-    gradle_apk_path = Actions.lane_context[Actions::SharedValues::GRADLE_APK_OUTPUT_PATH]
-    
-    if gradle_apk_path && File.exist?(gradle_apk_path)
-      sh("cp '#{gradle_apk_path}' ./build/android/beta/")
-      UI.success("✅ Android APK copied from Gradle context: #{gradle_apk_path}")
-    else
-      # Fallback: use our predicted path (relative to project root)
-      apk_source = keystore_configured ? 
-        "#{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/apk/release/#{ANDROID_MODULE}-release.apk" :
-        "#{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/apk/debug/#{ANDROID_MODULE}-debug.apk"
-        
-      if File.exist?(apk_source)
-        sh("cp '#{apk_source}' ./build/android/beta/")
-        UI.success("✅ Android APK copied from fallback path")
-      else
-        UI.error("❌ APK not found at: #{apk_source}")
-        UI.message("Gradle APK path was: #{gradle_apk_path}")
-        UI.message("Attempting final fallback search...")
-        # Final fallback: try to find any APK in the outputs directory
-        apk_dir = keystore_configured ? "release" : "debug"
-        search_cmd = "find #{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/apk/#{apk_dir}/ -name '*.apk' -exec cp {} ./build/android/beta/ \\;"
-        sh(search_cmd)
-      end
-    end
-    
-    # Upload to Internal App Sharing if configured
-    google_play_config = setup_google_play_json_key
-    if google_play_config && keystore_configured
-      apk_path = if keystore_configured
-        "#{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/apk/release/#{ANDROID_MODULE}-release.apk"
-      else
-        "#{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/apk/debug/#{ANDROID_MODULE}-debug.apk"
-      end
-      
-      begin
-        upload_to_play_store_internal_app_sharing(
-          json_key: google_play_config[:path],
-          apk: apk_path,
-          package_name: "eu.mpwg.allesteurer"
-        )
-        UI.success("✅ Android APK uploaded to Internal App Sharing!")
-      ensure
-        google_play_config[:cleanup].call
-      end
-    else
-      if !keystore_configured
-        UI.message("⚠️  Keystore not configured - skipping upload (debug builds cannot be uploaded)")
-      else
-        UI.message("⚠️  Google Play JSON key not configured - skipping upload")
-      end
-      UI.success("✅ Android APK built successfully!")
-      UI.message("📱 APK location: ./build/android/beta/")
+  # MARK: - Helper Methods
+
+  private_lane :setup_ci_if_needed do
+    if is_ci
+      setup_ci
     end
   end
 
-  desc "Build Android App Bundle and upload to Play Console"
-  lane :release do
-    UI.message("🔨 Building Android App Bundle for Play Store...")
+  private_lane :common_build_config do
+    {
+      scheme: SCHEME_NAME,
+      project: WORKSPACE_PATH,
+      clean: false,  # Improved: Only clean when necessary for faster incremental builds
+      include_bitcode: false,
+      # Let match determine the identity and profile
+      codesigning_identity: "",  # Let match determine the identity
+      export_xcargs: "-allowProvisioningUpdates",
+      # Performance optimizations
+      xcargs: build_xcargs
+    }
+  end
+
+  private_lane :build_xcargs do
+    args = []
     
-    # Setup keystore for release signing
-    keystore_configured = setup_android_keystore
+    # Enable parallel builds for faster compilation
+    args << "-jobs #{ENV.fetch('FASTLANE_BUILD_JOBS', `sysctl -n hw.logicalcpu`.strip)}"
     
-    unless keystore_configured
-      UI.user_error!("❌ Android keystore must be configured for release builds!")
-    end
+    # Use optimized linker for faster linking
+    args << "OTHER_LDFLAGS=\"-Wl,-no_deduplicate\""
     
-    gradle(
-      task: "bundleRelease",
-      project_dir: ANDROID_PROJECT_PATH
-    )
+    # Enable build caching
+    args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
     
-    # Copy AAB to output directory
-    sh("mkdir -p ./build/android/release")
-    sh("find #{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/bundle/release/ -name '*.aab' -exec cp {} ./build/android/release/ \\;")
+    # Swift compilation optimizations
+    args << "SWIFT_COMPILATION_MODE=incremental" if !is_ci
     
-    # Upload to Play Console if configured
-    google_play_config = setup_google_play_json_key
-    if google_play_config
-      begin
-        upload_to_play_store(
-          json_key: google_play_config[:path],
-          aab: "#{ANDROID_PROJECT_PATH}#{ANDROID_MODULE}/build/outputs/bundle/release/#{ANDROID_MODULE}-release.aab",
-          track: "internal",
-          skip_upload_metadata: true,
-          skip_upload_images: true,
-          skip_upload_screenshots: true
-        )
-        UI.success("✅ Android App Bundle uploaded to Play Console!")
-      ensure
-        google_play_config[:cleanup].call
-      end
+    args.join(" ")
+  end
+
+  private_lane :configure_app_store_connect do
+    if ENV["FASTLANE_SESSION"]
+      UI.message("🔑 Using FASTLANE_SESSION for App Store Connect authentication")
     else
-      UI.message("⚠️  Google Play JSON key not configured - skipping upload")
-      UI.success("✅ Android App Bundle built successfully!")
-      UI.message("📱 AAB location: ./build/android/release/")
+      UI.message("⚠️  FASTLANE_SESSION not configured - some operations may require manual authentication")
     end
   end
 
-  desc "Build Android app without distribution (for CI validation)"
-  lane :build do
-    UI.message("🔨 Building Android for CI validation...")
-    
-    gradle(
-      task: "assembleDebug",
-      project_dir: ANDROID_PROJECT_PATH
-    )
-    
-    UI.success("✅ Android build validation completed!")
-  end
+  private_lane :sync_certificates do |options|
+    type = options[:type]
 
-  desc "Setup Android keystore for signing (creates keystore if needed)"
-  lane :setup_keystore do
-    keystore_password = ENV["ANDROID_KEYSTORE_PASSWORD"]
-    key_alias = ENV["ANDROID_KEY_ALIAS"] || "eu.mpwg.allesteurer"
-    key_password = ENV["ANDROID_KEY_PASSWORD"]
-    
-    if keystore_password.nil? || key_password.nil?
-      UI.user_error!("❌ ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_PASSWORD must be set!")
+    # Validate required environment variables
+    required_match_vars = ["MATCH_GIT_URL", "MATCH_PASSWORD"]
+    missing_vars = required_match_vars.select { |var| ENV[var].nil? || ENV[var].empty? }
+
+    if missing_vars.any?
+      UI.error("❌ Missing required environment variables for fastlane match: #{missing_vars.join(', ')}")
+      UI.error("💡 Please check your .env file or environment configuration")
+      raise "Missing required environment variables for code signing"
     end
-    
-    # Use fixed keystore path
-    keystore_path = "keystore/release.keystore"
-    
-    # Create keystore directory if needed
-    keystore_dir = File.dirname(keystore_path)
-    sh("mkdir -p #{keystore_dir}") unless Dir.exist?(keystore_dir)
-    
-    # Create keystore if it doesn't exist
-    unless File.exist?(keystore_path)
-      UI.message("🔑 Creating new Android keystore...")
-      
-      # Generate keystore using keytool with secure password handling
-      require 'tempfile'
-      storepass_file = Tempfile.new(['storepass', '.tmp'])
-      keypass_file = Tempfile.new(['keypass', '.tmp'])
-      begin
-        storepass_file.write(keystore_password)
-        storepass_file.flush
-        keypass_file.write(key_password)
-        keypass_file.flush
-        
-        sh("keytool -genkey -v -keystore #{keystore_path} -alias #{key_alias} -keyalg RSA -keysize 2048 -validity 10000 " +
-           "-storepass:file #{storepass_file.path} -keypass:file #{keypass_file.path} " +
-           "-dname 'CN=AllesTeurer, OU=Development, O=MPWG, L=Zurich, ST=Zurich, C=CH'")
-      ensure
-        storepass_file.close
-        storepass_file.unlink
-        keypass_file.close
-        keypass_file.unlink
-      end
-      
-      UI.success("✅ Android keystore created at: #{keystore_path}")
-      UI.message("🔒 Store this keystore securely! It's needed for all future releases.")
-      
-      UI.message("💡 For CI/CD, encode this keystore as base64:")
-      UI.message("   base64 -w 0 #{keystore_path}")
-      UI.message("   Then set ANDROID_KEYSTORE_BASE64 environment variable")
-    else
-      UI.message("✅ Android keystore already exists at: #{keystore_path}")
-    end
-    
-    # Test keystore access
+
+    # Configure App Store Connect authentication if available (required for creating new certificates)
+    configure_app_store_connect
+
+    UI.message("🔐 Syncing #{type} certificates and provisioning profiles with fastlane match")
+    UI.message("🚧 Ensuring Fastlane handles code signing (not Xcode automatic signing)")
+
     begin
-      # Use secure password handling for keystore verification
-      require 'tempfile'
-      storepass_file = Tempfile.new(['storepass', '.tmp'])
-      begin
-        storepass_file.write(keystore_password)
-        storepass_file.flush
-        
-        sh("keytool -list -v -keystore #{keystore_path} -storepass:file #{storepass_file.path} | head -20")
-        UI.success("✅ Keystore access verified!")
-      ensure
-        storepass_file.close
-        storepass_file.unlink
-      end
+      match(
+        type: type,
+        app_identifier: APP_IDENTIFIER,
+        git_url: ENV["MATCH_GIT_URL"],
+        git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+        keychain_name: is_ci ? "CI" : nil,
+        keychain_password: is_ci ? ENV["KEYCHAIN_PASSWORD"] : nil,
+        readonly: is_ci,
+        verbose: true,
+        # Ensure Fastlane manages signing, not Xcode
+        skip_confirmation: true,
+        shallow_clone: true
+      )
+      UI.success("✅ Successfully synced #{type} certificates")
+      UI.message("🔒 Code signing will be handled by Fastlane, not Xcode")
     rescue => e
-      UI.user_error!("❌ Cannot access keystore: #{e.message}")
+      UI.error("❌ Failed to sync certificates: #{e.message}")
+      UI.error("💡 Common solutions:")
+      UI.error("   • Check MATCH_PASSWORD is correct")
+      UI.error("   • Verify MATCH_GIT_URL is accessible")
+      UI.error("   • Ensure certificates exist in match repository")
+      UI.error("   • Run 'fastlane update_certificates' if certificates need to be created")
+      raise e
     end
   end
-end
 
-# Error handling
-error do |lane, exception|
-  UI.error("Lane #{lane} failed with exception: #{exception}")
-  if is_ci?
-    delete_keychain(name: "build.keychain") rescue nil
+  # MARK: - Utility Lanes
+
+  desc "Show current version and build number"
+  lane :version do
+    version = get_version_number(xcodeproj: WORKSPACE_PATH)
+    build = get_build_number(xcodeproj: WORKSPACE_PATH)
+    UI.message("📱 Current version: #{version} (#{build})")
   end
-end
 
-after_all do |lane|
-  if is_ci?
-    delete_keychain(name: "build.keychain") rescue nil
+  desc "Show available lanes"
+  lane :show_help do
+    UI.header("📋 Available Fastlane Lanes")
+    UI.message("🧪 Testing:")
+    UI.message("  • fastlane test       - Run unit tests and build for CI validation")
+    UI.message("")
+    UI.message("🔨 Development:")
+    UI.message("  • fastlane dev        - Build development version")
+    UI.message("  • fastlane build      - Build for CI validation")
+    UI.message("  • fastlane clean_build - Clean build when incremental builds fail")
+    UI.message("")
+    UI.message("🧪 Testing:")
+    UI.message("  • fastlane beta       - Build and upload to TestFlight")
+    UI.message("")
+    UI.message("🚀 Production:")
+    UI.message("  • fastlane release    - Build and upload to App Store")
+    UI.message("")
+    UI.message("🔐 Code Signing:")
+    UI.message("  • fastlane certificates        - Sync existing certificates")
+    UI.message("  • fastlane update_certificates - Update and push new certificates")
+    UI.message("")
+    UI.message("ℹ️  Utility:")
+    UI.message("  • fastlane version   - Show current app version")
+    UI.message("  • fastlane benchmark - Run build performance benchmark")
+    UI.message("  • fastlane show_help - Show this help")
   end
-end
 
-desc "Show available lanes"
-lane :show_help do
-  UI.header("📋 AllesTeurer KMP - Available Fastlane Lanes")
-  UI.message("")
-  UI.message("🚀 Cross-Platform:")
-  UI.message("  • fastlane dev_all        - Build both iOS & Android for development")
-  UI.message("  • fastlane beta_all       - Build both iOS & Android for beta testing")
-  UI.message("  • fastlane release_all    - Build both iOS & Android for release")
-  UI.message("  • fastlane build_all      - Build both platforms for CI validation")
-  UI.message("")
-  UI.message("📱 iOS:")
-  UI.message("  • fastlane ios dev        - Build iOS development version")
-  UI.message("  • fastlane ios beta       - Build iOS and upload to TestFlight")
-  UI.message("  • fastlane ios release    - Build iOS and upload to App Store")
-  UI.message("  • fastlane ios build      - Build iOS for CI validation")
-  UI.message("  • fastlane ios certificates - Sync iOS certificates")
-  UI.message("")
-  UI.message("🤖 Android:")
-  UI.message("  • fastlane android dev         - Build Android debug APK")
-  UI.message("  • fastlane android beta        - Build Android release APK (+ upload if configured)")
-  UI.message("  • fastlane android release     - Build Android App Bundle (+ upload if configured)")
-  UI.message("  • fastlane android build       - Build Android for CI validation")
-  UI.message("  • fastlane android setup_keystore - Setup Android keystore for signing")
-  UI.message("")
-  UI.message("💡 Environment Variables Required:")
-  UI.message("  iOS: APPLE_ID, DEVELOPMENT_TEAM, MATCH_PASSWORD, MATCH_GIT_URL")
-  UI.message("  iOS (optional): APP_STORE_CONNECT_API_KEY_* for automation")
-  UI.message("  Android: ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD, ANDROID_KEYSTORE_BASE64")
-  UI.message("  Android (optional): GOOGLE_PLAY_JSON_KEY_BASE64 for uploads")
-  UI.message("  CI: KEYCHAIN_PASSWORD")
+  desc "Run build performance benchmark"
+  lane :benchmark do
+    UI.header("🚀 Build Performance Benchmark")
+    
+    start_time = Time.now
+    
+    # Clean build for baseline
+    UI.message("Running clean build benchmark...")
+    clean_start = Time.now
+    
+    build_app(common_build_config.merge({
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/benchmark",
+      output_name: "#{SCHEME_NAME}-benchmark-clean.ipa",
+      skip_profile_detection: true,
+      skip_archive: true,
+      clean: true
+    }))
+    
+    clean_duration = Time.now - clean_start
+    
+    # Incremental build
+    UI.message("Running incremental build benchmark...")
+    incremental_start = Time.now
+    
+    build_app(common_build_config.merge({
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/benchmark",
+      output_name: "#{SCHEME_NAME}-benchmark-incremental.ipa",
+      skip_profile_detection: true,
+      skip_archive: true,
+      clean: false
+    }))
+    
+    incremental_duration = Time.now - incremental_start
+    total_duration = Time.now - start_time
+    
+    UI.success("📊 Build Performance Results:")
+    UI.success("  • Clean build time: #{clean_duration.round(2)} seconds")
+    UI.success("  • Incremental build time: #{incremental_duration.round(2)} seconds")
+    UI.success("  • Time saved with incremental builds: #{(clean_duration - incremental_duration).round(2)} seconds")
+    UI.success("  • Total benchmark time: #{total_duration.round(2)} seconds")
+    UI.success("  • Performance improvement: #{((clean_duration - incremental_duration) / clean_duration * 100).round(1)}%")
+  end
 end
