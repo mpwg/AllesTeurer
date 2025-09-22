@@ -135,18 +135,31 @@ platform :ios do
   private_lane :build_ios_platform do |options|
     UI.header("📱 Building iOS/iPadOS version")
     
+    # Get the provisioning profile name from Match environment variables
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{options[:export_method]}_profile-name"]
+    
+    # Debug information
+    UI.message("🔍 Debug: Building with export method: #{options[:export_method]}")
+    UI.message("🔍 Debug: Expected profile env var: sigh_#{APP_IDENTIFIER}_#{options[:export_method]}_profile-name")
+    UI.message("🔍 Debug: Profile name from env: #{profile_name}")
+    
     # Build configuration with proper export options override
     build_config = common_build_config.merge({
       configuration: options[:configuration] || "Release",
       export_method: options[:export_method],
       output_directory: options[:output_directory],
       output_name: "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa",
-      skip_profile_detection: options[:skip_profile_detection] || true,
+      skip_profile_detection: false,  # Allow profile detection for proper manual signing
       destination: "generic/platform=iOS"
     })
     
-    # Override export method in export_options
+    # Override export method in export_options and set proper provisioning profile
     build_config[:export_options][:method] = options[:export_method]
+    build_config[:export_options][:provisioningProfiles] = {
+      APP_IDENTIFIER => profile_name || "match Development #{APP_IDENTIFIER}"
+    }
+    
+    UI.message("🔍 Debug: Final provisioning profiles config: #{build_config[:export_options][:provisioningProfiles]}")
     
     build_app(build_config)
     
@@ -293,8 +306,7 @@ platform :ios do
       configuration: "Release",
       export_method: "development", # For direct distribution 
       output_directory: "./build/alpha",
-      version: tag_version,
-      skip_profile_detection: false  # Enable profile detection to ensure proper signing
+      version: tag_version
     })
 
     UI.success("✅ Alpha builds completed successfully!")
@@ -492,6 +504,10 @@ platform :ios do
   end
 
   private_lane :common_build_config do
+    # Get the current provisioning profile name from Match environment variables
+    # Default to development profile name since most lanes use development signing
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"] || "match Development #{APP_IDENTIFIER}"
+    
     {
       scheme: SCHEME_NAME,
       project: WORKSPACE_PATH,
@@ -506,7 +522,7 @@ platform :ios do
       export_options: {
         method: "development", # This will be overridden by each lane
         provisioningProfiles: {
-          APP_IDENTIFIER => ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"] || "match Development #{APP_IDENTIFIER}"
+          APP_IDENTIFIER => profile_name
         }
       }
     }
@@ -524,11 +540,19 @@ platform :ios do
     # Enable build caching
     args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
     
-    # Force manual code signing (disable automatic signing)
-    args << "CODE_SIGN_STYLE=Manual" if is_ci
-    
-    # Allow provisioning profile updates but use manual signing
-    args << "-allowProvisioningUpdates" if is_ci
+    if is_ci
+      # Force manual code signing (disable automatic signing)
+      args << "CODE_SIGN_STYLE=Manual"
+      
+      # Allow provisioning profile updates but use manual signing
+      args << "-allowProvisioningUpdates"
+      
+      # Set specific provisioning profile for the main app target
+      profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
+      if profile_name
+        args << "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\""
+      end
+    end
     
     # Swift compilation optimizations
     args << "SWIFT_COMPILATION_MODE=incremental" if !is_ci
@@ -577,7 +601,17 @@ platform :ios do
         skip_confirmation: true,
         shallow_clone: true
       )
-      UI.success("✅ Successfully synced #{type} certificates")
+      
+      # Verify that the provisioning profile was properly set in environment variables
+      profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{type}_profile-name"]
+      if profile_name
+        UI.success("✅ Successfully synced #{type} certificates")
+        UI.success("🔒 Provisioning profile: #{profile_name}")
+      else
+        UI.error("⚠️  Warning: Provisioning profile environment variable not set")
+        UI.error("Expected: sigh_#{APP_IDENTIFIER}_#{type}_profile-name")
+      end
+      
       UI.message("🔒 Code signing will be handled by Fastlane, not Xcode")
     rescue => e
       UI.error("❌ Failed to sync certificates: #{e.message}")
