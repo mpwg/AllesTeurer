@@ -186,9 +186,10 @@ platform :ios do
     
     # Build and test with Mac Catalyst using xcodebuild directly
     # This is 5x faster than iOS simulator as it runs natively on macOS
-    sh("set -o pipefail && xcodebuild test -project ../#{WORKSPACE_PATH} -scheme #{SCHEME_NAME} -destination 'platform=macOS,variant=Mac Catalyst' -resultBundlePath ../build/test-results/Alles-Teurer-Catalyst.xcresult CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs} | xcpretty || true")
+    # Only run unit tests, not UI tests, as UI tests don't work well with Mac Catalyst
+    sh("set -o pipefail && xcodebuild test -project ../#{WORKSPACE_PATH} -scheme #{SCHEME_NAME} -destination 'platform=macOS,variant=Mac Catalyst' -only-testing:Alles-TeurerTests -resultBundlePath ../build/test-results/Alles-Teurer-Catalyst.xcresult CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs} | xcpretty || true")
 
-    UI.success("✅ Mac Catalyst tests completed!")
+    UI.success("✅ Mac Catalyst unit tests completed!")
   end
 
   desc "Run tests on iOS Simulator (manual use for iOS-specific testing)"
