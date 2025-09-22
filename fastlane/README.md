@@ -31,6 +31,14 @@ Build development version for testing
 
 Build and upload to TestFlight
 
+### ios alpha
+
+```sh
+[bundle exec] fastlane ios alpha
+```
+
+Build alpha versions for GitHub Releases (no store upload)
+
 ### ios release
 
 ```sh
