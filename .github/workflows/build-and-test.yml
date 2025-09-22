@@ -228,7 +228,7 @@ jobs:
 
       - name: Build iOS Simulator
         run: |
-          fastlane ios build
+          bundle exec fastlane ios build
         timeout-minutes: 20
 
       - name: Upload iOS build logs
