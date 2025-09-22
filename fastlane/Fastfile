@@ -76,13 +76,13 @@ lane :dev_all do
   UI.message("📱 Building iOS development...")
   begin
     # Note: This will only work on macOS with iOS development environment
-    ios_dev if Helper.mac?
+    Fastlane::LaneManager.cruise_lane("ios", "dev") if Helper.mac?
   rescue => e
     UI.error("iOS development build failed: #{e.message}")
   end
   
   UI.message("🤖 Building Android development...")
-  android_dev
+  Fastlane::LaneManager.cruise_lane("android", "dev")
   
   UI.success("✅ All development builds completed!")
 end
@@ -93,13 +93,13 @@ lane :beta_all do
   
   UI.message("📱 Building iOS beta...")
   begin
-    ios_beta if Helper.mac?
+    Fastlane::LaneManager.cruise_lane("ios", "beta") if Helper.mac?
   rescue => e
     UI.error("iOS beta build failed: #{e.message}")
   end
   
   UI.message("🤖 Building Android beta...")
-  android_beta
+  Fastlane::LaneManager.cruise_lane("android", "beta")
   
   UI.success("✅ All beta builds completed!")
 end
@@ -110,13 +110,13 @@ lane :release_all do
   
   UI.message("📱 Building iOS release...")
   begin
-    ios_release if Helper.mac?
+    Fastlane::LaneManager.cruise_lane("ios", "release") if Helper.mac?
   rescue => e
     UI.error("iOS release build failed: #{e.message}")
   end
   
   UI.message("🤖 Building Android release...")
-  android_release
+  Fastlane::LaneManager.cruise_lane("android", "release")
   
   UI.success("✅ All release builds completed!")
 end
@@ -127,13 +127,13 @@ lane :build_all do
   
   UI.message("📱 Building iOS...")
   begin
-    ios_build if Helper.mac?
+    Fastlane::LaneManager.cruise_lane("ios", "build") if Helper.mac?
   rescue => e
     UI.error("iOS build failed: #{e.message}")
   end
   
   UI.message("🤖 Building Android...")
-  android_build
+  Fastlane::LaneManager.cruise_lane("android", "build")
   
   UI.success("✅ All validation builds completed!")
 end
