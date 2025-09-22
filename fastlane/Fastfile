@@ -487,6 +487,9 @@ platform :ios do
     # Enable build caching
     args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
     
+    # Allow provisioning profile updates for automatic signing
+    args << "-allowProvisioningUpdates" if is_ci
+    
     # Swift compilation optimizations
     args << "SWIFT_COMPILATION_MODE=incremental" if !is_ci
     
