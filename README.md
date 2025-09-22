@@ -2,17 +2,17 @@
 
 > _"Alles wird teurer"_ - Eine native iOS-App, die dabei hilft, Preisänderungen durch Scannen von Kassenbons zu verfolgen
 
-**AllesTeurer** ist eine datenschutzfokussierte native iOS-Anwendung, die lokale Kassenbon-Verarbeitung mit leistungsstarken Preisanalysen kombiniert. Die App verwendet SwiftUI für eine moderne Benutzeroberfläche, SwiftData für lokale Datenspeicherung, und Apples Vision Framework für präzise OCR-Texterkennung, um eine vollständige Preishistorie ohne Cloud-Abhängigkeiten zu erstellen.
+**AllesTeurer** ist eine datenschutzfokussierte Multi-Platform-Anwendung (iOS, iPadOS, macOS), die lokale Kassenbon-Verarbeitung mit leistungsstarken Preisanalysen kombiniert. Die App verwendet SwiftUI für eine moderne Benutzeroberfläche, SwiftData für lokale Datenspeicherung, und Apples Vision Framework für präzise OCR-Texterkennung, um eine vollständige Preishistorie ohne Cloud-Abhängigkeiten zu erstellen.
 
 ## 🎯 Überblick
 
-Da steigende Kosten jeden betreffen, ermöglicht diese native iOS-App den Nutzern:
+Da steigende Kosten jeden betreffen, ermöglicht diese Multi-Platform-App den Nutzern:
 
 - **🔒 Privacy-First**: Alle Daten bleiben auf Ihrem iPhone - keine Cloud-Services erforderlich
 - **📊 Lokale Preisanalyse**: Verfolgen Sie Inflation und Ausgabenmuster mit On-Device-Berechnungen
 - **🔍 Intelligente Produkterkennung**: Automatische Zuordnung ähnlicher Produkte über verschiedene Kassenbons
 - **📈 Preistrends**: Visualisierung von Preisänderungen über Zeit und Händler hinweg mit Swift Charts
-- **� Native iOS Experience**: Optimiert für iOS mit SwiftUI, SwiftData und Apple Intelligence Integration
+- **📱 Multi-Platform Experience**: Optimiert für iOS, iPadOS und macOS mit SwiftUI, SwiftData und Apple Intelligence Integration
 
 ## ✨ Funktionen
 
@@ -30,12 +30,13 @@ Da steigende Kosten jeden betreffen, ermöglicht diese native iOS-App den Nutzer
 - 🏪 **Händlervergleiche**: Preisunterschiede zwischen verschiedenen Geschäften analysieren
 - 💡 **Inflationsindikatoren**: Lokale Berechnungen von Preistrendstatistiken
 
-### Native iOS Features
+### Multi-Platform Features
 
 - 📱 **iOS Share Extension**: Kassenbon-Sharing von anderen Apps
 - 🔍 **Spotlight Integration**: Produktsuche über iOS-Systemsuche
 - 📋 **Widget Support**: Home Screen und Lock Screen Widgets für Ausgabenübersicht
 - 🗣️ **Shortcuts Integration**: Siri Shortcuts für häufige Aktionen
+- 🖥️ **Mac Catalyst**: Native macOS Version mit angepasster Benutzeroberfläche
 - 🤖 **Apple Intelligence**: Intelligente Produktkategorisierung mit dem Natural Language Framework
 - 🌙 **Dynamic Appearance**: Automatische Unterstützung für Light und Dark Mode
 - ♿ **Accessibility**: VoiceOver und Dynamic Type Unterstützung
@@ -201,6 +202,22 @@ Wir begrüßen Beiträge zur Entwicklung von AllesTeurer! Hier ist, wie Sie helf
 3. **Unseren Coding-Standards folgen** (siehe `.github/instructions/`)
 4. **Tests schreiben** für neue Features
 5. **Pull Request einreichen** mit ausführlicher Beschreibung
+
+### Release-System
+
+AllesTeurer verwendet ein **tag-basiertes Release-System** mit **Multi-Platform-Builds** für manuelle Kontrolle über Deployments:
+
+- **🏷️ Alpha Releases**: `git tag v1.0.0-alpha.1` → GitHub Release mit iOS (.ipa) und macOS (.app) Downloads
+- **🧪 Beta Releases**: `git tag v1.0.0-beta.1` → TestFlight (iOS) + GitHub Release (macOS)
+- **🚀 Production Releases**: `git tag v1.0.0` → App Store (iOS) + GitHub Release (macOS)
+- **📋 Builds & Tests**: Branch pushes → nur Build und Test
+
+**Plattform-Unterstützung:**
+
+- **iOS/iPadOS**: Native SwiftUI App über App Store und TestFlight
+- **macOS**: Mac Catalyst Version über GitHub Releases (Mac App Store geplant)
+
+Siehe [Multi-Platform Tag-Based Releases Guide](docs/TAG_BASED_RELEASES.md) für detaillierte Anweisungen. 2. **Entwicklungsumgebung einrichten** (siehe [Installation](#installation)) 3. **Unseren Coding-Standards folgen** (siehe `.github/instructions/`) 4. **Tests schreiben** für neue Features 5. **Pull Request einreichen** mit ausführlicher Beschreibung
 
 ### Xcode-Befehle für Entwicklung
 
