@@ -271,8 +271,16 @@ jobs:
     # Create GitHub Release for all tag-based builds
     needs: [build-and-test, deploy-testflight, deploy-appstore, build-alpha]
     runs-on: ubuntu-latest
-    # Always run if build-and-test succeeded and we have a tag, regardless of other jobs
-    if: always() && (needs.build-and-test.result == 'success') && startsWith(github.ref, 'refs/tags/v')
+    # Run for any tag, but only after appropriate build jobs complete
+    if: |
+      always() && 
+      needs.build-and-test.result == 'success' && 
+      startsWith(github.ref, 'refs/tags/v') && (
+        (contains(github.ref, '-alpha') && needs.build-alpha.result == 'success') ||
+        (contains(github.ref, '-beta') && needs.deploy-testflight.result == 'success') ||
+        (contains(github.ref, '-rc') && needs.deploy-testflight.result == 'success') ||
+        (!contains(github.ref, '-') && needs.deploy-appstore.result == 'success')
+      )
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -306,22 +314,43 @@ jobs:
           name: AllesTeurer-Alpha-${{ github.ref_name }}
           path: ./release-assets/
 
-      - name: Create ZIP archives for alpha releases
-        if: contains(github.ref, '-alpha')
+      - name: Download beta artifacts (if beta)
+        if: contains(github.ref, '-beta') || contains(github.ref, '-rc')
+        uses: actions/download-artifact@v4
+        with:
+          name: AllesTeurer-Beta-${{ github.ref_name }}
+          path: ./release-assets/
+
+      - name: Download production artifacts (if production)
+        if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')
+        uses: actions/download-artifact@v4
+        with:
+          name: AllesTeurer-Release-${{ github.ref_name }}
+          path: ./release-assets/
+
+      - name: Create ZIP archives for releases
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           cd ./release-assets/
 
-          # Create iOS ZIP
-          if [ -f *.ipa ]; then
-            mv *.ipa "AllesTeurer-iOS-${{ github.ref_name }}.ipa"
-            zip -r "AllesTeurer-iOS-${{ github.ref_name }}.zip" "AllesTeurer-iOS-${{ github.ref_name }}.ipa"
+          # Create iOS ZIP if IPA exists
+          if ls *.ipa 1> /dev/null 2>&1; then
+            for ipa in *.ipa; do
+              base_name=$(basename "$ipa" .ipa)
+              zip -r "${base_name}.zip" "$ipa"
+            done
           fi
 
-          # Create macOS ZIP  
-          if [ -d *.app ]; then
-            mv *.app "AllesTeurer-macOS-${{ github.ref_name }}.app"
-            zip -r "AllesTeurer-macOS-${{ github.ref_name }}.zip" "AllesTeurer-macOS-${{ github.ref_name }}.app"
+          # Create macOS ZIP if APP exists
+          if ls *.app 1> /dev/null 2>&1; then
+            for app in *.app; do
+              base_name=$(basename "$app" .app)
+              zip -r "${base_name}.zip" "$app"
+            done
           fi
+
+          # List all files for debugging
+          ls -la
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -332,5 +361,6 @@ jobs:
           files: |
             ./release-assets/*.zip
             ./release-assets/*.ipa
+            ./release-assets/*.app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
