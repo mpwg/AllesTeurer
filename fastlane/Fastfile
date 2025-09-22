@@ -185,7 +185,7 @@ platform :ios do
       configuration: options[:configuration] || "Release",
       export_method: export_method,
       output_directory: options[:output_directory],
-      output_name: "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app",
+      output_name: "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}",
       skip_profile_detection: options[:skip_profile_detection] || false,
       destination: "platform=macOS,variant=Mac Catalyst",
       catalyst_platform: "macos"
