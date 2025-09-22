@@ -71,12 +71,13 @@ These instructions define the mandatory architecture and patterns for the AllesT
 - Date comparisons: Always create local date variables in predicate scope
 
 **PREDICATE PATTERNS THAT WORK:**
+
 ```swift
 // String filtering
 #Predicate<Movie> { movie in movie.name.starts(with: "Back") }
 #Predicate<Movie> { movie in movie.name.localizedStandardContains("JAWS") }
 
-// Relationship queries  
+// Relationship queries
 #Predicate<Movie> { movie in movie.cast.count > 10 }
 #Predicate<Movie> { movie in !movie.cast.isEmpty }
 #Predicate<Movie> { movie in movie.cast.contains { $0.name == "Tom Cruise" } }
@@ -86,12 +87,13 @@ let now = Date.now
 #Predicate<Movie> { movie in movie.releaseDate > now }
 
 // Boolean combinations
-#Predicate<Movie> { movie in 
-    movie.director.name.contains("Steven") && movie.cost > 100_000_000 
+#Predicate<Movie> { movie in
+    movie.director.name.contains("Steven") && movie.cost > 100_000_000
 }
 ```
 
 **PREDICATE PATTERNS THAT CRASH:**
+
 ```swift
 // AVOID - These will crash at runtime
 movie.cast.isEmpty == false  // Use !movie.cast.isEmpty instead

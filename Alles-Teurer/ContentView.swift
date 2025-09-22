@@ -5,8 +5,8 @@
 //  Created by Matthias Wallner-Géhri on 22.09.25.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -24,16 +24,16 @@ struct ContentView: View {
                 }
                 .onDelete(perform: deleteKassenbons)
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
+            #if os(macOS)
+                .navigationSplitViewColumnWidth(min: 180, ideal: 200)
+            #endif
             .navigationTitle("Kassenbons")
             .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
+                #if os(iOS)
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        EditButton()
+                    }
+                #endif
                 ToolbarItem {
                     Button(action: addTestKassenbon) {
                         Label("Test Kassenbon hinzufügen", systemImage: "plus")
@@ -45,7 +45,9 @@ struct ContentView: View {
                 ContentUnavailableView(
                     "Keine Kassenbons",
                     systemImage: "receipt",
-                    description: Text("Fügen Sie Ihren ersten Kassenbon hinzu, um mit der Preisverfolgung zu beginnen.")
+                    description: Text(
+                        "Fügen Sie Ihren ersten Kassenbon hinzu, um mit der Preisverfolgung zu beginnen."
+                    )
                 )
             } else {
                 Text("Wählen Sie einen Kassenbon aus")
@@ -60,7 +62,7 @@ struct ContentView: View {
                 scanDatum: Date.now,
                 gesamtbetrag: 47.83
             )
-            
+
             // Test-Artikel hinzufügen
             let artikel1 = KassenbonArtikel(
                 name: "Milch 3,5%",
@@ -68,17 +70,17 @@ struct ContentView: View {
                 einzelpreis: 1.49,
                 gesamtpreis: 1.49
             )
-            
+
             let artikel2 = KassenbonArtikel(
                 name: "Brot Vollkorn",
                 menge: 1,
                 einzelpreis: 2.99,
                 gesamtpreis: 2.99
             )
-            
+
             testKassenbon.artikel = [artikel1, artikel2]
             modelContext.insert(testKassenbon)
-            
+
             do {
                 try modelContext.save()
             } catch {
@@ -92,7 +94,7 @@ struct ContentView: View {
             for index in offsets {
                 modelContext.delete(kassenbons[index])
             }
-            
+
             do {
                 try modelContext.save()
             } catch {
@@ -104,7 +106,7 @@ struct ContentView: View {
 
 struct KassenbonRowView: View {
     let kassenbon: Kassenbon
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -115,14 +117,14 @@ struct KassenbonRowView: View {
                     .font(.headline)
                     .foregroundColor(.primary)
             }
-            
+
             HStack {
                 Text(kassenbon.scanDatum, style: .date)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 Spacer()
-                
+
                 Text("\(kassenbon.artikel.count) Artikel")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -134,7 +136,7 @@ struct KassenbonRowView: View {
 
 struct KassenbonDetailView: View {
     let kassenbon: Kassenbon
-    
+
     var body: some View {
         List {
             Section {
@@ -147,7 +149,7 @@ struct KassenbonDetailView: View {
                         Text(kassenbon.geschaeftsname)
                             .font(.headline)
                     }
-                    
+
                     HStack {
                         Text("Datum")
                             .font(.caption)
@@ -155,7 +157,7 @@ struct KassenbonDetailView: View {
                         Spacer()
                         Text(kassenbon.scanDatum, style: .date)
                     }
-                    
+
                     HStack {
                         Text("Gesamtbetrag")
                             .font(.caption)
@@ -168,7 +170,7 @@ struct KassenbonDetailView: View {
                 }
                 .padding(.vertical, 4)
             }
-            
+
             Section("Artikel") {
                 ForEach(kassenbon.artikel) { artikel in
                     HStack {
@@ -176,14 +178,16 @@ struct KassenbonDetailView: View {
                             Text(artikel.name)
                                 .font(.body)
                             if artikel.menge > 1 {
-                                Text("\(artikel.menge)x \(artikel.einzelpreis, format: .currency(code: "EUR"))")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                Text(
+                                    "\(artikel.menge)x \(artikel.einzelpreis, format: .currency(code: "EUR"))"
+                                )
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                             }
                         }
-                        
+
                         Spacer()
-                        
+
                         Text(artikel.gesamtpreis, format: .currency(code: "EUR"))
                             .font(.body)
                     }

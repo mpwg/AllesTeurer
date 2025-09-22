@@ -53,6 +53,7 @@ AllesTeurer/
 - **Local-First**: SwiftData for type-safe, native iOS data persistence
 
 **CONCURRENCY REQUIREMENTS - NO EXCEPTIONS:**
+
 - **Always use async/await pattern** - NEVER use completion handlers or @escaping closures
 - **Thread Safety**: Use @ModelActor for data operations, @MainActor for UI updates
 - **ViewModel Pattern**: All ViewModels must be @Observable and handle async operations properly
@@ -60,6 +61,7 @@ AllesTeurer/
 - **UI Updates**: All UI state changes must happen on @MainActor
 
 **NEVER DO:**
+
 - Use completion handlers instead of async/await
 - Use @escaping closures for async operations
 - Access SwiftData ModelContext directly from ViewModels
@@ -96,6 +98,7 @@ struct ContentView: View {
 ### SwiftData Predicate Guidelines (CRITICAL)
 
 **ALWAYS FOLLOW THESE RULES:**
+
 - Use `#Predicate<ModelType>` with explicit type for @Query
 - String filtering: `contains()`, `starts(with:)`, `localizedStandardContains()` for case-insensitive
 - Boolean logic: Use `&&`/`||` in single expressions, `!condition` (NOT `== false`)
@@ -103,6 +106,7 @@ struct ContentView: View {
 - Relationship queries: `collection.contains { }`, `collection.filter { }`, `!collection.isEmpty`
 
 **PREDICATE EXAMPLES:**
+
 ```swift
 // Correct patterns
 #Predicate<Product> { product in product.name.contains("Milk") }

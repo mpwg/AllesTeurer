@@ -5,8 +5,8 @@
 //  Created by Matthias Wallner-Géhri on 22.09.25.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct Alles_TeurerApp: App {
@@ -16,10 +16,10 @@ struct Alles_TeurerApp: App {
             KassenbonArtikel.self,
             Produkt.self,
             PreisEintrag.self,
-            Geschaeft.self
+            Geschaeft.self,
         ])
         let modelConfiguration = ModelConfiguration(
-            schema: schema, 
+            schema: schema,
             isStoredInMemoryOnly: false,
             groupContainer: .identifier("group.eu.mpwg.allesteurer.shared")
         )
