@@ -9,6 +9,15 @@ applyTo: "**/*.swift"
 
 Starting with iOS 17, iPadOS 17, macOS 14, tvOS 17, and watchOS 10, SwiftUI provides the `@Observable` macro as a replacement for `ObservableObject`. This document provides comprehensive instructions for AI agents on how to properly migrate from `ObservableObject` to `@Observable` and use Observation correctly.
 
+## MANDATORY MVVM Architecture Requirements
+
+**CRITICAL RULES - ALWAYS ENFORCE:**
+
+- **ViewModels**: MUST be @Observable classes with async/await operations only
+- **Data Operations**: All data access must go through ModelActor-based repositories
+- **UI Updates**: All UI state changes must happen on @MainActor
+- **Concurrency**: Always use async/await pattern, NEVER use completion handlers or @escaping closures
+
 ## Key Benefits of Observation
 
 1. **Better tracking**: Supports tracking optionals and collections of objects

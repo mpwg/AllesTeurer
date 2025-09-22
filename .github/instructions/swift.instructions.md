@@ -1,6 +1,38 @@
 # GitHub Copilot Instructions
 
-These instructions d- Use enums with associated values to manage### 🚫 Patterns to Avoid
+These instructions define the mandatory architecture and patterns for the AllesTeurer iOS project.
+
+## 🏗️ MANDATORY MVVM Architecture with Async/Await
+
+**CRITICAL ARCHITECTURE RULES - ALWAYS ENFORCE:**
+
+- **UI**: SwiftUI with Observable ViewModels and data binding
+- **ViewModels**: MUST be @Observable classes (Swift 5.9+) with async/await operations only
+- **Repositories**: Data access abstraction with SwiftData integration using ModelActor for thread-safety
+- **Use Cases**: Domain logic encapsulation with async/await for complex operations
+- **Local-First**: SwiftData for type-safe, native iOS data persistence
+
+**CONCURRENCY REQUIREMENTS - NO EXCEPTIONS:**
+
+- **Always use async/await pattern** - NEVER use completion handlers or @escaping closures
+- **Thread Safety**: Use @ModelActor for data operations, @MainActor for UI updates
+- **ViewModel Pattern**: All ViewModels must be @Observable and handle async operations properly
+- **Data Operations**: All data access must go through ModelActor-based repositories
+- **UI Updates**: All UI state changes must happen on @MainActor
+
+**NEVER DO:**
+
+- Use completion handlers instead of async/await
+- Use @escaping closures for async operations
+- Access SwiftData ModelContext directly from ViewModels
+- Perform data operations without proper actor isolation
+- Mix ObservableObject with @Observable patterns
+
+## 🧩 Patterns to Follow
+
+- Use enums with associated values to manage
+
+### 🚫 Patterns to Avoid
 
 - Don't use force unwraps (`!`) unless you're certain the value is non-nil.
 - Avoid putting business logic directly inside views.
@@ -23,6 +55,49 @@ These instructions d- Use enums with associated values to manage### 🚫 Pattern
 - Use `ModelContext` for data operations (insert, delete, save).
 - Leverage Swift Data's automatic relationship management.
 - Use `@Attribute` for custom property configurations (unique constraints, etc.).
+
+### SwiftData Predicate Best Practices
+
+**CRITICAL RULES - ALWAYS FOLLOW:**
+
+- Use `#Predicate<ModelType>` with explicit type annotation for @Query
+- For FetchDescriptor, `#Predicate { model in ... }` type inference usually works
+- String comparisons: Use `contains()`, `starts(with:)` - NOT `hasPrefix()` or `hasSuffix()`
+- Case-insensitive search: Use `localizedStandardContains()` - NOT `uppercased()` or `lowercased()`
+- Boolean logic: Use `&&` and `||` for single expressions - NOT nested if statements
+- Negation: Use `!condition` - NOT `condition == false` (crashes at runtime)
+- Relationship queries: Use `collection.contains { }`, `collection.filter { }`, `collection.isEmpty`
+- External values: Create local copies (`let now = Date.now`) - can't reference external variables directly
+- Date comparisons: Always create local date variables in predicate scope
+
+**PREDICATE PATTERNS THAT WORK:**
+```swift
+// String filtering
+#Predicate<Movie> { movie in movie.name.starts(with: "Back") }
+#Predicate<Movie> { movie in movie.name.localizedStandardContains("JAWS") }
+
+// Relationship queries  
+#Predicate<Movie> { movie in movie.cast.count > 10 }
+#Predicate<Movie> { movie in !movie.cast.isEmpty }
+#Predicate<Movie> { movie in movie.cast.contains { $0.name == "Tom Cruise" } }
+
+// Date filtering with local variables
+let now = Date.now
+#Predicate<Movie> { movie in movie.releaseDate > now }
+
+// Boolean combinations
+#Predicate<Movie> { movie in 
+    movie.director.name.contains("Steven") && movie.cost > 100_000_000 
+}
+```
+
+**PREDICATE PATTERNS THAT CRASH:**
+```swift
+// AVOID - These will crash at runtime
+movie.cast.isEmpty == false  // Use !movie.cast.isEmpty instead
+movie.name.uppercased()      // Use localizedStandardContains() instead
+movie.releaseDate > Date.now // Create local variable first
+```
 
 ### Example Swift Data Usage
 

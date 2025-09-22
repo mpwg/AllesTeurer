@@ -12,9 +12,17 @@ import SwiftData
 struct Alles_TeurerApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Kassenbon.self,
+            KassenbonArtikel.self,
+            Produkt.self,
+            PreisEintrag.self,
+            Geschaeft.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration = ModelConfiguration(
+            schema: schema, 
+            isStoredInMemoryOnly: false,
+            groupContainer: .identifier("group.eu.mpwg.allesteurer.shared")
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
@@ -28,5 +36,14 @@ struct Alles_TeurerApp: App {
             ContentView()
         }
         .modelContainer(sharedModelContainer)
+        .commands {
+            // Mac Catalyst Menu-Befehle
+            CommandGroup(replacing: .newItem) {
+                Button("Kassenbon scannen") {
+                    // TODO: Scan-Aktion implementieren
+                }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
     }
 }

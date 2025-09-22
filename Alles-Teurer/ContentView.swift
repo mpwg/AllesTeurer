@@ -10,23 +10,24 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Query private var kassenbons: [Kassenbon]
 
     var body: some View {
         NavigationSplitView {
             List {
-                ForEach(items) { item in
+                ForEach(kassenbons) { kassenbon in
                     NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
+                        KassenbonDetailView(kassenbon: kassenbon)
                     } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+                        KassenbonRowView(kassenbon: kassenbon)
                     }
                 }
-                .onDelete(perform: deleteItems)
+                .onDelete(perform: deleteKassenbons)
             }
 #if os(macOS)
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
 #endif
+            .navigationTitle("Kassenbons")
             .toolbar {
 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -34,33 +35,168 @@ struct ContentView: View {
                 }
 #endif
                 ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    Button(action: addTestKassenbon) {
+                        Label("Test Kassenbon hinzufügen", systemImage: "plus")
                     }
                 }
             }
         } detail: {
-            Text("Select an item")
+            if kassenbons.isEmpty {
+                ContentUnavailableView(
+                    "Keine Kassenbons",
+                    systemImage: "receipt",
+                    description: Text("Fügen Sie Ihren ersten Kassenbon hinzu, um mit der Preisverfolgung zu beginnen.")
+                )
+            } else {
+                Text("Wählen Sie einen Kassenbon aus")
+            }
         }
     }
 
-    private func addItem() {
+    private func addTestKassenbon() {
         withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
+            let testKassenbon = Kassenbon(
+                geschaeftsname: "REWE",
+                scanDatum: Date.now,
+                gesamtbetrag: 47.83
+            )
+            
+            // Test-Artikel hinzufügen
+            let artikel1 = KassenbonArtikel(
+                name: "Milch 3,5%",
+                menge: 1,
+                einzelpreis: 1.49,
+                gesamtpreis: 1.49
+            )
+            
+            let artikel2 = KassenbonArtikel(
+                name: "Brot Vollkorn",
+                menge: 1,
+                einzelpreis: 2.99,
+                gesamtpreis: 2.99
+            )
+            
+            testKassenbon.artikel = [artikel1, artikel2]
+            modelContext.insert(testKassenbon)
+            
+            do {
+                try modelContext.save()
+            } catch {
+                print("Fehler beim Speichern: \(error)")
+            }
         }
     }
 
-    private func deleteItems(offsets: IndexSet) {
+    private func deleteKassenbons(offsets: IndexSet) {
         withAnimation {
             for index in offsets {
-                modelContext.delete(items[index])
+                modelContext.delete(kassenbons[index])
+            }
+            
+            do {
+                try modelContext.save()
+            } catch {
+                print("Fehler beim Löschen: \(error)")
             }
         }
     }
 }
 
+struct KassenbonRowView: View {
+    let kassenbon: Kassenbon
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(kassenbon.geschaeftsname)
+                    .font(.headline)
+                Spacer()
+                Text(kassenbon.gesamtbetrag, format: .currency(code: "EUR"))
+                    .font(.headline)
+                    .foregroundColor(.primary)
+            }
+            
+            HStack {
+                Text(kassenbon.scanDatum, style: .date)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Text("\(kassenbon.artikel.count) Artikel")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct KassenbonDetailView: View {
+    let kassenbon: Kassenbon
+    
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Geschäft")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(kassenbon.geschaeftsname)
+                            .font(.headline)
+                    }
+                    
+                    HStack {
+                        Text("Datum")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(kassenbon.scanDatum, style: .date)
+                    }
+                    
+                    HStack {
+                        Text("Gesamtbetrag")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(kassenbon.gesamtbetrag, format: .currency(code: "EUR"))
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            
+            Section("Artikel") {
+                ForEach(kassenbon.artikel) { artikel in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(artikel.name)
+                                .font(.body)
+                            if artikel.menge > 1 {
+                                Text("\(artikel.menge)x \(artikel.einzelpreis, format: .currency(code: "EUR"))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Text(artikel.gesamtpreis, format: .currency(code: "EUR"))
+                            .font(.body)
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+        .navigationTitle("Kassenbon Details")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: Kassenbon.self, inMemory: true)
 }

@@ -42,37 +42,73 @@ AllesTeurer/
 - **iOS-First**: Single platform focus with deep iOS integration
 - **Privacy-First**: All processing happens on-device, optional sync only
 
-### MVVM + Repository Pattern
+### MVVM + Repository Pattern with Async/Await (MANDATORY)
+
+**CRITICAL ARCHITECTURE RULES - ALWAYS ENFORCE:**
 
 - **UI**: SwiftUI with Observable ViewModels and data binding
-- **ViewModels**: ObservableObject classes handling UI state and business logic
-- **Repositories**: Data access abstraction with SwiftData integration
-- **Use Cases**: Domain logic encapsulation for complex operations
+- **ViewModels**: MUST be @Observable classes (Swift 5.9+) with async/await operations only
+- **Repositories**: Data access abstraction with SwiftData integration using ModelActor for thread-safety
+- **Use Cases**: Domain logic encapsulation with async/await for complex operations
 - **Local-First**: SwiftData for type-safe, native iOS data persistence
 
-### iOS Code Organization
+**CONCURRENCY REQUIREMENTS - NO EXCEPTIONS:**
+- **Always use async/await pattern** - NEVER use completion handlers or @escaping closures
+- **Thread Safety**: Use @ModelActor for data operations, @MainActor for UI updates
+- **ViewModel Pattern**: All ViewModels must be @Observable and handle async operations properly
+- **Data Operations**: All data access must go through ModelActor-based repositories
+- **UI Updates**: All UI state changes must happen on @MainActor
 
+**NEVER DO:**
+- Use completion handlers instead of async/await
+- Use @escaping closures for async operations
+- Access SwiftData ModelContext directly from ViewModels
+- Perform data operations without proper actor isolation
+- Mix ObservableObject with @Observable patterns
+
+### SwiftData Implementation
+
+```swift
+import SwiftData
+
+@Model
+class Item {
+    var name: String
+    var timestamp: Date
+
+    init(name: String, timestamp: Date = Date()) {
+        self.name = name
+        self.timestamp = timestamp
+    }
+}
+
+// In SwiftUI View
+struct ContentView: View {
+    @Query private var items: [Item]
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        // UI code here
+    }
+}
 ```
-Alles Teurer/
-├── Models/                 # SwiftData models and entities
-├── ViewModels/            # Observable ViewModels for business logic
-├── Views/                 # SwiftUI views and screens
-│   ├── Scanner/           # Receipt scanning interface
-│   ├── Products/          # Product list and details
-│   ├── Analytics/         # Price charts and insights
-│   └── Settings/          # App configuration
-├── Services/              # Business logic and data processing
-│   ├── OCRService.swift   # Vision Framework integration
-│   ├── DataManager.swift  # Swift Data operations
-│   ├── ProductMatcher.swift # Local fuzzy matching algorithms
-│   └── PriceAnalyzer.swift # Local analytics calculations
-├── Views/                 # SwiftUI views organized by feature
-│   ├── Scanner/           # Receipt scanning interface
-│   ├── Products/          # Product list and details
-│   ├── Analytics/         # Price charts and insights
-│   └── Settings/          # App configuration
-├── Coordinators/          # Navigation flow management
-└── Utils/                 # Extensions and helper functions
+
+### SwiftData Predicate Guidelines (CRITICAL)
+
+**ALWAYS FOLLOW THESE RULES:**
+- Use `#Predicate<ModelType>` with explicit type for @Query
+- String filtering: `contains()`, `starts(with:)`, `localizedStandardContains()` for case-insensitive
+- Boolean logic: Use `&&`/`||` in single expressions, `!condition` (NOT `== false`)
+- External values: Create local copies first (`let now = Date.now`)
+- Relationship queries: `collection.contains { }`, `collection.filter { }`, `!collection.isEmpty`
+
+**PREDICATE EXAMPLES:**
+```swift
+// Correct patterns
+#Predicate<Product> { product in product.name.contains("Milk") }
+#Predicate<Receipt> { receipt in !receipt.items.isEmpty }
+let today = Date.now
+#Predicate<Receipt> { receipt in receipt.date > today }
 ```
 
 ### Critical Technical Constraints
@@ -121,30 +157,40 @@ class ReceiptItem {
 }
 ```
 
-### Observable ViewModels
+### Observable ViewModels with Async/Await
 
 ```swift
 @MainActor
 @Observable
 class ReceiptScannerViewModel {
     private let ocrService: OCRService
-    private let receiptRepository: ReceiptRepository
+    private let dataManager: DataManager
 
     var scanState: ScanState = .idle
+    var receipts: [Receipt] = []
 
-    init(ocrService: OCRService, receiptRepository: ReceiptRepository) {
+    init(ocrService: OCRService, dataManager: DataManager) {
         self.ocrService = ocrService
-        self.receiptRepository = receiptRepository
+        self.dataManager = dataManager
     }
 
     func processReceipt(from imageData: Data) async {
         scanState = .processing
         do {
             let receipt = try await ocrService.processReceiptImage(imageData)
-            try await receiptRepository.save(receipt)
+            try await dataManager.saveReceipt(receipt)
+            await loadReceipts()
             scanState = .success(receipt)
         } catch {
             scanState = .error(error.localizedDescription)
+        }
+    }
+
+    private func loadReceipts() async {
+        do {
+            receipts = try await dataManager.fetchAllReceipts()
+        } catch {
+            print("Failed to load receipts: \(error)")
         }
     }
 }
@@ -157,14 +203,19 @@ enum ScanState {
 }
 ```
 
-### SwiftUI Views
+### SwiftUI Views with Async ViewModels
 
 ```swift
 struct ReceiptScannerView: View {
-    @State private var viewModel = ReceiptScannerViewModel(
-        ocrService: OCRService(),
-        receiptRepository: ReceiptRepository()
-    )
+    @State private var viewModel: ReceiptScannerViewModel
+
+    init(dataManager: DataManager) {
+        let ocrService = OCRService()
+        _viewModel = State(wrappedValue: ReceiptScannerViewModel(
+            ocrService: ocrService,
+            dataManager: dataManager
+        ))
+    }
 
     var body: some View {
         NavigationStack {
@@ -177,14 +228,21 @@ struct ReceiptScannerView: View {
                         }
                     }
                 case .processing:
-                    ProgressView("Processing receipt...")
+                    ProgressView("Kassenbon wird verarbeitet...")
                 case .success(let receipt):
                     ReceiptResultView(receipt: receipt)
                 case .error(let message):
-                    ErrorView(message: message)
+                    ErrorView(message: message) {
+                        Task {
+                            await viewModel.resetScanState()
+                        }
+                    }
                 }
             }
-            .navigationTitle("Scan Receipt")
+            .navigationTitle("Kassenbon scannen")
+            .task {
+                await viewModel.loadInitialData()
+            }
         }
     }
 }

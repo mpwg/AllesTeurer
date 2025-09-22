@@ -6,5 +6,35 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<!-- Camera access for receipt scanning -->
+	<key>NSCameraUsageDescription</key>
+	<string>AllesTeurer benötigt Kamerazugriff, um Kassenbons zu scannen und Produktpreise zu verfolgen.</string>
+	<!-- Photo library access for receipt image processing -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AllesTeurer benötigt Zugriff auf Ihre Fotomediathek, um Kassenbon-Bilder für die Preisverfolgung zu verarbeiten.</string>
+	<!-- Optional location for store matching -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AllesTeurer kann Ihren Standort verwenden, um nahegelegene Geschäfte beim Scannen von Kassenbons zu identifizieren.</string>
+	<!-- Supported document types for receipt import -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Kassenbon-Bilder</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.image</string>
+				<string>com.adobe.pdf</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Enable Siri and Shortcuts -->
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>KassenbonScannenIntent</string>
+		<string>PreisverlaufAnzeigenIntent</string>
+	</array>
 </dict>
 </plist>
