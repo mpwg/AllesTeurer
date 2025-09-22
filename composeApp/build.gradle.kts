@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Base64
+import java.io.File
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -57,6 +59,31 @@ kotlin {
     }
 }
 
+// Create keystore from base64 data if available, before Android configuration
+val keystoreFile = run {
+    val keystoreBase64 = System.getenv("ANDROID_KEYSTORE_BASE64") ?: System.getProperty("ANDROID_KEYSTORE_BASE64")
+    if (keystoreBase64 != null && keystoreBase64.isNotBlank()) {
+        val keystoreDir = File(projectDir, "build/keystore")
+        keystoreDir.mkdirs()
+        val keystoreFile = File(keystoreDir, "release.keystore")
+        if (!keystoreFile.exists()) {
+            val keystoreData = Base64.getDecoder().decode(keystoreBase64.trim())
+            keystoreFile.writeBytes(keystoreData)
+        }
+        keystoreFile
+    } else {
+        null
+    }
+}
+
+// Helper function to resolve keystore path from various sources
+fun getKeystorePath(): String {
+    return System.getenv("ANDROID_KEYSTORE_PATH") 
+        ?: System.getProperty("ANDROID_KEYSTORE_PATH") 
+        ?: findProperty("ANDROID_KEYSTORE_PATH") as String?
+        ?: "keystore/release.keystore"
+}
+
 android {
     namespace = "eu.mpwg.allesteurer"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -73,10 +100,16 @@ android {
     signingConfigs {
         create("release") {
             // Use environment variables for CI/CD, fall back to gradle.properties for local
-            keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: findProperty("ANDROID_KEY_ALIAS") as String? ?: "allesteurer"
-            keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: findProperty("ANDROID_KEY_PASSWORD") as String?
-            storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH") ?: findProperty("ANDROID_KEYSTORE_PATH") ?: "keystore/release.keystore")
-            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: findProperty("ANDROID_KEYSTORE_PASSWORD") as String?
+            keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: System.getProperty("ANDROID_KEY_ALIAS") ?: findProperty("ANDROID_KEY_ALIAS") as String? ?: "allesteurer"
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: System.getProperty("ANDROID_KEY_PASSWORD") ?: findProperty("ANDROID_KEY_PASSWORD") as String?
+            storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: System.getProperty("ANDROID_KEYSTORE_PASSWORD") ?: findProperty("ANDROID_KEYSTORE_PASSWORD") as String?
+            
+            // Use keystore file created earlier or fall back to file path
+            if (keystoreFile != null) {
+                storeFile = keystoreFile
+            } else {
+                storeFile = file(getKeystorePath())
+            }
         }
         
         getByName("debug") {
@@ -92,7 +125,14 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            // Only use release signing if we have the necessary credentials
+            val hasKeystore = keystoreFile != null || file(getKeystorePath()).exists()
+            if (hasKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                logger.warn("No release keystore found, using debug signing for release build")
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
