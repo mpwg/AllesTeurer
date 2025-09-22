@@ -36,10 +36,10 @@ actor DataManager {
     /// Lädt alle Kassenbons für ein bestimmtes Geschäft
     func ladeKassenbons(fuerGeschaeft geschaeft: Geschaeft) throws -> [Kassenbon] {
         let descriptor = FetchDescriptor<Kassenbon>(
+            predicate: #Predicate { $0.geschaeft?.name == geschaeft.name },
             sortBy: [SortDescriptor(\.scanDatum, order: .reverse)]
         )
-        let alleKassenbons = try modelContext.fetch(descriptor)
-        return alleKassenbons.filter { $0.geschaeft?.name == geschaeft.name }
+        return try modelContext.fetch(descriptor)
     }
 
     /// Lädt alle Kassenbons
