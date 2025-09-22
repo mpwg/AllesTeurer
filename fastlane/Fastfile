@@ -265,7 +265,7 @@ platform :ios do
       export_method: "development", # For direct distribution
       output_directory: "./build/alpha",
       version: tag_version,
-      skip_profile_detection: true
+      skip_profile_detection: false  # Enable profile detection to ensure proper signing
     })
 
     UI.success("✅ Alpha builds completed successfully!")
@@ -468,8 +468,7 @@ platform :ios do
       project: WORKSPACE_PATH,
       clean: false,  # Improved: Only clean when necessary for faster incremental builds
       include_bitcode: false,
-      # Let match determine the identity and profile
-      codesigning_identity: "",  # Let match determine the identity
+      # Let match determine the identity and profile automatically
       export_xcargs: "-allowProvisioningUpdates",
       # Performance optimizations
       xcargs: build_xcargs
