@@ -1,5 +1,4 @@
 import java.util.Properties
-import java.io.FileInputStream
 
 // Load .env file into system properties
 fun loadEnvFile() {

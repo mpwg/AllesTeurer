@@ -76,6 +76,14 @@ val keystoreFile = run {
     }
 }
 
+// Helper function to resolve keystore path from various sources
+fun getKeystorePath(): String {
+    return System.getenv("ANDROID_KEYSTORE_PATH") 
+        ?: System.getProperty("ANDROID_KEYSTORE_PATH") 
+        ?: findProperty("ANDROID_KEYSTORE_PATH") as String?
+        ?: "keystore/release.keystore"
+}
+
 android {
     namespace = "eu.mpwg.allesteurer"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -100,8 +108,7 @@ android {
             if (keystoreFile != null) {
                 storeFile = keystoreFile
             } else {
-                val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getProperty("ANDROID_KEYSTORE_PATH") ?: findProperty("ANDROID_KEYSTORE_PATH") ?: "keystore/release.keystore"
-                storeFile = file(keystorePath)
+                storeFile = file(getKeystorePath())
             }
         }
         
@@ -119,11 +126,11 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             // Only use release signing if we have the necessary credentials
-            val hasKeystore = keystoreFile != null || file(System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getProperty("ANDROID_KEYSTORE_PATH") ?: findProperty("ANDROID_KEYSTORE_PATH") ?: "keystore/release.keystore").exists()
+            val hasKeystore = keystoreFile != null || file(getKeystorePath()).exists()
             if (hasKeystore) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
-                println("Warning: No release keystore found, using debug signing for release build")
+                logger.warn("No release keystore found, using debug signing for release build")
                 signingConfig = signingConfigs.getByName("debug")
             }
         }
