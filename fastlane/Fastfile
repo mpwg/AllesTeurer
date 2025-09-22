@@ -179,13 +179,13 @@ platform :ios do
       scheme: SCHEME_NAME,
       devices: ["iPhone 17"],
       deployment_target_version: "26.0",
-      clean: true,
+      clean: false,  # Improved: Use incremental builds for faster testing
       code_coverage: true,
       skip_build: false,
       result_bundle: true,
       output_directory: "./build/test-results",
       buildlog_path: "./build/logs",
-      xcargs: "CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates"
+      xcargs: "CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates #{build_xcargs}"
     )
 
     UI.success("✅ Tests completed successfully!")
@@ -209,6 +209,25 @@ platform :ios do
     }))
 
     UI.success("✅ Build validation completed successfully!")
+  end
+
+  desc "Clean build when incremental builds are causing issues"
+  lane :clean_build do
+    setup_ci_if_needed
+
+    sync_certificates(type: "development")
+
+    build_app(common_build_config.merge({
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/validation",
+      output_name: "#{SCHEME_NAME}-clean-build.ipa",
+      skip_profile_detection: true,
+      skip_archive: false,
+      clean: true  # Force clean build
+    }))
+
+    UI.success("✅ Clean build completed successfully!")
   end
 
   # MARK: - Code Signing
@@ -258,12 +277,32 @@ platform :ios do
     {
       scheme: SCHEME_NAME,
       project: WORKSPACE_PATH,
-      clean: true,
+      clean: false,  # Improved: Only clean when necessary for faster incremental builds
       include_bitcode: false,
       # Let match determine the identity and profile
       codesigning_identity: "",  # Let match determine the identity
-      export_xcargs: "-allowProvisioningUpdates"
+      export_xcargs: "-allowProvisioningUpdates",
+      # Performance optimizations
+      xcargs: build_xcargs
     }
+  end
+
+  private_lane :build_xcargs do
+    args = []
+    
+    # Enable parallel builds for faster compilation
+    args << "-jobs #{ENV.fetch('FASTLANE_BUILD_JOBS', `sysctl -n hw.logicalcpu`.strip)}"
+    
+    # Use optimized linker for faster linking
+    args << "OTHER_LDFLAGS=\"-Wl,-no_deduplicate\""
+    
+    # Enable build caching
+    args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
+    
+    # Swift compilation optimizations
+    args << "SWIFT_COMPILATION_MODE=incremental" if ENV["CI"] != "true"
+    
+    args.join(" ")
   end
 
   private_lane :configure_app_store_connect do
@@ -338,6 +377,7 @@ platform :ios do
     UI.message("🔨 Development:")
     UI.message("  • fastlane dev        - Build development version")
     UI.message("  • fastlane build      - Build for CI validation")
+    UI.message("  • fastlane clean_build - Clean build when incremental builds fail")
     UI.message("")
     UI.message("🧪 Testing:")
     UI.message("  • fastlane beta       - Build and upload to TestFlight")
@@ -351,6 +391,54 @@ platform :ios do
     UI.message("")
     UI.message("ℹ️  Utility:")
     UI.message("  • fastlane version   - Show current app version")
+    UI.message("  • fastlane benchmark - Run build performance benchmark")
     UI.message("  • fastlane show_help - Show this help")
+  end
+
+  desc "Run build performance benchmark"
+  lane :benchmark do
+    UI.header("🚀 Build Performance Benchmark")
+    
+    start_time = Time.now
+    
+    # Clean build for baseline
+    UI.message("Running clean build benchmark...")
+    clean_start = Time.now
+    
+    build_app(common_build_config.merge({
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/benchmark",
+      output_name: "#{SCHEME_NAME}-benchmark-clean.ipa",
+      skip_profile_detection: true,
+      skip_archive: true,
+      clean: true
+    }))
+    
+    clean_duration = Time.now - clean_start
+    
+    # Incremental build
+    UI.message("Running incremental build benchmark...")
+    incremental_start = Time.now
+    
+    build_app(common_build_config.merge({
+      configuration: "Debug",
+      export_method: "development",
+      output_directory: "./build/benchmark",
+      output_name: "#{SCHEME_NAME}-benchmark-incremental.ipa",
+      skip_profile_detection: true,
+      skip_archive: true,
+      clean: false
+    }))
+    
+    incremental_duration = Time.now - incremental_start
+    total_duration = Time.now - start_time
+    
+    UI.success("📊 Build Performance Results:")
+    UI.success("  • Clean build time: #{clean_duration.round(2)} seconds")
+    UI.success("  • Incremental build time: #{incremental_duration.round(2)} seconds")
+    UI.success("  • Time saved with incremental builds: #{(clean_duration - incremental_duration).round(2)} seconds")
+    UI.success("  • Total benchmark time: #{total_duration.round(2)} seconds")
+    UI.success("  • Performance improvement: #{((clean_duration - incremental_duration) / clean_duration * 100).round(1)}%")
   end
 end

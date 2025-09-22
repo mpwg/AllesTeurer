@@ -39,6 +39,14 @@ Build and upload to TestFlight
 
 Build and upload to App Store
 
+### ios test
+
+```sh
+[bundle exec] fastlane ios test
+```
+
+Run unit tests and build for CI validation
+
 ### ios build
 
 ```sh
@@ -46,6 +54,14 @@ Build and upload to App Store
 ```
 
 Build app without distribution (for CI validation)
+
+### ios clean_build
+
+```sh
+[bundle exec] fastlane ios clean_build
+```
+
+Clean build when incremental builds are causing issues
 
 ### ios certificates
 
@@ -78,6 +94,14 @@ Show current version and build number
 ```
 
 Show available lanes
+
+### ios benchmark
+
+```sh
+[bundle exec] fastlane ios benchmark
+```
+
+Run build performance benchmark
 
 ----
 

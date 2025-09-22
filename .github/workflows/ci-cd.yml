@@ -25,6 +25,12 @@ env:
   FASTLANE_HIDE_GITHUB_ISSUES: 1
   FASTLANE_DISABLE_COLORS: 1
   FASTLANE_OPT_OUT_USAGE: 1
+  # Build performance optimizations
+  FASTLANE_BUILD_JOBS: 4
+  # Xcode build performance
+  XCODE_XCCONFIG_FILE: ""
+  # Swift compilation performance
+  SWIFT_DETERMINISTIC_HASHING: 1
 
 jobs:
   build-and-test:
@@ -50,9 +56,49 @@ jobs:
           path: |
             ~/Library/Developer/Xcode/DerivedData
             ~/Library/Caches/com.apple.dt.Xcode
-          key: ${{ runner.os }}-xcode-${{ hashFiles('**/project.pbxproj') }}
+            ~/Library/Developer/Xcode/UserData/IB Support
+            ~/Library/Developer/Xcode/UserData/IBDesignables
+          key: ${{ runner.os }}-xcode-deriveddata-${{ hashFiles('**/project.pbxproj', '**/*.swift', '**/*.h', '**/*.m') }}
           restore-keys: |
+            ${{ runner.os }}-xcode-deriveddata-
             ${{ runner.os }}-xcode-
+
+      - name: Cache Swift Package Manager
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.swift', '**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Cache CocoaPods (if used)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ./Pods
+          key: ${{ runner.os }}-cocoapods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cocoapods-
+
+      - name: Cache Fastlane Match certificates
+        uses: actions/cache@v4
+        with:
+          path: ~/.fastlane/match
+          key: ${{ runner.os }}-match-${{ hashFiles('fastlane/Matchfile') }}
+          restore-keys: |
+            ${{ runner.os }}-match-
+
+      - name: Optimize build environment
+        run: |
+          # Set optimal build jobs based on available CPU cores
+          echo "FASTLANE_BUILD_JOBS=$(sysctl -n hw.logicalcpu)" >> $GITHUB_ENV
+          # Set Xcode build settings for performance
+          defaults write com.apple.dt.Xcode IDEBuildOperationMaxNumberOfConcurrentCompileTasks $(sysctl -n hw.logicalcpu)
+          defaults write com.apple.dt.Xcode IDEIndexDisable -bool YES
+          defaults write com.apple.dt.Xcode IDEIndexerActivityShowNumericProgress -bool YES
 
       - name: Build and Test with Fastlane
         env:
