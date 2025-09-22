@@ -54,14 +54,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-xcode-
 
-      - name: Build and Test
-        run: |
-          xcodebuild clean build test \
-            -project "Alles Teurer.xcodeproj" \
-            -scheme "Alles Teurer" \
-            -destination "platform=iOS Simulator,name=iPhone 15,OS=17.2" \
-            -enableCodeCoverage YES \
-            CODE_SIGNING_ALLOWED=NO
+      - name: Build and Test with Fastlane
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'default_password' }}
+        run: bundle exec fastlane test
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -69,8 +65,8 @@ jobs:
         with:
           name: test-results
           path: |
-            ~/Library/Developer/Xcode/DerivedData/**/Build/Products/**/coverage.profdata
-            ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+            ./build/test-results/**
+            ./build/logs/**
 
       - name: Archive for Release
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
@@ -81,24 +77,15 @@ jobs:
           APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-        run: |
-          xcodebuild archive \
-            -project "Alles Teurer.xcodeproj" \
-            -scheme "Alles Teurer" \
-            -archivePath "${{ runner.temp }}/AllesTeurer.xcarchive" \
-            -destination "generic/platform=iOS"
-            
-          xcodebuild -exportArchive \
-            -archivePath "${{ runner.temp }}/AllesTeurer.xcarchive" \
-            -exportPath "${{ runner.temp }}" \
-            -exportOptionsPlist "ExportOptions.plist"
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'default_password' }}
+        run: bundle exec fastlane build
 
       - name: Upload IPA artifact
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: AllesTeurer-${{ github.sha }}.ipa
-          path: ${{ runner.temp }}/*.ipa
+          path: ./build/validation/*.ipa
 
   deploy-testflight:
     if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'testflight')
@@ -114,20 +101,16 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: true
 
-      - name: Download IPA
-        uses: actions/download-artifact@v4
-        with:
-          name: AllesTeurer-${{ github.sha }}.ipa
-
-      - name: Deploy to TestFlight
+      - name: Deploy to TestFlight with Fastlane
         env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-        run: |
-          bundle exec fastlane pilot upload \
-            --ipa "*.ipa" \
-            --skip_waiting_for_build_processing true
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'default_password' }}
+        run: bundle exec fastlane beta
 
   deploy-appstore:
     if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_target == 'appstore')
@@ -143,19 +126,13 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: true
 
-      - name: Download IPA
-        uses: actions/download-artifact@v4
-        with:
-          name: AllesTeurer-${{ github.sha }}.ipa
-
-      - name: Submit to App Store
+      - name: Submit to App Store with Fastlane
         env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-        run: |
-          bundle exec fastlane deliver \
-            --ipa "*.ipa" \
-            --skip_metadata true \
-            --skip_screenshots true \
-            --submit_for_review false
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'default_password' }}
+        run: bundle exec fastlane release

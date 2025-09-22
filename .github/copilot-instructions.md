@@ -190,64 +190,6 @@ struct ReceiptScannerView: View {
 }
 ```
 
-```kotlin
-@Composable
-fun ProductListScreen(
-    viewModel: ProductListViewModel = koinViewModel(),
-    modifier: Modifier = Modifier
-) {
-    val products by viewModel.products.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
-
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        items(products) { product ->
-            ProductItem(
-                product = product,
-                onClick = { viewModel.onProductClick(product) }
-            )
-        }
-    }
-}
-```
-
-## Development Workflows
-
-### Gradle Commands
-
-```bash
-# Build all targets
-./gradlew build
-
-# Run tests across all platforms
-./gradlew test
-
-# Format Kotlin code
-./gradlew ktlintFormat
-
-# Format code across entire monorepo
-pnpm format
-```
-
-### Platform-Specific Commands
-
-```bash
-# Open iOS project (for platform-specific debugging)
-open apps/composeApp/iosApp/iosApp.xcodeproj
-
-# Run platform-specific tests
-./gradlew :apps:composeApp:testDebugUnitTest        # Android
-./gradlew :apps:composeApp:iosSimulatorArm64Test    # iOS
-
-# Run on specific platforms
-./gradlew :composeApp:installDebug             # Android
-```
-
-### Feature Development Approach
-
-1. **Follow spec-driven workflow**: Reference `/spec/` directory for requirements and architecture
-2. **EARS notation**: Requirements written as "WHEN [condition], THE SYSTEM SHALL [behavior]"
-3. **Privacy validation**: Ensure no data leaves device except optional backend sync
-
 ## Development Workflows
 
 ### Xcode Commands
@@ -275,6 +217,35 @@ xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name
 
 # Run on device
 xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS,id=[device-id]"
+
+# Run on specific simulators
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPhone 15 Pro"
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS Simulator,name=iPad Pro (12.9-inch)"
+
+# Run on device
+xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS,id=[device-id]"
+```
+
+### Feature Development Approach
+
+1. **Follow spec-driven workflow**: Reference `/spec/` directory for requirements and architecture
+2. **EARS notation**: Requirements written as "WHEN [condition], THE SYSTEM SHALL [behavior]"
+3. **Privacy validation**: Ensure no data leaves device except optional backend sync
+4. **Accessibility first**: Use semantic markup and proper accessibility support in SwiftUI
+
+## Technology-Specific Conventions
+
+### OCR Integration (iOS Vision Framework)
+
+- Preprocess images for optimal OCR (resize to 1024x1024, enhance contrast)
+- Handle German text recognition specifically
+- Implement user correction flows for OCR errors
+- Use async/await for all Vision operations
+
+### Swift Charts Implementation
+
+- Create interactive price trend visualizations
+
 ```
 
 ### Feature Development Approach
@@ -337,27 +308,4 @@ xcodebuild test -scheme "Alles Teurer" -destination "platform=iOS,id=[device-id]
 - `/.github/instructions/a11y.instructions.md` - Accessibility requirements
 - `/.github/instructions/swiftui-observation.instructions.md` - SwiftUI Observable patterns
 - `/.github/instructions/ai-agent-testing.instructions.md` - AI agent test implementation guidelines
-
-## Critical "Don'ts"
-
-- **Never use Core Data** - Swift Data only
-- **No external analytics** - All insights calculated locally
-- **No third-party OCR** - Apple Vision Framework exclusively
-- **No cloud processing** - Maintain privacy-first architecture
-- **Don't break accessibility** - Every UI element must be accessible
-
-## Testing Approach
-
-- **Unit Testing**: Test OCR processing, product matching, and price analytics using Swift Testing framework
-- **UI Testing**: Verify receipt scanning flow and data display accuracy with XCUITest
-- **Accessibility Testing**: Validate VoiceOver and Dynamic Type support
-- **Privacy Testing**: Ensure no network calls in core functionality
-
-## References
-
-- `/spec/Anforderungen.md` - Functional requirements in German
-- `/spec/architecture.md` - Technical architecture decisions
-- `/.github/instructions/swift.instructions.md` - Swift coding conventions
-- `/.github/instructions/a11y.instructions.md` - Accessibility requirements
-- `/.github/instructions/swiftui-observation.instructions.md` - SwiftUI Observable patterns
-- `/.github/instructions/ai-agent-testing.instructions.md` - AI agent test implementation guidelines
+```

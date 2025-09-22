@@ -169,7 +169,7 @@ dependencies: [
 
 1. **Zum Produkte-Tab wechseln**
 2. **Produkt auswählen** für detaillierte Preishistorie
-3. **Interaktive Charts erkunden** mit Compose Multiplatform
+3. **Interaktive Charts erkunden** mit Swift Charts
 4. **Preisvergleiche** zwischen verschiedenen Händlern einsehen
 
 ### Analytics-Dashboard

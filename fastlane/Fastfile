@@ -167,6 +167,30 @@ platform :ios do
     UI.success("🏷️  Tagged version: #{get_version_number(xcodeproj: WORKSPACE_PATH)}")
   end
 
+  # MARK: - Testing
+
+  desc "Run unit tests and build for CI validation"
+  lane :test do
+    UI.message("🧪 Running unit tests and building for CI validation")
+    
+    # Run tests without code signing (for CI)
+    run_tests(
+      project: WORKSPACE_PATH,
+      scheme: SCHEME_NAME,
+      devices: ["iPhone 17"],
+      deployment_target_version: "26.0",
+      clean: true,
+      code_coverage: true,
+      skip_build: false,
+      result_bundle: true,
+      output_directory: "./build/test-results",
+      buildlog_path: "./build/logs",
+      xcargs: "CODE_SIGNING_ALLOWED=NO -allowProvisioningUpdates"
+    )
+
+    UI.success("✅ Tests completed successfully!")
+  end
+
   # MARK: - Build Only (for CI validation)
 
   desc "Build app without distribution (for CI validation)"
@@ -308,6 +332,9 @@ platform :ios do
   desc "Show available lanes"
   lane :show_help do
     UI.header("📋 Available Fastlane Lanes")
+    UI.message("🧪 Testing:")
+    UI.message("  • fastlane test       - Run unit tests and build for CI validation")
+    UI.message("")
     UI.message("🔨 Development:")
     UI.message("  • fastlane dev        - Build development version")
     UI.message("  • fastlane build      - Build for CI validation")

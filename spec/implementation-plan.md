@@ -182,70 +182,76 @@ Alles Teurer/
            self.priceHistory = []
        }
    }
+
+   @Model
+   final class PriceRecord {
+       let id: UUID
+       let productName: String
+       let price: Double
+       let storeName: String
+       let recordDate: Date
+
+       init(productName: String, price: Double, storeName: String, recordDate: Date = Date()) {
+           self.id = UUID()
+           self.productName = productName
+           self.price = price
+           self.storeName = storeName
+           self.recordDate = recordDate
+       }
+   }
    ```
 
 **Tasks:**
 
-1. **Initialize Kotlin Multiplatform project**
+1. **Initialize iOS Project Structure**
 
    ```bash
-   # Create new KMP project with Compose Multiplatform
-   mkdir alles-teurer && cd alles-teurer
-
-   # Initialize with KMP wizard or template
-   # Set up build.gradle.kts for multiplatform
+   # Create proper iOS project structure in Xcode
+   # Configure bundle identifier: eu.mpwg.allesteurer
+   # Set deployment target: iOS 17.0
+   # Enable required capabilities (Camera, Photo Library)
    ```
 
-2. **Configure gradle build scripts**
+2. **Configure SwiftData Stack**
 
-   ```kotlin
-   // build.gradle.kts (root)
-   plugins {
-       alias(libs.plugins.kotlin.multiplatform) apply false
-       alias(libs.plugins.kotlin.serialization) apply false
-       alias(libs.plugins.sqldelight) apply false
-       alias(libs.plugins.compose.multiplatform) apply false
-   }
+   ```swift
+   // DataManager.swift - Central data management
+   import SwiftData
+   import Foundation
 
-   // apps/composeApp/build.gradle.kts
-   kotlin {
-       androidTarget()
+   @MainActor
+   class DataManager: ObservableObject {
+       static let shared = DataManager()
 
-       listOf(
-           iosX64(),
-           iosArm64(),
-           iosSimulatorArm64()
-       ).forEach { iosTarget ->
-           iosTarget.binaries.framework {
-               baseName = "ComposeApp"
-               isStatic = true
+       private let modelContainer: ModelContainer
+       private var modelContext: ModelContext { modelContainer.mainContext }
+
+       init() {
+           let schema = Schema([Receipt.self, Product.self, PriceRecord.self])
+           let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+           do {
+               modelContainer = try ModelContainer(for: schema, configurations: [configuration])
+           } catch {
+               fatalError("Failed to initialize ModelContainer: \(error)")
            }
        }
 
-       sourceSets {
-           val commonMain by getting {
-               dependencies {
-                   implementation(compose.runtime)
-                   implementation(compose.foundation)
-                   implementation(compose.material3)
-                   implementation(compose.components.resources)
-                   implementation(libs.kotlinx.coroutines.core)
-                   implementation(libs.kotlinx.serialization.json)
-                   implementation(libs.sqldelight.runtime)
-                   implementation(libs.sqldelight.coroutines.extensions)
-               }
+       func save() throws {
+           if modelContext.hasChanges {
+               try modelContext.save()
            }
        }
    }
    ```
 
-3. **Set up module structure**
-   - Configure commonMain, androidMain, iosMain source sets
-   - Set up proper package structure following Clean Architecture
-   - Initialize SQLDelight configuration
-   - Set up Compose Multiplatform integration
+3. **Set up iOS module structure**
+   - Configure SwiftUI Views organized by feature
+   - Set up proper View Models following MVVM pattern
+   - Initialize Vision Framework integration
+   - Set up Swift Charts for analytics
 
-#### 2.2 SQLDelight Database Setup
+#### 2.2 SwiftData Database Operations
 
 **Timeline:** Week 2  
 **Effort:** 4 days  
