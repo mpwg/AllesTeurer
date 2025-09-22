@@ -10,6 +10,27 @@
 #     https://docs.fastlane.tools/plugins/available-plugins
 #
 
+# CODE SIGNING STRATEGY:
+# 
+# This Fastfile supports both Xcode automatic signing and Fastlane manual signing:
+# 
+# LOCAL BUILDS (is_ci = false):
+# - Uses Xcode automatic signing (respects project's CODE_SIGN_STYLE=Automatic)
+# - Match certificates are installed to keychain for Xcode to use automatically
+# - No manual CODE_SIGN_IDENTITY override is applied
+# - Allows for faster local development workflow
+# 
+# CI BUILDS (is_ci = true):
+# - Forces manual signing (overrides with CODE_SIGN_STYLE=Manual)
+# - Explicitly sets CODE_SIGN_IDENTITY and PROVISIONING_PROFILE_SPECIFIER
+# - Ensures deterministic signing in CI environment
+# - Uses Match certificates and profiles explicitly
+#
+# This hybrid approach provides the best of both worlds:
+# - Local developers can use Xcode's convenient automatic signing
+# - CI builds use controlled manual signing for reproducible results
+# - Both environments use the same Match-managed certificates and profiles
+
 # Load environment variables from .env file if it exists, otherwise use system environment variables
 env_file_path = File.join(File.dirname(__FILE__), '..', '.env')
 if File.exist?(env_file_path)
@@ -593,17 +614,15 @@ platform :ios do
       codesigning_identity = "Apple Development"
     end
     
-    {
+    build_config = {
       scheme: SCHEME_NAME,
       project: WORKSPACE_PATH,
       clean: false,  # Improved: Only clean when necessary for faster incremental builds
       include_bitcode: false,
-      # Force manual code signing with Match profiles
+      # Always allow provisioning updates - works with both automatic and manual signing
       export_xcargs: "-allowProvisioningUpdates",
       # Performance optimizations
       xcargs: build_xcargs(export_method: export_method),
-      # Manual code signing configuration using match certificate
-      codesigning_identity: codesigning_identity,
       export_options: {
         method: export_method, # This will be overridden by each lane
         provisioningProfiles: {
@@ -611,6 +630,17 @@ platform :ios do
         }
       }
     }
+    
+    # Only set manual codesigning_identity for CI builds
+    # For local builds, let Xcode's automatic signing handle certificate selection
+    if is_ci
+      UI.message("🔧 CI build: Setting manual code signing identity: #{codesigning_identity}")
+      build_config[:codesigning_identity] = codesigning_identity
+    else
+      UI.message("🔧 Local build: Using Xcode automatic signing (no manual codesigning_identity)")
+    end
+    
+    build_config
   end
 
   private_lane :build_xcargs do |options = {}|
@@ -625,15 +655,19 @@ platform :ios do
     # Enable build caching
     args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
     
+    # Always allow provisioning profile updates - this works with both automatic and manual signing
+    args << "-allowProvisioningUpdates"
+    
+    # Determine the export method for certificate lookup (default to development)
+    export_method = options[:export_method] || "development"
+    
+    # For CI builds, override to manual signing to ensure we use Match certificates
+    # For local builds, respect Xcode's automatic signing configuration
     if is_ci
-      # Force manual code signing (disable automatic signing)
+      UI.message("🔧 CI detected: Using manual code signing with Match certificates")
+      
+      # Force manual code signing (override Xcode's automatic signing)
       args << "CODE_SIGN_STYLE=Manual"
-      
-      # Allow provisioning profile updates but use manual signing
-      args << "-allowProvisioningUpdates"
-      
-      # Determine the export method for certificate lookup (default to development)
-      export_method = options[:export_method] || "development"
       
       # Set specific provisioning profile for the main app target
       profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{export_method}_profile-name"] || 
@@ -650,6 +684,11 @@ platform :ios do
       else
         args << "CODE_SIGN_IDENTITY=\"Apple Development\""
       end
+    else
+      UI.message("🔧 Local build: Using Xcode automatic signing (project configured for automatic)")
+      # For local builds, let Xcode handle signing automatically
+      # The project is configured with CODE_SIGN_STYLE=Automatic
+      # Match certificates will be available in keychain for Xcode to use
     end
     
     # Swift compilation optimizations
@@ -683,7 +722,11 @@ platform :ios do
     configure_app_store_connect
 
     UI.message("🔐 Syncing #{type} certificates and provisioning profiles with fastlane match")
-    UI.message("🚧 Ensuring Fastlane handles code signing (not Xcode automatic signing)")
+    if is_ci
+      UI.message("🚧 CI Environment: Fastlane will override Xcode automatic signing for controlled builds")
+    else
+      UI.message("🚧 Local Environment: Match certificates installed to keychain for Xcode automatic signing")
+    end
 
     begin
       match(
@@ -710,7 +753,11 @@ platform :ios do
         UI.error("Expected: sigh_#{APP_IDENTIFIER}_#{type}_profile-name")
       end
       
-      UI.message("🔒 Code signing will be handled by Fastlane, not Xcode")
+      if is_ci
+        UI.message("🔒 CI: Code signing will be handled by Fastlane (manual override)")
+      else
+        UI.message("🔒 Local: Certificates available for Xcode automatic signing")
+      end
     rescue => e
       UI.error("❌ Failed to sync certificates: #{e.message}")
       UI.error("💡 Common solutions:")
