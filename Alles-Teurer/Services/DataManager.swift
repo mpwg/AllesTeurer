@@ -184,7 +184,7 @@ actor DataManager {
     // MARK: - Analytics
 
     /// Berechnet Gesamtinflation über alle Produkte
-    func berechneGesamtinflation() throws -> Double {
+    func berechneGesamtinflation() throws -> Decimal {
         let kategorie: ProduktKategorie? = nil
         let alleProdukte = try ladeProdukte(kategorie: kategorie)
         let inflationsraten = alleProdukte.compactMap { produkt in
@@ -192,9 +192,11 @@ actor DataManager {
             return inflation > 0 ? inflation : nil
         }
 
-        guard !inflationsraten.isEmpty else { return 0.0 }
+        guard !inflationsraten.isEmpty else { return 0 }
 
-        let durchschnitt = inflationsraten.reduce(0, +) / Double(inflationsraten.count)
+        // Use pure Decimal arithmetic
+        let summe = inflationsraten.reduce(Decimal(0), +)
+        let durchschnitt = summe / Decimal(inflationsraten.count)
         return durchschnitt
     }
 
