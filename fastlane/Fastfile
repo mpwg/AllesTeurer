@@ -394,6 +394,16 @@ platform :ios do
       
       # Get the actual output path from the lane context (set by build_app)
       output_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
+      UI.message("🔍 DEBUG: Lane context IPA path: #{output_path}")
+      UI.message("🔍 DEBUG: Current working directory: #{Dir.pwd}")
+      UI.message("🔍 DEBUG: Output directory contents:")
+      if Dir.exist?(build_config[:output_directory])
+        Dir.glob(File.join(build_config[:output_directory], "**", "*")).each do |file|
+          UI.message("  • #{file}")
+        end
+      else
+        UI.message("  • Output directory does not exist: #{build_config[:output_directory]}")
+      end
       
       # Verify the build output exists
       if output_path && File.exist?(output_path)
