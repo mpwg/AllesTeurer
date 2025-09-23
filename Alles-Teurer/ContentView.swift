@@ -19,24 +19,24 @@ extension Decimal {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var kassenbons: [Kassenbon]
+    @Query private var rechnungen: [Rechnung]
 
     var body: some View {
         NavigationSplitView {
             List {
-                ForEach(kassenbons) { kassenbon in
+                ForEach(rechnungen) { rechnung in
                     NavigationLink {
-                        KassenbonDetailView(kassenbon: kassenbon)
+                        RechnungDetailView(rechnung: rechnung)
                     } label: {
-                        KassenbonRowView(kassenbon: kassenbon)
+                        RechnungRowView(rechnung: rechnung)
                     }
                 }
-                .onDelete(perform: deleteKassenbons)
+                .onDelete(perform: deleteRechnungen)
             }
             #if os(macOS)
                 .navigationSplitViewColumnWidth(min: 180, ideal: 200)
             #endif
-            .navigationTitle("Kassenbons")
+            .navigationTitle("Rechnungen")
             .toolbar {
                 #if os(iOS)
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -44,57 +44,57 @@ struct ContentView: View {
                     }
                 #endif
                 ToolbarItem {
-                    Button(action: addTestKassenbon) {
-                        Label("Test Kassenbon hinzufügen", systemImage: "plus")
+                    Button(action: addTestRechnung) {
+                        Label("Test Rechnung hinzufügen", systemImage: "plus")
                     }
                 }
             }
         } detail: {
-            if kassenbons.isEmpty {
+            if rechnungen.isEmpty {
                 ContentUnavailableView(
-                    "Keine Kassenbons",
+                    "Keine Rechnungen",
                     systemImage: "receipt",
                     description: Text(
-                        "Fügen Sie Ihren ersten Kassenbon hinzu, um mit der Preisverfolgung zu beginnen."
+                        "Fügen Sie Ihre erste Rechnung hinzu, um mit der Preisverfolgung zu beginnen."
                     )
                 )
             } else {
-                Text("Wählen Sie einen Kassenbon aus")
+                Text("Wählen Sie eine Rechnung aus")
             }
         }
     }
 
-    private func addTestKassenbon() {
+    private func addTestRechnung() {
         // MVVM: Use repository pattern through DataManager
         Task { @MainActor in
             do {
                 let dataManager = DataManager(modelContainer: modelContext.container)
 
-                let testKassenbon = Kassenbon(
-                    geschaeftsname: "REWE",
+                let testRechnung = Rechnung(
+                    geschaeftsname: "BILLA",
                     scanDatum: Date.now,
                     gesamtbetrag: 47.83
                 )
 
                 // Test-Artikel hinzufügen
-                let artikel1 = KassenbonArtikel(
+                let artikel1 = RechnungsArtikel(
                     name: "Milch 3,5%",
                     menge: 1,
                     einzelpreis: 1.49,
                     gesamtpreis: 1.49
                 )
 
-                let artikel2 = KassenbonArtikel(
+                let artikel2 = RechnungsArtikel(
                     name: "Brot Vollkorn",
                     menge: 1,
                     einzelpreis: 2.99,
                     gesamtpreis: 2.99
                 )
 
-                testKassenbon.artikel = [artikel1, artikel2]
+                testRechnung.artikel = [artikel1, artikel2]
 
                 // Use DataManager repository pattern instead of direct ModelContext access
-                try await dataManager.speichereKassenbon(testKassenbon)
+                try await dataManager.speichereRechnung(testRechnung)
 
             } catch {
                 print("Fehler beim Speichern: \(error)")
@@ -102,15 +102,15 @@ struct ContentView: View {
         }
     }
 
-    private func deleteKassenbons(offsets: IndexSet) {
+    private func deleteRechnungen(offsets: IndexSet) {
         // MVVM: Use repository pattern through DataManager
         Task { @MainActor in
             do {
                 let dataManager = DataManager(modelContainer: modelContext.container)
-                let kassenbonsToDelete = offsets.map { kassenbons[$0] }
+                let rechnungenToDelete = offsets.map { rechnungen[$0] }
 
-                for kassenbon in kassenbonsToDelete {
-                    try await dataManager.loescheKassenbon(mitID: kassenbon.persistentModelID)
+                for rechnung in rechnungenToDelete {
+                    try await dataManager.loescheRechnung(mitID: rechnung.persistentModelID)
                 }
             } catch {
                 print("Fehler beim Löschen: \(error)")
@@ -119,28 +119,28 @@ struct ContentView: View {
     }
 }
 
-struct KassenbonRowView: View {
-    let kassenbon: Kassenbon
+struct RechnungRowView: View {
+    let rechnung: Rechnung
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(kassenbon.geschaeftsname)
+                Text(rechnung.geschaeftsname)
                     .font(.headline)
                 Spacer()
-                Text(kassenbon.gesamtbetrag, format: Decimal.euroFormatter)
+                Text(rechnung.gesamtbetrag, format: Decimal.euroFormatter)
                     .font(.headline)
                     .foregroundColor(.primary)
             }
 
             HStack {
-                Text(kassenbon.scanDatum, style: .date)
+                Text(rechnung.scanDatum, style: .date)
                     .font(.caption)
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                Text("\(kassenbon.artikel.count) Artikel")
+                Text("\(rechnung.artikel.count) Artikel")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -149,8 +149,8 @@ struct KassenbonRowView: View {
     }
 }
 
-struct KassenbonDetailView: View {
-    let kassenbon: Kassenbon
+struct RechnungDetailView: View {
+    let rechnung: Rechnung
 
     var body: some View {
         List {
@@ -161,7 +161,7 @@ struct KassenbonDetailView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(kassenbon.geschaeftsname)
+                        Text(rechnung.geschaeftsname)
                             .font(.headline)
                     }
 
@@ -170,7 +170,7 @@ struct KassenbonDetailView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(kassenbon.scanDatum, style: .date)
+                        Text(rechnung.scanDatum, style: .date)
                     }
 
                     HStack {
@@ -178,7 +178,7 @@ struct KassenbonDetailView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(kassenbon.gesamtbetrag, format: Decimal.euroFormatter)
+                        Text(rechnung.gesamtbetrag, format: Decimal.euroFormatter)
                             .font(.headline)
                             .foregroundColor(.primary)
                     }
@@ -187,7 +187,7 @@ struct KassenbonDetailView: View {
             }
 
             Section("Artikel") {
-                ForEach(kassenbon.artikel) { artikel in
+                ForEach(rechnung.artikel) { artikel in
                     HStack {
                         VStack(alignment: .leading) {
                             Text(artikel.name)
@@ -210,12 +210,12 @@ struct KassenbonDetailView: View {
                 }
             }
         }
-        .navigationTitle("Kassenbon Details")
+        .navigationTitle("Rechnungs-Details")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Kassenbon.self, inMemory: true)
+        .modelContainer(for: Rechnung.self, inMemory: true)
 }

@@ -12,14 +12,14 @@ import SwiftUI
 
 /// DataManager Errors
 enum DataManagerError: Error, LocalizedError {
-    case kassenbonNotFound
+    case rechnungNotFound
     case produktNotFound
     case saveError(String)
 
     var errorDescription: String? {
         switch self {
-        case .kassenbonNotFound:
-            return "Kassenbon wurde nicht gefunden"
+        case .rechnungNotFound:
+            return "Rechnung wurde nicht gefunden"
         case .produktNotFound:
             return "Produkt wurde nicht gefunden"
         case .saveError(let details):
@@ -32,44 +32,44 @@ enum DataManagerError: Error, LocalizedError {
 @ModelActor
 actor DataManager {
 
-    // MARK: - Kassenbon Operations
+    // MARK: - Rechnung Operations
 
-    /// Speichert einen neuen Kassenbon
-    func speichereKassenbon(_ kassenbon: Kassenbon) throws {
-        modelContext.insert(kassenbon)
+    /// Speichert eine neue Rechnung
+    func speichereRechnung(_ rechnung: Rechnung) throws {
+        modelContext.insert(rechnung)
         try modelContext.save()
 
         // Aktualisiere verknüpfte Produkte
-        for artikel in kassenbon.artikel {
-            try aktualisiereProduktPreis(fuerArtikel: artikel, kassenbon: kassenbon)
+        for artikel in rechnung.artikel {
+            try aktualisiereProduktPreis(fuerArtikel: artikel, rechnung: rechnung)
         }
     }
 
-    /// Löscht einen Kassenbon über seine ID
-    func loescheKassenbon(mitID id: PersistentIdentifier) throws {
-        guard let kassenbon = modelContext.model(for: id) as? Kassenbon else {
-            throw DataManagerError.kassenbonNotFound
+    /// Löscht eine Rechnung über ihre ID
+    func loescheRechnung(mitID id: PersistentIdentifier) throws {
+        guard let rechnung = modelContext.model(for: id) as? Rechnung else {
+            throw DataManagerError.rechnungNotFound
         }
-        modelContext.delete(kassenbon)
+        modelContext.delete(rechnung)
         try modelContext.save()
     }
 
-    /// Lädt alle Kassenbons für ein bestimmtes Geschäft
-    func ladeKassenbons(fuerGeschaeft geschaeft: Geschaeft) throws -> [Kassenbon] {
+    /// Lädt alle Rechnungen für ein bestimmtes Geschäft
+    func ladeRechnungen(fuerGeschaeft geschaeft: Geschaeft) throws -> [Rechnung] {
         // Create local copy for predicate external value access
         let geschaeftsName = geschaeft.name
-        let descriptor = FetchDescriptor<Kassenbon>(
-            predicate: #Predicate<Kassenbon> { kassenbon in
-                kassenbon.geschaeft?.name == geschaeftsName
+        let descriptor = FetchDescriptor<Rechnung>(
+            predicate: #Predicate<Rechnung> { rechnung in
+                rechnung.geschaeft?.name == geschaeftsName
             },
             sortBy: [SortDescriptor(\.scanDatum, order: .reverse)]
         )
         return try modelContext.fetch(descriptor)
     }
 
-    /// Lädt alle Kassenbons
-    func ladeAlleKassenbons() throws -> [Kassenbon] {
-        let descriptor = FetchDescriptor<Kassenbon>(
+    /// Lädt alle Rechnungen
+    func ladeAlleRechnungen() throws -> [Rechnung] {
+        let descriptor = FetchDescriptor<Rechnung>(
             sortBy: [SortDescriptor(\.scanDatum, order: .reverse)]
         )
         return try modelContext.fetch(descriptor)
@@ -77,8 +77,8 @@ actor DataManager {
 
     // MARK: - Produkt Operations
 
-    /// Erstellt oder aktualisiert ein Produkt basierend auf einem Kassenbon-Artikel
-    func aktualisiereProduktPreis(fuerArtikel artikel: KassenbonArtikel, kassenbon: Kassenbon)
+    /// Erstellt oder aktualisiert ein Produkt basierend auf einem Rechnungs-Artikel
+    func aktualisiereProduktPreis(fuerArtikel artikel: RechnungsArtikel, rechnung: Rechnung)
         throws
     {
         // Use SwiftData predicate for efficient database-level filtering
@@ -103,8 +103,8 @@ actor DataManager {
         // Füge Preiseintrag hinzu
         let preisEintrag = PreisEintrag(
             preis: artikel.einzelpreis,
-            datum: kassenbon.scanDatum,
-            geschaeftsname: kassenbon.geschaeftsname,
+            datum: rechnung.scanDatum,
+            geschaeftsname: rechnung.geschaeftsname,
             menge: Decimal(artikel.menge),
             einheit: artikel.einheit ?? "Stück"
         )
@@ -218,17 +218,17 @@ actor DataManager {
         return try modelContext.fetch(descriptor)
     }
 
-    /// Lädt Kassenbons des letzten Monats für Statistiken
-    func ladeKassenbonsDesLetztenMonats() throws -> [Kassenbon] {
+    /// Lädt Rechnungen des letzten Monats für Statistiken
+    func ladeRechnungenDesLetztenMonats() throws -> [Rechnung] {
         let kalender = Calendar.current
         let heute = Date()
         let monatsBeginn = kalender.dateInterval(of: .month, for: heute)?.start ?? heute
 
         // Create local variable for external date value
         let startDatum = monatsBeginn
-        let descriptor = FetchDescriptor<Kassenbon>(
-            predicate: #Predicate<Kassenbon> { kassenbon in
-                kassenbon.scanDatum >= startDatum
+        let descriptor = FetchDescriptor<Rechnung>(
+            predicate: #Predicate<Rechnung> { rechnung in
+                rechnung.scanDatum >= startDatum
             },
             sortBy: [SortDescriptor(\.scanDatum, order: .reverse)]
         )

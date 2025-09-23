@@ -232,7 +232,7 @@ struct ReceiptScannerView: View {
                         }
                     }
                 case .processing:
-                    ProgressView("Kassenbon wird verarbeitet...")
+                    ProgressView("Rechnung wird verarbeitet...")
                 case .success(let receipt):
                     ReceiptResultView(receipt: receipt)
                 case .error(let message):
@@ -243,7 +243,7 @@ struct ReceiptScannerView: View {
                     }
                 }
             }
-            .navigationTitle("Kassenbon scannen")
+            .navigationTitle("Rechnung scannen")
             .task {
                 await viewModel.loadInitialData()
             }

@@ -79,9 +79,9 @@ enum GeschaeftTyp: String, CaseIterable, Codable {
 
 // MARK: - SwiftData Models
 
-/// Kassenbon - Repräsentiert einen gescannten Kassenbon
+/// Rechnung - Repräsentiert eine gescannte Rechnung
 @Model
-final class Kassenbon {
+final class Rechnung {
     @Attribute(.unique) var id: UUID
     var geschaeftsname: String
     var geschaeftsadresse: String?
@@ -89,9 +89,9 @@ final class Kassenbon {
     var gesamtbetrag: Decimal
 
     @Relationship(deleteRule: .cascade)
-    var artikel: [KassenbonArtikel]
+    var artikel: [RechnungsArtikel]
 
-    @Relationship(inverse: \Geschaeft.kassenbons)
+    @Relationship(inverse: \Geschaeft.rechnungen)
     var geschaeft: Geschaeft?
 
     /// OCR-Vertrauensgrad (0.0 - 1.0)
@@ -118,17 +118,17 @@ final class Kassenbon {
 
 /// KassenbonArtikel - Einzelner Artikel auf einem Kassenbon
 @Model
-final class KassenbonArtikel {
+final class RechnungsArtikel {
     @Attribute(.unique) var id: UUID
     var name: String
     var menge: Int
     var einzelpreis: Decimal
     var gesamtpreis: Decimal
 
-    @Relationship(inverse: \Kassenbon.artikel)
-    var kassenbon: Kassenbon?
+    @Relationship(inverse: \Rechnung.artikel)
+    var rechnung: Rechnung?
 
-    @Relationship(inverse: \Produkt.kassenbonArtikel)
+    @Relationship(inverse: \Produkt.rechnungsArtikel)
     var produkt: Produkt?
 
     /// Einheit (z.B. "kg", "Stück", "Liter")
@@ -163,7 +163,7 @@ final class Produkt {
     var preisverlauf: [PreisEintrag]
 
     @Relationship(deleteRule: .nullify)
-    var kassenbonArtikel: [KassenbonArtikel]
+    var rechnungsArtikel: [RechnungsArtikel]
 
     var letzteAktualisierung: Date
     /// Durchschnittspreis basierend auf letzten 10 Einkäufen
@@ -178,7 +178,7 @@ final class Produkt {
         self.name = name
         self.kategorie = kategorie
         self.preisverlauf = []
-        self.kassenbonArtikel = []
+        self.rechnungsArtikel = []
         self.letzteAktualisierung = .now
     }
 
@@ -253,16 +253,16 @@ final class Geschaeft {
     var stadt: String?
 
     @Relationship(deleteRule: .cascade)
-    var kassenbons: [Kassenbon]
+    var rechnungen: [Rechnung]
 
     /// Koordinaten für Kartenansicht
     var breitengrad: Double?
     var laengengrad: Double?
 
-    /// Durchschnittliches Preisniveau (berechnet aus allen Kassenbons)
+    /// Durchschnittliches Preisniveau (berechnet aus allen Rechnungen)
     var durchschnittlicherWarenkorb: Decimal?
-    /// Anzahl der gescannten Kassenbons
-    var anzahlKassenbons: Int
+    /// Anzahl der gescannten Rechnungen
+    var anzahlRechnungen: Int
     /// Letzter Besuch
     var letzterBesuch: Date?
     /// Notizen zum Geschäft
@@ -272,21 +272,21 @@ final class Geschaeft {
         self.id = UUID()
         self.name = name
         self.typ = typ
-        self.kassenbons = []
-        self.anzahlKassenbons = 0
+        self.rechnungen = []
+        self.anzahlRechnungen = 0
     }
 
-    /// Berechnet das durchschnittliche Preisniveau basierend auf allen Kassenbons
+    /// Berechnet das durchschnittliche Preisniveau basierend auf allen Rechnungen
     func berechneDurchschnittlicherWarenkorb() {
-        guard !kassenbons.isEmpty else {
+        guard !rechnungen.isEmpty else {
             self.durchschnittlicherWarenkorb = 0
             return
         }
 
-        let gesamtbetrag = kassenbons.reduce(Decimal(0)) { $0 + $1.gesamtbetrag }
-        self.durchschnittlicherWarenkorb = gesamtbetrag / Decimal(kassenbons.count)
-        self.anzahlKassenbons = kassenbons.count
-        self.letzterBesuch = kassenbons.map { $0.scanDatum }.max()
+        let gesamtbetrag = rechnungen.reduce(Decimal(0)) { $0 + $1.gesamtbetrag }
+        self.durchschnittlicherWarenkorb = gesamtbetrag / Decimal(rechnungen.count)
+        self.anzahlRechnungen = rechnungen.count
+        self.letzterBesuch = rechnungen.map { $0.scanDatum }.max()
     }
 
     /// Entfernung zu gegebenen Koordinaten in Kilometern

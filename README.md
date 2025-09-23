@@ -1,25 +1,26 @@
 # AllesTeurer 📱💰
 
-> _"Alles wird teurer"_ - Eine native iOS-App, die dabei hilft, Preisänderungen durch Scannen von Kassenbons zu verfolgen
+> _"Alles wird teurer"_ - Eine native iOS-App, die dabei hilft, Preisänderungen durch Scannen von Rechnungen zu verfolgen
 
-**AllesTeurer** ist eine datenschutzfokussierte Multi-Platform-Anwendung (iOS, iPadOS, macOS), die lokale Kassenbon-Verarbeitung mit leistungsstarken Preisanalysen kombiniert. Die App verwendet SwiftUI für eine moderne Benutzeroberfläche, SwiftData für lokale Datenspeicherung, und Apples Vision Framework für präzise OCR-Texterkennung, um eine vollständige Preishistorie ohne Cloud-Abhängigkeiten zu erstellen.
+**AllesTeurer** ist eine datenschutzfokussierte Multi-Platform-Anwendung (iOS, iPadOS, macOS), die lokale Rechnungs-Verarbeitung mit leistungsstarken Preisanalysen kombiniert. Die App wurde speziell für den österreichischen Markt entwickelt und verwendet SwiftUI für eine moderne Benutzeroberfläche, SwiftData für lokale Datenspeicherung, und Apples Vision Framework für präzise OCR-Texterkennung, um eine vollständige Preishistorie ohne Cloud-Abhängigkeiten zu erstellen.
 
 ## 🎯 Überblick
 
-Da steigende Kosten jeden betreffen, ermöglicht diese Multi-Platform-App den Nutzern:
+Da steigende Kosten jeden betreffen, ermöglicht diese Multi-Platform-App den Nutzern in Österreich:
 
 - **🔒 Privacy-First**: Alle Daten bleiben auf Ihrem iPhone - keine Cloud-Services erforderlich
 - **📊 Lokale Preisanalyse**: Verfolgen Sie Inflation und Ausgabenmuster mit On-Device-Berechnungen
-- **🔍 Intelligente Produkterkennung**: Automatische Zuordnung ähnlicher Produkte über verschiedene Kassenbons
+- **🔍 Intelligente Produkterkennung**: Automatische Zuordnung ähnlicher Produkte über verschiedene Rechnungen
 - **📈 Preistrends**: Visualisierung von Preisänderungen über Zeit und Händler hinweg mit Swift Charts
 - **📱 Multi-Platform Experience**: Optimiert für iOS, iPadOS und macOS mit SwiftUI, SwiftData und Apple Intelligence Integration
+- **🇦🇹 Österreichische Einzelhändler**: Unterstützung für BILLA, SPAR, Hofer und andere österreichische Handelsketten
 
 ## ✨ Funktionen
 
 ### Kernfunktionalität
 
-- 📸 **Kassenbon-Scanning**: Native iOS Kamera-Integration mit AVFoundation
-- 👁️ **OCR-Verarbeitung**: Apple Vision Framework für präzise deutsche Texterkennung
+- 📸 **Rechnungs-Scanning**: Native iOS Kamera-Integration mit AVFoundation
+- 👁️ **OCR-Verarbeitung**: Apple Vision Framework für präzise österreichische Texterkennung
 - 💾 **Lokale Datenspeicherung**: SwiftData für typsichere, native iOS-Datenpersistierung
 - 🔗 **Produktabgleich**: Intelligente Algorithmen zur Erkennung gleicher Produkte
 
@@ -32,7 +33,7 @@ Da steigende Kosten jeden betreffen, ermöglicht diese Multi-Platform-App den Nu
 
 ### Multi-Platform Features
 
-- 📱 **iOS Share Extension**: Kassenbon-Sharing von anderen Apps
+- 📱 **iOS Share Extension**: Rechnungs-Sharing von anderen Apps
 - 🔍 **Spotlight Integration**: Produktsuche über iOS-Systemsuche
 - 📋 **Widget Support**: Home Screen und Lock Screen Widgets für Ausgabenübersicht
 - 🗣️ **Shortcuts Integration**: Siri Shortcuts für häufige Aktionen
@@ -96,7 +97,7 @@ AllesTeurer/
 
 Die App benötigt folgende iOS-Berechtigungen:
 
-- **Kamera-Zugriff**: Für Kassenbon-Scanning (NSCameraUsageDescription)
+- **Kamera-Zugriff**: Für Rechnungs-Scanning (NSCameraUsageDescription)
 - **Fotobibliothek**: Für Import bestehender Bilder (NSPhotoLibraryUsageDescription)
 
 ## 🛠️ Entwicklungsworkflow
@@ -145,7 +146,7 @@ dependencies: [
 
 ### iOS-spezifische Integrationen
 
-- **Vision Framework**: OCR-Texterkennung aus Kassenbon-Bildern
+- **Vision Framework**: OCR-Texterkennung aus Rechnungs-Bildern
 - **AVFoundation**: Kamera-Integration für Receipt-Scanning
 - **CloudKit**: Optionale Private-Cloud-Synchronisation
 - **Natural Language**: Intelligente Produktkategorisierung
@@ -156,12 +157,12 @@ dependencies: [
 > [!NOTE]
 > Die App befindet sich derzeit in der Entwicklungsphase. Die folgenden Features sind für die finale Version geplant.
 
-### Ersten Kassenbon scannen
+### Erste Rechnung scannen
 
 1. **App starten** und zum Scanner-Tab navigieren
-2. **Kassenbon positionieren** und Aufnahme-Button drücken
-3. **OCR-Ergebnisse überprüfen** - die App erkennt automatisch:
-   - Händlernamen und -adresse
+2. **Rechnung positionieren** und Aufnahme-Button drücken
+3. **OCR-Ergebnisse überprüfen** - die app erkennt automatisch:
+   - Händlernamen und -adresse (österreichische Einzelhändler)
    - Kaufdatum und -uhrzeit
    - Einzelne Artikel mit Preisen und Mengen
 4. **Daten bestätigen** und lokal speichern
@@ -185,7 +186,7 @@ dependencies: [
 > [!IMPORTANT]
 > AllesTeurer folgt einem "Privacy-by-Design"-Ansatz mit vollständiger Datenkontrolle.
 
-- **🔒 Lokale Speicherung**: Alle Kassenbons und Preisdaten bleiben auf Ihrem Gerät
+- **🔒 Lokale Speicherung**: Alle Rechnungen und Preisdaten bleiben auf Ihrem Gerät
 - **🚫 Keine Cloud-Abhängigkeiten**: Funktioniert vollständig offline ohne externe Services
 - **🔄 Optionale Synchronisation**: Plattformspezifische Cloud-Sync nur auf Wunsch (CloudKit/Google Drive)
 - **📤 Vollständiger Export**: Alle Daten jederzeit als CSV/PDF exportierbar
@@ -246,7 +247,7 @@ xcodebuild build -scheme "Alles Teurer" -destination "platform=iOS Simulator,nam
 ### Empfohlene Spezifikationen
 
 - **iPhone 14 oder neuer**: Optimierte Performance für Vision Framework
-- **Gute Kamera**: Für optimale Kassenbon-Erkennung mit automatischem Fokus
+- **Gute Kamera**: Für optimale Rechnungs-Erkennung mit automatischem Fokus
 - **Ausreichend Speicher**: 1GB+ für lokale Speicherung der Preishistorie
 - **Neural Engine**: A12 Bionic oder neuer für bessere OCR-Performance
 

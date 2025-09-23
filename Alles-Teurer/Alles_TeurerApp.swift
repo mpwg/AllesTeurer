@@ -12,8 +12,8 @@ import SwiftUI
 struct Alles_TeurerApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Kassenbon.self,
-            KassenbonArtikel.self,
+            Rechnung.self,
+            RechnungsArtikel.self,
             Produkt.self,
             PreisEintrag.self,
             Geschaeft.self,
@@ -41,7 +41,7 @@ struct Alles_TeurerApp: App {
         .commands {
             // Mac Catalyst Menu-Befehle
             CommandGroup(replacing: .newItem) {
-                Button("Kassenbon scannen") {
+                Button("Rechnung scannen") {
                     // TODO: Scan-Aktion implementieren
                 }
                 .keyboardShortcut("r", modifiers: .command)

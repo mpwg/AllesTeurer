@@ -42,7 +42,7 @@ enum OCRFehler: LocalizedError {
     case ungueltigesBild
     case keinTextErkannt
     case verarbeitungsFehler(String)
-    case kassenbonFormatNichtErkannt
+    case rechnungsformatNichtErkannt
 
     var errorDescription: String? {
         switch self {
@@ -52,8 +52,8 @@ enum OCRFehler: LocalizedError {
             return "Es wurde kein Text im Bild erkannt."
         case .verarbeitungsFehler(let detail):
             return "Verarbeitungsfehler: \(detail)"
-        case .kassenbonFormatNichtErkannt:
-            return "Das Kassenbonformat wurde nicht erkannt."
+        case .rechnungsformatNichtErkannt:
+            return "Das Rechnungsformat wurde nicht erkannt."
         }
     }
 }
@@ -93,12 +93,16 @@ final class OCRService {
     var scanZustand: ScanZustand = .inaktiv
     var letzterScan: OCRResult?
 
-    // Deutsche Einzelhandelsketten für bessere Erkennung
-    private let deutscheEinzelhaendler = [
-        "REWE", "EDEKA", "ALDI", "LIDL", "PENNY", "NETTO", "KAUFLAND",
-        "REAL", "GLOBUS", "FAMILA", "COMBI", "NORMA", "DM", "ROSSMANN",
-        "MÜLLER", "SATURN", "MEDIA MARKT", "OBI", "BAUHAUS", "HORNBACH",
-        "IKEA", "DECATHLON", "H&M", "C&A", "ZARA", "PRIMARK",
+    // Österreichische Einzelhandelsketten für bessere Erkennung
+    private let austrianEinzelhaendler = [
+        "BILLA", "SPAR", "HOFER", "LIDL", "INTERSPAR", "MPREIS", "MERKUR",
+        "PENNY", "NETTO", "EUROSPAR", "BILLA PLUS", "MAXIMARKT", "UNIMARKT",
+        "DM", "BIPA", "MÜLLER", "SATURN", "MEDIA MARKT", "LIBRO",
+        "OBI", "BAUHAUS", "HORNBACH", "HAGEBAU", "LAGERHAUS",
+        "IKEA", "XXXLutz", "KIKA", "LEINER", "MÖBELIX", "MÖMAX",
+        "H&M", "C&A", "ZARA", "MANGO", "PEEK & CLOPPENBURG",
+        "DECATHLON", "HERVIS", "SPORT 2000", "INTERSPORT",
+        "APOTHEKE", "BÄCKEREI", "METZGEREI", "TANKSTELLE",
     ]
 
     // Static regex patterns to avoid repeated compilation and potential crashes
@@ -118,7 +122,7 @@ final class OCRService {
         // Service wird ohne DataManager initialisiert
     }
 
-    /// Verarbeitet Bilddaten und extrahiert Kassenbondaten
+    /// Verarbeitet Bilddaten und extrahiert Rechnungsdaten
     /// - Parameter imageData: Raw image data from camera or photo library
     /// - Returns: OCRResult with parsed data
     func verarbeiteImageData(_ imageData: Data) async throws -> OCRResult {
@@ -169,11 +173,11 @@ final class OCRService {
                 fortsetzung.resume(returning: erkannterText)
             }
 
-            // Konfiguration für deutsche Kassenbons
+            // Konfiguration für österreichische Rechnungen
             anfrage.recognitionLevel = .accurate
-            anfrage.recognitionLanguages = ["de-DE", "en-US"]
+            anfrage.recognitionLanguages = ["de-AT", "de-DE", "en-US"]
             anfrage.usesLanguageCorrection = true
-            anfrage.customWords = deutscheEinzelhaendler
+            anfrage.customWords = austrianEinzelhaendler
             anfrage.minimumTextHeight = 0.01
 
             let handler = VNImageRequestHandler(cgImage: cgBild, options: [:])
@@ -204,7 +208,7 @@ final class OCRService {
         let gesamtbetrag = findeGesamtbetrag(aus: zeilen)
 
         guard !artikel.isEmpty else {
-            throw OCRFehler.kassenbonFormatNichtErkannt
+            throw OCRFehler.rechnungsformatNichtErkannt
         }
 
         let vertrauen = berechneVertrauensgrad(fuer: artikel, gesamtbetrag: gesamtbetrag)
@@ -222,7 +226,7 @@ final class OCRService {
     private func erkennGeschaeftsname(aus zeilen: [String]) -> String {
         // Suche in den ersten 5 Zeilen nach bekannten Einzelhändlern
         for zeile in Array(zeilen.prefix(5)) {
-            for einzelhaendler in deutscheEinzelhaendler {
+            for einzelhaendler in austrianEinzelhaendler {
                 if zeile.uppercased().contains(einzelhaendler) {
                     return einzelhaendler
                 }
@@ -233,7 +237,7 @@ final class OCRService {
         return zeilen.first?.trimmingCharacters(in: .whitespaces) ?? "Unbekanntes Geschäft"
     }
 
-    /// Extrahiert Artikel aus den Kassenbonzeilen
+    /// Extrahiert Artikel aus den Rechnungszeilen
     private func extrahiereArtikel(aus zeilen: [String]) -> [ArtikelData] {
         var artikel: [ArtikelData] = []
 
@@ -287,7 +291,7 @@ final class OCRService {
         return artikel
     }
 
-    /// Findet den Gesamtbetrag des Kassenbons
+    /// Findet den Gesamtbetrag der Rechnung
     private func findeGesamtbetrag(aus zeilen: [String]) -> Decimal {
         let gesamtbetragSchluesselwoerter = ["SUMME", "GESAMT", "TOTAL", "BETRAG", "EUR"]
 
