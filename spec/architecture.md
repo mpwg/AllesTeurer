@@ -10,8 +10,9 @@ AllesTeurer is built as a native iOS 26 application using Swift 6's strict concu
 
 ```swift
 // Strict concurrency with complete data isolation
+@Observable
 @MainActor
-final class ReceiptViewModel: ObservableObject {
+final class ReceiptViewModel {
     // Automatically isolated to main actor
 }
 
