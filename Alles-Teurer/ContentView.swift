@@ -8,6 +8,15 @@
 import SwiftData
 import SwiftUI
 
+// MARK: - Decimal Currency Formatting Extension
+
+extension Decimal {
+    /// Formats the decimal as EUR currency for consistent display across the app
+    static let euroFormatter: Decimal.FormatStyle.Currency = .currency(code: "EUR")
+}
+
+// MARK: - ContentView
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var kassenbons: [Kassenbon]
@@ -119,7 +128,7 @@ struct KassenbonRowView: View {
                 Text(kassenbon.geschaeftsname)
                     .font(.headline)
                 Spacer()
-                Text(kassenbon.gesamtbetrag, format: .currency(code: "EUR"))
+                Text(kassenbon.gesamtbetrag, format: Decimal.euroFormatter)
                     .font(.headline)
                     .foregroundColor(.primary)
             }
@@ -169,7 +178,7 @@ struct KassenbonDetailView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text(kassenbon.gesamtbetrag, format: .currency(code: "EUR"))
+                        Text(kassenbon.gesamtbetrag, format: Decimal.euroFormatter)
                             .font(.headline)
                             .foregroundColor(.primary)
                     }
@@ -185,7 +194,7 @@ struct KassenbonDetailView: View {
                                 .font(.body)
                             if artikel.menge > 1 {
                                 Text(
-                                    "\(artikel.menge)x \(artikel.einzelpreis, format: .currency(code: "EUR"))"
+                                    "\(artikel.menge)x \(artikel.einzelpreis, format: Decimal.euroFormatter)"
                                 )
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -194,7 +203,7 @@ struct KassenbonDetailView: View {
 
                         Spacer()
 
-                        Text(artikel.gesamtpreis, format: .currency(code: "EUR"))
+                        Text(artikel.gesamtpreis, format: Decimal.euroFormatter)
                             .font(.body)
                     }
                     .padding(.vertical, 2)

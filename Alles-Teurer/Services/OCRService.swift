@@ -100,6 +100,19 @@ final class OCRService {
         "MÜLLER", "SATURN", "MEDIA MARKT", "OBI", "BAUHAUS", "HORNBACH",
         "IKEA", "DECATHLON", "H&M", "C&A", "ZARA", "PRIMARK",
     ]
+    
+    // Static regex patterns to avoid repeated compilation and potential crashes
+    private static let preisRegex: NSRegularExpression? = {
+        try? NSRegularExpression(pattern: #"(?:€\s*)?(\d+[,\.]\d{2})(?:\s*[A-Z])?"#)
+    }()
+    
+    private static let mengeRegex: NSRegularExpression? = {
+        try? NSRegularExpression(pattern: #"^(\d+)\s*[xX]\s*"#)
+    }()
+    
+    private static let gesamtbetragRegex: NSRegularExpression? = {
+        try? NSRegularExpression(pattern: #"(\d+[,\.]\d{2})"#)
+    }()
 
     init() {
         // Service wird ohne DataManager initialisiert
@@ -223,11 +236,14 @@ final class OCRService {
     /// Extrahiert Artikel aus den Kassenbonzeilen
     private func extrahiereArtikel(aus zeilen: [String]) -> [ArtikelData] {
         var artikel: [ArtikelData] = []
+        
+        guard let preisRegex = Self.preisRegex, let mengeRegex = Self.mengeRegex else {
+            print("Fehler: Reguläre Ausdrücke konnten nicht kompiliert werden")
+            return artikel
+        }
 
         for zeile in zeilen {
             // Suche nach Preis-Patterns mit regulären Ausdrücken
-            let preisRegex = try! NSRegularExpression(
-                pattern: #"(?:€\s*)?(\d+[,\.]\d{2})(?:\s*[A-Z])?"#)
             let treffer = preisRegex.firstMatch(
                 in: zeile, range: NSRange(zeile.startIndex..., in: zeile))
 
@@ -245,7 +261,6 @@ final class OCRService {
             guard !produktName.isEmpty && preis > 0 else { continue }
 
             // Menge erkennen
-            let mengeRegex = try! NSRegularExpression(pattern: #"^(\d+)\s*[xX]\s*"#)
             var menge = 1
             var bereinigterName = produktName
 
@@ -275,6 +290,11 @@ final class OCRService {
     /// Findet den Gesamtbetrag des Kassenbons
     private func findeGesamtbetrag(aus zeilen: [String]) -> Decimal {
         let gesamtbetragSchluesselwoerter = ["SUMME", "GESAMT", "TOTAL", "BETRAG", "EUR"]
+        
+        guard let gesamtbetragRegex = Self.gesamtbetragRegex else {
+            print("Fehler: Gesamtbetrag-Regex konnte nicht kompiliert werden")
+            return 0.0
+        }
 
         for zeile in zeilen.reversed() {
             let zeileUpper = zeile.uppercased()
@@ -284,8 +304,7 @@ final class OCRService {
             }
 
             if enthaeltSchluesselwort {
-                let preisRegex = try! NSRegularExpression(pattern: #"(\d+[,\.]\d{2})"#)
-                let treffer = preisRegex.matches(
+                let treffer = gesamtbetragRegex.matches(
                     in: zeile, range: NSRange(zeile.startIndex..., in: zeile))
 
                 let gefundenePreise = treffer.compactMap { treffer -> Decimal? in
@@ -310,12 +329,17 @@ final class OCRService {
         guard !artikel.isEmpty else { return 0.0 }
 
         let berechneterGesamtbetrag = artikel.reduce(Decimal(0)) { $0 + $1.gesamtpreis }
-        let differenz = abs(
-            NSDecimalNumber(decimal: gesamtbetrag).doubleValue
-                - NSDecimalNumber(decimal: berechneterGesamtbetrag).doubleValue)
-
-        let maxDifferenz = max(NSDecimalNumber(decimal: gesamtbetrag).doubleValue * 0.1, 5.0)
-        let vertrauen = max(0.0, 1.0 - (differenz / maxDifferenz))
+        
+        // Use Decimal arithmetic for precision in financial calculations
+        let differenz = abs(gesamtbetrag - berechneterGesamtbetrag)
+        let zehnProzent = gesamtbetrag * Decimal(0.1)
+        let fuenfEuro = Decimal(5.0)
+        let maxDifferenz = max(zehnProzent, fuenfEuro)
+        
+        // Only convert to Double at the very end for the confidence calculation
+        let differenzDouble = NSDecimalNumber(decimal: differenz).doubleValue
+        let maxDifferenzDouble = NSDecimalNumber(decimal: maxDifferenz).doubleValue
+        let vertrauen = max(0.0, 1.0 - (differenzDouble / maxDifferenzDouble))
 
         return vertrauen
     }

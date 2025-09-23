@@ -81,12 +81,14 @@ actor DataManager {
     func aktualisiereProduktPreis(fuerArtikel artikel: KassenbonArtikel, kassenbon: Kassenbon)
         throws
     {
-        // Suche nach existierendem Produkt (verwende Swift filtering statt komplexer Prädikate)
-        let descriptor = FetchDescriptor<Produkt>()
-        let alleProdukte = try modelContext.fetch(descriptor)
-        let existierendeProdukte = alleProdukte.filter {
-            $0.name.localizedCaseInsensitiveContains(artikel.name)
-        }
+        // Use SwiftData predicate for efficient database-level filtering
+        let artikelName = artikel.name
+        let descriptor = FetchDescriptor<Produkt>(
+            predicate: #Predicate<Produkt> { produkt in
+                produkt.name.localizedStandardContains(artikelName)
+            }
+        )
+        let existierendeProdukte = try modelContext.fetch(descriptor)
 
         let produkt: Produkt
         if let existierend = existierendeProdukte.first {
@@ -147,15 +149,27 @@ actor DataManager {
     func erstelleOderAktualiereGeschaeft(name: String, typ: GeschaeftTyp = .supermarkt) throws
         -> Geschaeft
     {
-        // Use proper predicate with localizedStandardContains for case-insensitive search
+        // Search for exact match first, then fallback to fuzzy matching
         let suchName = name
-        let descriptor = FetchDescriptor<Geschaeft>(
+        let exactDescriptor = FetchDescriptor<Geschaeft>(
+            predicate: #Predicate<Geschaeft> { geschaeft in
+                geschaeft.name == suchName
+            }
+        )
+        
+        let exactMatches = try modelContext.fetch(exactDescriptor)
+        if let exactMatch = exactMatches.first {
+            return exactMatch
+        }
+        
+        // Fallback to fuzzy matching for slight variations
+        let fuzzyDescriptor = FetchDescriptor<Geschaeft>(
             predicate: #Predicate<Geschaeft> { geschaeft in
                 geschaeft.name.localizedStandardContains(suchName)
             }
         )
 
-        let existierendeGeschaefte = try modelContext.fetch(descriptor)
+        let existierendeGeschaefte = try modelContext.fetch(fuzzyDescriptor)
 
         if let existierend = existierendeGeschaefte.first {
             return existierend
