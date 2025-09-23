@@ -58,23 +58,6 @@ enum OCRFehler: LocalizedError {
     }
 }
 
-/// OCRResult - Intermediate result structure
-struct OCRResult {
-    let geschaeftsname: String
-    let artikel: [ArtikelData]
-    let gesamtbetrag: Decimal
-    let roherText: String
-    let vertrauen: Double
-}
-
-/// ArtikelData - Intermediate article structure
-struct ArtikelData {
-    let name: String
-    let menge: Int
-    let einzelpreis: Decimal
-    let gesamtpreis: Decimal
-}
-
 /// ScanZustand - Aktueller Zustand des Scannvorgangs
 enum ScanZustand {
     case inaktiv

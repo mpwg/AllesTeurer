@@ -301,3 +301,89 @@ final class Geschaeft {
         return eigenStandort.distance(from: zielStandort) / 1000.0  // in Kilometern
     }
 }
+
+// MARK: - OCR Types (Shared between OCRService and ViewModels)
+
+/// OCR processing result data
+struct OCRResult: Sendable {
+    let recognizedText: String
+    let confidence: Double
+    let detectedItems: [ArtikelData]
+    let storeName: String?
+    let totalAmount: Decimal?
+}
+
+/// Article data from OCR processing
+struct ArtikelData: Sendable {
+    let name: String
+    let preis: Decimal
+    let menge: Int
+
+    init(name: String, preis: Decimal, menge: Int = 1) {
+        self.name = name
+        self.preis = preis
+        self.menge = menge
+    }
+}
+
+// MARK: - Sendable Transfer Objects for MVVM
+
+/// Sendable representation of a Receipt for ViewModels
+struct ReceiptListItem: Sendable {
+    let id: UUID
+    let storeName: String
+    let storeAddress: String?
+    let scanDate: Date
+    let totalAmount: Double  // Converted from Decimal
+    let itemCount: Int
+    let confidence: Double
+    let receiptNumber: String?
+}
+
+/// Sendable representation of a Receipt Item for ViewModels
+struct ReceiptItemData: Sendable {
+    let id: UUID
+    let name: String
+    let quantity: Int
+    let unitPrice: Double  // Converted from Decimal
+    let totalPrice: Double  // Converted from Decimal
+    let category: ProduktKategorie
+}
+
+/// Sendable representation of a Store for ViewModels
+struct StoreData: Sendable {
+    let id: UUID
+    let name: String
+    let address: String?
+    let type: GeschaeftTyp
+    let receiptCount: Int
+    let totalSpent: Double  // Converted from Decimal
+}
+
+/// Sendable representation of spending analytics
+struct SpendingAnalytics: Sendable {
+    let totalSpent: Double
+    let averageReceiptValue: Double
+    let receiptCount: Int
+    let spendingByStore: [StoreSpending]
+    let spendingByCategory: [CategorySpending]
+    let monthlyTrends: [MonthlySpending]
+}
+
+struct StoreSpending: Sendable {
+    let storeName: String
+    let amount: Double
+    let receiptCount: Int
+}
+
+struct CategorySpending: Sendable {
+    let category: ProduktKategorie
+    let amount: Double
+    let itemCount: Int
+}
+
+struct MonthlySpending: Sendable {
+    let month: Date
+    let amount: Double
+    let receiptCount: Int
+}

@@ -45,13 +45,109 @@ actor DataManager {
         }
     }
 
-    /// Löscht eine Rechnung über ihre ID
-    func loescheRechnung(mitID id: PersistentIdentifier) throws {
-        guard let rechnung = modelContext.model(for: id) as? Rechnung else {
-            throw DataManagerError.rechnungNotFound
+    // MARK: - Sendable Data Access Methods (for ViewModels)
+
+    /// Returns receipt list items as Sendable objects for ViewModels
+    func getReceiptListItems() throws -> [ReceiptListItem] {
+        let receipts = try ladeAlleRechnungen()
+        return receipts.map { receipt in
+            ReceiptListItem(
+                id: receipt.id,
+                storeName: receipt.geschaeftsname,
+                storeAddress: receipt.geschaeftsadresse,
+                scanDate: receipt.scanDatum,
+                totalAmount: Double(truncating: receipt.gesamtbetrag as NSDecimalNumber),
+                itemCount: receipt.artikel.count,
+                confidence: receipt.ocrVertrauen,
+                receiptNumber: receipt.kassenbonNummer
+            )
         }
-        modelContext.delete(rechnung)
-        try modelContext.save()
+    }
+
+    /// Returns receipt items for a specific receipt as Sendable objects
+    func getReceiptItems(for receiptId: UUID) throws -> [ReceiptItemData] {
+        let receipts = try ladeAlleRechnungen()
+        guard let receipt = receipts.first(where: { $0.id == receiptId }) else {
+            throw DataManagerError.receiptNotFound
+        }
+
+        return receipt.artikel.map { item in
+            ReceiptItemData(
+                id: item.id,
+                name: item.name,
+                quantity: item.menge,
+                unitPrice: Double(truncating: item.einzelpreis as NSDecimalNumber),
+                totalPrice: Double(truncating: item.gesamtpreis as NSDecimalNumber),
+                category: item.produkt?.kategorie ?? .sonstiges
+            )
+        }
+    }
+
+    /// Returns store data as Sendable objects
+    func getStoreData() throws -> [StoreData] {
+        let stores = try ladeAlleGeschaefte()
+        return stores.map { store in
+            let totalSpent = store.rechnungen.reduce(0.0) { sum, receipt in
+                sum + Double(truncating: receipt.gesamtbetrag as NSDecimalNumber)
+            }
+
+            return StoreData(
+                id: store.id,
+                name: store.name,
+                address: store.adresse,
+                type: store.typ,
+                receiptCount: store.rechnungen.count,
+                totalSpent: totalSpent
+            )
+        }
+    }
+
+    /// Returns spending analytics as Sendable data
+    func getSpendingAnalytics() throws -> SpendingAnalytics {
+        let receipts = try ladeAlleRechnungen()
+        let totalSpent = receipts.reduce(0.0) { sum, receipt in
+            sum + Double(truncating: receipt.gesamtbetrag as NSDecimalNumber)
+        }
+
+        let averageReceiptValue = receipts.isEmpty ? 0.0 : totalSpent / Double(receipts.count)
+
+        // Group by store
+        let storeSpending = Dictionary(grouping: receipts) { $0.geschaeftsname }
+            .map { (storeName, storeReceipts) in
+                let amount = storeReceipts.reduce(0.0) { sum, receipt in
+                    sum + Double(truncating: receipt.gesamtbetrag as NSDecimalNumber)
+                }
+                return StoreSpending(
+                    storeName: storeName, amount: amount, receiptCount: storeReceipts.count)
+            }
+            .sorted { $0.amount > $1.amount }
+
+        // Group by category (simplified for now)
+        let categorySpending: [CategorySpending] = []  // TODO: Implement category grouping
+
+        // Monthly trends (simplified for now)
+        let monthlyTrends: [MonthlySpending] = []  // TODO: Implement monthly grouping
+
+        return SpendingAnalytics(
+            totalSpent: totalSpent,
+            averageReceiptValue: averageReceiptValue,
+            receiptCount: receipts.count,
+            spendingByStore: storeSpending,
+            spendingByCategory: categorySpending,
+            monthlyTrends: monthlyTrends
+        )
+    }
+
+    /// Deletes a receipt by ID (returns success status)
+    func deleteReceipt(withId id: UUID) throws -> Bool {
+        let receipts = try ladeAlleRechnungen()
+        guard let receipt = receipts.first(where: { $0.id == id }) else {
+            return false
+        }
+
+        context.delete(receipt)
+        try context.save()
+        return true
     }
 
     /// Lädt alle Rechnungen für ein bestimmtes Geschäft
@@ -311,5 +407,36 @@ actor DataManager {
 
         // Standard: Lebensmittel
         return .lebensmittel
+    }
+
+    /// Creates and saves a receipt from OCR data - proper actor isolation
+    func createAndSaveReceipt(
+        geschaeftsname: String,
+        gesamtbetrag: Decimal,
+        artikelData: [ArtikelData],
+        roherText: String,
+        vertrauen: Double
+    ) throws {
+        let rechnung = Rechnung(
+            geschaeftsname: geschaeftsname,
+            scanDatum: Date.now,
+            gesamtbetrag: gesamtbetrag
+        )
+
+        // Convert artikel data to SwiftData models
+        let rechnungsArtikel = artikelData.map { artikelData in
+            RechnungsArtikel(
+                name: artikelData.name,
+                menge: artikelData.menge,
+                einzelpreis: artikelData.einzelpreis,
+                gesamtpreis: artikelData.gesamtpreis
+            )
+        }
+
+        rechnung.artikel = rechnungsArtikel
+        rechnung.roherOCRText = roherText
+        rechnung.ocrVertrauen = vertrauen
+
+        try speichereRechnung(rechnung)
     }
 }
