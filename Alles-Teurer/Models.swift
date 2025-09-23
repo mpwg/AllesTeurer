@@ -183,16 +183,16 @@ final class Produkt {
     }
 
     /// Berechnet die Inflation basierend auf dem ersten und letzten Preis
-    func inflationsrate() -> Double {
+    func inflationsrate() -> Decimal {
         guard preisverlauf.count >= 2,
             let ersterPreis = preisverlauf.first?.preis,
             let letzterPreis = preisverlauf.last?.preis,
             ersterPreis > 0
-        else { return 0.0 }
+        else { return 0 }
 
-        let ersterPreisDouble = NSDecimalNumber(decimal: ersterPreis).doubleValue
-        let letzterPreisDouble = NSDecimalNumber(decimal: letzterPreis).doubleValue
-        let inflation = (letzterPreisDouble - ersterPreisDouble) / ersterPreisDouble * 100
+        // Use pure Decimal arithmetic to maintain precision
+        let differenz = letzterPreis - ersterPreis
+        let inflation = (differenz / ersterPreis) * 100
         return inflation
     }
 
