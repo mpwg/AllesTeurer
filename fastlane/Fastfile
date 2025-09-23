@@ -204,7 +204,7 @@ platform :ios do
           build_number = latest_build + 1
           UI.message("🔍 DEBUG: Latest TestFlight build: #{latest_build}, new build: #{build_number}")
         rescue => e
-          UI.warning("⚠️  Failed to get latest TestFlight build number: #{e.message}")
+          UI.important("⚠️  Failed to get latest TestFlight build number: #{e.message}")
           build_number = 1
           UI.message("🔍 DEBUG: Falling back to build number: #{build_number}")
         end
@@ -240,7 +240,7 @@ platform :ios do
       delete_keychain(name: FASTLANE_KEYCHAIN_NAME)
       UI.success("✅ Custom Fastlane keychain deleted successfully")
     rescue => e
-      UI.warning("⚠️  Failed to delete custom keychain: #{e.message}")
+      UI.important("⚠️  Failed to delete custom keychain: #{e.message}")
       UI.message("💡 You may need to manually delete the keychain '#{FASTLANE_KEYCHAIN_NAME}' from Keychain Access")
     end
     
@@ -299,7 +299,7 @@ platform :ios do
       if macos_app
         UI.success("✅ macOS build completed: #{macos_app}")
       else
-        UI.warning("⚠️  macOS build skipped or failed")
+        UI.important("⚠️  macOS build skipped or failed")
       end
       
       result = {
@@ -342,7 +342,7 @@ platform :ios do
     
     # Fallback to development if specific export method profile not found
     if !profile_name && export_method != "development"
-      UI.warning("⚠️  No #{export_method} profile found, falling back to development")
+      UI.important("⚠️  No #{export_method} profile found, falling back to development")
       profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
       certificate_name = ENV["sigh_#{APP_IDENTIFIER}_development_certificate-name"]
       UI.message("🔍 Debug: Fallback profile: #{profile_name}")
@@ -770,7 +770,7 @@ platform :ios do
       if File.exist?(result_bundle_path)
         UI.success("✅ Test results bundle created: #{result_bundle_path}")
       else
-        UI.warning("⚠️  Test results bundle not found at: #{result_bundle_path}")
+        UI.important("⚠️  Test results bundle not found at: #{result_bundle_path}")
       end
       
       UI.success("✅ Mac Catalyst unit tests completed!")
@@ -1004,7 +1004,7 @@ platform :ios do
         args << "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\""
         UI.message("🔍 DEBUG: Using provisioning profile: #{profile_name}")
       else
-        UI.warning("⚠️  No provisioning profile found for xcargs")
+        UI.important("⚠️  No provisioning profile found for xcargs")
       end
       
       # Use generic code signing identity to avoid character encoding issues
