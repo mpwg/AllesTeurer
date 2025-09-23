@@ -45,7 +45,7 @@ AllesTeurer/
 ### MVVM + Repository Pattern
 
 - **UI**: SwiftUI with Observable ViewModels and data binding
-- **ViewModels**: ObservableObject classes handling UI state and business logic
+- **ViewModels**: @Observable classes handling UI state and business logic
 - **Repositories**: Data access abstraction with SwiftData integration
 - **Use Cases**: Domain logic encapsulation for complex operations
 - **Local-First**: SwiftData for type-safe, native iOS data persistence
