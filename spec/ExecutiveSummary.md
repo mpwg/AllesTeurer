@@ -681,7 +681,10 @@ class ReceiptParserLLM:
 
 ```swift
 // iOS Implementation
-class PriceTagScanner: ObservableObject {
+import SwiftUI
+
+@Observable
+class PriceTagScanner {
     private let vision = VNRecognizeTextRequest()
 
     func scanPriceTag(image: UIImage) async throws -> PriceTagInfo {
