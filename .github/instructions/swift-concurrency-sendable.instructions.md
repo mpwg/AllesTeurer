@@ -196,3 +196,199 @@ actor DataManager {
 ```
 
 This approach maintains proper concurrency safety while enabling MVVM architecture with SwiftData.
+
+## Advanced Swift 6 Concurrency Features
+
+### Swift 6 Changes to Sendable Inference
+
+⚠️ **Important**: Swift 6 removed some automatic inference for classes:
+
+```swift
+final class Example {
+    let name = "test"
+}
+
+let a = Example()
+getSendable(value: a)  // ❌ Swift 6: Must explicitly mark as Sendable
+```
+
+**Best Practice**: Always explicitly mark classes as `Sendable` for robustness.
+
+### @unchecked Sendable - Use with Caution
+
+Use `@unchecked Sendable` when you've ensured thread safety through other mechanisms but the compiler can't verify it:
+
+```swift
+final class ThreadSafeCache: @unchecked Sendable {
+    private var cache: [String: Sendable] = [:]
+    private let queue = DispatchQueue(label: "cache", attributes: .concurrent)
+    
+    func get(_ key: String) -> Sendable? {
+        queue.sync { cache[key] }
+    }
+    
+    func set(_ key: String, value: Sendable) {
+        queue.async(flags: .barrier) {
+            self.cache[key] = value
+        }
+    }
+}
+```
+
+**Swift 6 Alternative with Mutex**:
+```swift
+import Synchronization
+
+final class ThreadSafeCache: Sendable {
+    private let cache = Mutex<[String: Sendable]>([:])
+
+    func get(_ key: String) -> Sendable? {
+        cache.withLock { $0[key] }
+    }
+
+    func set(_ key: String, value: Sendable) {
+        cache.withLock { $0[key] = value }
+    }
+}
+```
+
+⚠️ **Warning**: Don't abuse `@unchecked Sendable` just to make code compile!
+
+### sending Parameter Modifier - Ownership Transfer
+
+The `sending` parameter modifier addresses overly strict `@Sendable` closure restrictions:
+
+```swift
+// Problem with @Sendable
+Task {
+    let nonSendable = NonSendableClass()
+    runAsync {
+        nonSendable.value += 1  // ❌ @Sendable closure restriction
+    }
+    // Actually safe since nonSendable isn't used elsewhere
+}
+
+// Solution with sending
+func runAsync(sending perform: @escaping () -> Void) {}
+
+Task {
+    let nonSendable = NonSendableClass()
+    runAsync {
+        nonSendable.value += 1  // ✅ Works with sending
+    }
+}
+```
+
+**Key Concept**: `sending` enforces **ownership transfer**:
+
+```swift
+actor MyActor {
+    var storage: NonSendableClass?
+    
+    func store(_ object: sending NonSendableClass) {
+        storage = object
+    }
+}
+
+Task {
+    let obj = NonSendableClass()
+    await actor.store(obj)  // ✅ Ownership transferred
+    obj.value += 1         // ❌ Can't use after sending
+}
+```
+
+**Differences**:
+- **@Sendable**: "This type is thread-safe"
+- **sending**: "I'm transferring ownership, single-use only"
+
+### nonisolated(nonsending) - Isolation Inheritance (Swift 6.2)
+
+Traditional `nonisolated` behavior:
+```swift
+@MainActor
+class Example {
+    nonisolated func processData() async {
+        // Always escapes MainActor (runs on non-main thread)
+    }
+}
+```
+
+New `nonisolated(nonsending)` behavior:
+```swift
+@MainActor
+class Example {
+    nonisolated(nonsending) func processData() async {
+        // Inherits caller's isolation domain
+        // Runs on main thread when called from MainActor
+        // Runs on appropriate actor when called from other actors
+    }
+}
+```
+
+### Isolation Domain Classes are Automatically Sendable
+
+Classes with explicit isolation domains are automatically Sendable:
+
+```swift
+@MainActor
+final class UIModel {
+    let name = "test"
+}
+// Automatically Sendable because it's @MainActor isolated
+
+Task { @MainActor in
+    let model = UIModel()
+    getSendable(value: model)  // ✅ Works
+}
+```
+
+### Comprehensive Summary Table
+
+| Keyword | Purpose | Use Case | Compiler Verification | Safety Guarantees |
+|---------|---------|----------|----------------------|-------------------|
+| `Sendable` | Type marking | Cross-isolation domain type passing | ✅ Verifies type thread-safety | ✅ Automatic or explicit |
+| `@unchecked Sendable` | Skip verification | Legacy code, manual thread safety | ⚠️ Bypasses checks | ⚠️ Developer guaranteed |
+| `@Sendable` | Closure attribute | Cross-isolation domain closures | ✅ Checks captured values | ✅ Automatic checking |
+| `sending` | Parameter modifier | Ownership transfer, builder pattern | 🚫 No Sendable check | 🚫 Ownership semantics |
+| `nonsending` | Isolation inheritance | Maintain caller's isolation | ✅ Controls runtime context | ✅ Caller context dependent |
+
+### Enhanced Best Practices for AllesTeurer
+
+#### 1. Use sending for SwiftData Operations:
+```swift
+@ModelActor
+actor DataManager {
+    func updateReceipt(sending updates: ReceiptUpdates) async throws {
+        // Takes ownership of updates, processes them safely
+    }
+}
+```
+
+#### 2. Combine nonisolated(nonsending) with ViewModels:
+```swift
+@MainActor
+@Observable
+class ReceiptListViewModel {
+    nonisolated(nonsending) func processData() async {
+        // Inherits caller's isolation domain
+        // Flexible isolation based on caller context
+    }
+}
+```
+
+#### 3. Enhanced Repository Pattern:
+```swift
+@ModelActor
+actor DataRepository {
+    func fetchReceiptSummaries() throws -> [ReceiptSummary] {
+        // Convert @Model objects to Sendable value types
+    }
+    
+    // Using sending for safe data processing
+    func processReceiptData(sending data: ReceiptProcessingData) async throws {
+        // Ownership transfer ensures safe processing
+    }
+}
+```
+
+This comprehensive approach leverages Swift 6's full concurrency model for maximum safety and performance.
