@@ -156,12 +156,12 @@ actor DataManager {
                 geschaeft.name == suchName
             }
         )
-        
+
         let exactMatches = try modelContext.fetch(exactDescriptor)
         if let exactMatch = exactMatches.first {
             return exactMatch
         }
-        
+
         // Fallback to fuzzy matching for slight variations
         let fuzzyDescriptor = FetchDescriptor<Geschaeft>(
             predicate: #Predicate<Geschaeft> { geschaeft in

@@ -100,16 +100,16 @@ final class OCRService {
         "MÜLLER", "SATURN", "MEDIA MARKT", "OBI", "BAUHAUS", "HORNBACH",
         "IKEA", "DECATHLON", "H&M", "C&A", "ZARA", "PRIMARK",
     ]
-    
+
     // Static regex patterns to avoid repeated compilation and potential crashes
     private static let preisRegex: NSRegularExpression? = {
         try? NSRegularExpression(pattern: #"(?:€\s*)?(\d+[,\.]\d{2})(?:\s*[A-Z])?"#)
     }()
-    
+
     private static let mengeRegex: NSRegularExpression? = {
         try? NSRegularExpression(pattern: #"^(\d+)\s*[xX]\s*"#)
     }()
-    
+
     private static let gesamtbetragRegex: NSRegularExpression? = {
         try? NSRegularExpression(pattern: #"(\d+[,\.]\d{2})"#)
     }()
@@ -236,7 +236,7 @@ final class OCRService {
     /// Extrahiert Artikel aus den Kassenbonzeilen
     private func extrahiereArtikel(aus zeilen: [String]) -> [ArtikelData] {
         var artikel: [ArtikelData] = []
-        
+
         guard let preisRegex = Self.preisRegex, let mengeRegex = Self.mengeRegex else {
             print("Fehler: Reguläre Ausdrücke konnten nicht kompiliert werden")
             return artikel
@@ -290,7 +290,7 @@ final class OCRService {
     /// Findet den Gesamtbetrag des Kassenbons
     private func findeGesamtbetrag(aus zeilen: [String]) -> Decimal {
         let gesamtbetragSchluesselwoerter = ["SUMME", "GESAMT", "TOTAL", "BETRAG", "EUR"]
-        
+
         guard let gesamtbetragRegex = Self.gesamtbetragRegex else {
             print("Fehler: Gesamtbetrag-Regex konnte nicht kompiliert werden")
             return 0.0
@@ -329,13 +329,13 @@ final class OCRService {
         guard !artikel.isEmpty else { return 0.0 }
 
         let berechneterGesamtbetrag = artikel.reduce(Decimal(0)) { $0 + $1.gesamtpreis }
-        
+
         // Use Decimal arithmetic for precision in financial calculations
         let differenz = abs(gesamtbetrag - berechneterGesamtbetrag)
         let zehnProzent = gesamtbetrag * Decimal(0.1)
         let fuenfEuro = Decimal(5.0)
         let maxDifferenz = max(zehnProzent, fuenfEuro)
-        
+
         // Only convert to Double at the very end for the confidence calculation
         let differenzDouble = NSDecimalNumber(decimal: differenz).doubleValue
         let maxDifferenzDouble = NSDecimalNumber(decimal: maxDifferenz).doubleValue
