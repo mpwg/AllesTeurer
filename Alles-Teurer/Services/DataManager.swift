@@ -119,7 +119,7 @@ actor DataManager {
     }
 
     /// Berechnet Inflation für ein Produkt
-    func berechneInflation(fuerProdukt produkt: Produkt) async -> Double {
+    func berechneInflation(fuerProdukt produkt: Produkt) async -> Decimal {
         return produkt.inflationsrate()
     }
 
