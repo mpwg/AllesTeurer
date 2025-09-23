@@ -392,18 +392,20 @@ platform :ios do
       UI.message("🔍 DEBUG: Starting iOS build process")
       build_app(build_config)
       
-      output_path = File.join(options[:output_directory], "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa")
+      # Get the actual output path from the lane context (set by build_app)
+      output_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
       
       # Verify the build output exists
-      if File.exist?(output_path)
+      if output_path && File.exist?(output_path)
         UI.success("✅ iOS build completed successfully: #{output_path}")
         UI.message("🔍 DEBUG: File size: #{File.size(output_path)} bytes")
       else
         UI.error("❌ iOS build output file not found: #{output_path}")
-        UI.error("💡 Contents of output directory:")
+        UI.error("💡 Contents of expected output directory: #{options[:output_directory]}")
         Dir.glob(File.join(options[:output_directory], "*")).each do |file|
           UI.error("  • #{file}")
         end
+        UI.error("💡 Lane context IPA path: #{lane_context[SharedValues::IPA_OUTPUT_PATH]}")
         raise "iOS build output file not found"
       end
       
@@ -478,18 +480,26 @@ platform :ios do
       UI.message("🔍 DEBUG: Starting macOS build process")
       build_app(build_config)
       
-      output_path = File.join(options[:output_directory], "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app")
+      # Get the actual output path from the lane context (set by build_app)
+      # For macOS builds, this could be either PKG_OUTPUT_PATH or IPA_OUTPUT_PATH depending on export_method
+      output_path = lane_context[SharedValues::PKG_OUTPUT_PATH] || lane_context[SharedValues::IPA_OUTPUT_PATH]
       
       # Verify the build output exists
-      if File.exist?(output_path)
+      if output_path && File.exist?(output_path)
         UI.success("✅ macOS build completed successfully: #{output_path}")
-        UI.message("🔍 DEBUG: Build output is a directory (app bundle)")
+        if File.directory?(output_path)
+          UI.message("🔍 DEBUG: Build output is a directory (app bundle)")
+        else
+          UI.message("🔍 DEBUG: Build output size: #{File.size(output_path)} bytes")
+        end
       else
         UI.error("❌ macOS build output not found: #{output_path}")
-        UI.error("💡 Contents of output directory:")
+        UI.error("💡 Contents of expected output directory: #{options[:output_directory]}")
         Dir.glob(File.join(options[:output_directory], "*")).each do |file|
           UI.error("  • #{file}")
         end
+        UI.error("💡 Lane context PKG path: #{lane_context[SharedValues::PKG_OUTPUT_PATH]}")
+        UI.error("💡 Lane context IPA path: #{lane_context[SharedValues::IPA_OUTPUT_PATH]}")
         raise "macOS build output not found"
       end
       
