@@ -47,9 +47,9 @@ AllesTeurer/
 **CRITICAL ARCHITECTURE RULES - ALWAYS ENFORCE:**
 
 - **UI**: SwiftUI with Observable ViewModels and data binding
-- **ViewModels**: MUST be @Observable classes (Swift 5.9+) with async/await operations only
-- **Repositories**: Data access abstraction with SwiftData integration using ModelActor for thread-safety
-- **Use Cases**: Domain logic encapsulation with async/await for complex operations
+- **ViewModels**: @Observable classes handling UI state and business logic
+- **Repositories**: Data access abstraction with SwiftData integration
+- **Use Cases**: Domain logic encapsulation for complex operations
 - **Local-First**: SwiftData for type-safe, native iOS data persistence
 
 **CONCURRENCY REQUIREMENTS - NO EXCEPTIONS:**

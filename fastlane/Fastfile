@@ -135,14 +135,33 @@ platform :ios do
   private_lane :build_ios_platform do |options|
     UI.header("📱 Building iOS/iPadOS version")
     
-    build_app(common_build_config.merge({
+    # Get the provisioning profile name from Match environment variables
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{options[:export_method]}_profile-name"]
+    
+    # Debug information
+    UI.message("🔍 Debug: Building with export method: #{options[:export_method]}")
+    UI.message("🔍 Debug: Expected profile env var: sigh_#{APP_IDENTIFIER}_#{options[:export_method]}_profile-name")
+    UI.message("🔍 Debug: Profile name from env: #{profile_name}")
+    
+    # Build configuration with proper export options override
+    build_config = common_build_config.merge({
       configuration: options[:configuration] || "Release",
       export_method: options[:export_method],
       output_directory: options[:output_directory],
       output_name: "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa",
-      skip_profile_detection: options[:skip_profile_detection] || true,
+      skip_profile_detection: false,  # Allow profile detection for proper manual signing
       destination: "generic/platform=iOS"
-    }))
+    })
+    
+    # Override export method in export_options and set proper provisioning profile
+    build_config[:export_options][:method] = options[:export_method]
+    build_config[:export_options][:provisioningProfiles] = {
+      APP_IDENTIFIER => profile_name || "match Development #{APP_IDENTIFIER}"
+    }
+    
+    UI.message("🔍 Debug: Final provisioning profiles config: #{build_config[:export_options][:provisioningProfiles]}")
+    
+    build_app(build_config)
     
     File.join(options[:output_directory], "#{SCHEME_NAME}-iOS-#{options[:version] || 'latest'}.ipa")
   end
@@ -150,25 +169,48 @@ platform :ios do
   private_lane :build_macos_platform do |options|
     UI.header("🖥️ Building macOS (Mac Catalyst) version")
     
-    # For Mac Catalyst, we need to use a different export method
-    export_method = case options[:export_method]
-                   when "app-store"
-                     "mac-application"
-                   when "development"
-                     "developer-id"
-                   else
-                     "developer-id"
-                   end
+    # Sync Mac Catalyst certificates specifically for macOS builds
+    begin
+      match(
+        type: "development",
+        platform: "catalyst",
+        app_identifier: APP_IDENTIFIER,
+        git_url: ENV["MATCH_GIT_URL"],
+        git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+        keychain_name: is_ci ? "CI" : nil,
+        keychain_password: is_ci ? ENV["KEYCHAIN_PASSWORD"] : nil,
+        readonly: is_ci,
+        verbose: true,
+        skip_confirmation: true,
+        shallow_clone: true
+      )
+    rescue => e
+      UI.error("⚠️ Failed to sync Mac Catalyst certificates: #{e.message}")
+      UI.error("📱 Skipping macOS build")
+      return nil
+    end
     
-    build_app(common_build_config.merge({
+    # For Mac Catalyst, we use the same export method as iOS since it's an iOS app on macOS
+    export_method = options[:export_method] || "development"
+    
+    # Build configuration with proper export options override
+    build_config = common_build_config.merge({
       configuration: options[:configuration] || "Release",
       export_method: export_method,
       output_directory: options[:output_directory],
-      output_name: "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app",
-      skip_profile_detection: options[:skip_profile_detection] || true,
+      output_name: "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}",
+      skip_profile_detection: options[:skip_profile_detection] || false,
       destination: "platform=macOS,variant=Mac Catalyst",
       catalyst_platform: "macos"
-    }))
+    })
+    
+    # Override export method in export_options for Mac Catalyst
+    build_config[:export_options][:method] = export_method
+    build_config[:export_options][:provisioningProfiles] = {
+      APP_IDENTIFIER => ENV["sigh_#{APP_IDENTIFIER}_development_catalyst_profile-name"] || "match Development #{APP_IDENTIFIER} catalyst"
+    }
+    
+    build_app(build_config)
     
     File.join(options[:output_directory], "#{SCHEME_NAME}-macOS-#{options[:version] || 'latest'}.app")
   end
@@ -262,10 +304,9 @@ platform :ios do
     
     builds = build_multiplatform({
       configuration: "Release",
-      export_method: "development", # For direct distribution
+      export_method: "development", # For direct distribution 
       output_directory: "./build/alpha",
-      version: tag_version,
-      skip_profile_detection: true
+      version: tag_version
     })
 
     UI.success("✅ Alpha builds completed successfully!")
@@ -463,16 +504,27 @@ platform :ios do
   end
 
   private_lane :common_build_config do
+    # Get the current provisioning profile name from Match environment variables
+    # Default to development profile name since most lanes use development signing
+    profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"] || "match Development #{APP_IDENTIFIER}"
+    
     {
       scheme: SCHEME_NAME,
       project: WORKSPACE_PATH,
       clean: false,  # Improved: Only clean when necessary for faster incremental builds
       include_bitcode: false,
-      # Let match determine the identity and profile
-      codesigning_identity: "",  # Let match determine the identity
+      # Force manual code signing with Match profiles
       export_xcargs: "-allowProvisioningUpdates",
       # Performance optimizations
-      xcargs: build_xcargs
+      xcargs: build_xcargs,
+      # Manual code signing configuration
+      codesigning_identity: "Apple Development",
+      export_options: {
+        method: "development", # This will be overridden by each lane
+        provisioningProfiles: {
+          APP_IDENTIFIER => profile_name
+        }
+      }
     }
   end
 
@@ -487,6 +539,20 @@ platform :ios do
     
     # Enable build caching
     args << "CLANG_ENABLE_MODULE_DEBUGGING=NO"  # Faster for CI builds
+    
+    if is_ci
+      # Force manual code signing (disable automatic signing)
+      args << "CODE_SIGN_STYLE=Manual"
+      
+      # Allow provisioning profile updates but use manual signing
+      args << "-allowProvisioningUpdates"
+      
+      # Set specific provisioning profile for the main app target
+      profile_name = ENV["sigh_#{APP_IDENTIFIER}_development_profile-name"]
+      if profile_name
+        args << "PROVISIONING_PROFILE_SPECIFIER=\"#{profile_name}\""
+      end
+    end
     
     # Swift compilation optimizations
     args << "SWIFT_COMPILATION_MODE=incremental" if !is_ci
@@ -535,7 +601,17 @@ platform :ios do
         skip_confirmation: true,
         shallow_clone: true
       )
-      UI.success("✅ Successfully synced #{type} certificates")
+      
+      # Verify that the provisioning profile was properly set in environment variables
+      profile_name = ENV["sigh_#{APP_IDENTIFIER}_#{type}_profile-name"]
+      if profile_name
+        UI.success("✅ Successfully synced #{type} certificates")
+        UI.success("🔒 Provisioning profile: #{profile_name}")
+      else
+        UI.error("⚠️  Warning: Provisioning profile environment variable not set")
+        UI.error("Expected: sigh_#{APP_IDENTIFIER}_#{type}_profile-name")
+      end
+      
       UI.message("🔒 Code signing will be handled by Fastlane, not Xcode")
     rescue => e
       UI.error("❌ Failed to sync certificates: #{e.message}")
