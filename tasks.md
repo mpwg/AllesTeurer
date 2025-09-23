@@ -163,10 +163,11 @@ import VisionKit
 import SwiftUI
 
 @available(iOS 26.0, *)
+@Observable
 @MainActor
-final class OCRService: ObservableObject {
-    @Published var scanState: ScanState = .idle
-    @Published var recognizedReceipt: Receipt?
+final class OCRService {
+    var scanState: ScanState = .idle
+    var recognizedReceipt: Receipt?
 
     private let textRecognizer = VNRecognizeTextRequest()
 

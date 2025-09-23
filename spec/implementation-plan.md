@@ -13,7 +13,7 @@ This document provides a comprehensive implementation plan for AllesTeurer, a pr
 - **Language:** Swift 5.9+ with modern async/await patterns
 - **UI Framework:** SwiftUI with Observation framework
 - **Architecture:** MVVM with Repository pattern
-- **Database:** SwiftData with Core Data backend
+- **Database:** SwiftData for native iOS data persistence
 - **Concurrency:** Swift Concurrency (async/await, actors)
 - **Charts:** Swift Charts for native data visualization
 
@@ -217,10 +217,12 @@ Alles Teurer/
    ```swift
    // DataManager.swift - Central data management
    import SwiftData
+   import SwiftUI
    import Foundation
 
+   @Observable
    @MainActor
-   class DataManager: ObservableObject {
+   class DataManager {
        static let shared = DataManager()
 
        private let modelContainer: ModelContainer
@@ -457,7 +459,7 @@ Alles Teurer/
 
 **Timeline:** Week 3  
 **Effort:** 4 days  
-**Dependencies:** Core Data setup
+**Dependencies:** SwiftData setup
 
 **Tasks:**
 
@@ -1603,9 +1605,11 @@ fields: [
 
 ```swift
 // Services/IntelligenceService.swift
+import SwiftUI
 import NaturalLanguage
 
-class IntelligenceService: ObservableObject {
+@Observable
+class IntelligenceService {
     private let categorizer = NLModel(mlModel: try! CategoryClassifier(configuration: .init()).model)
 
     func categorizeProduct(_ productName: String) async -> String {
@@ -1642,9 +1646,11 @@ struct ProductInfo {
 
 ```swift
 // Services/LocalSearchService.swift
+import SwiftUI
 import Foundation
 
-class LocalSearchService: ObservableObject {
+@Observable
+class LocalSearchService {
     private let dataManager = DataManager.shared
 
     func searchProducts(query: String) async -> [Product] {
@@ -1698,11 +1704,14 @@ When ready to add backend services, the iOS app architecture supports easy integ
 
 ```swift
 // Services/NetworkService.swift (Future)
-class NetworkService: ObservableObject {
+import SwiftUI
+
+@Observable
+class NetworkService {
     private let baseURL = URL(string: "https://api.allesteuer.com")!
 
     func syncWithBackend() async {
-        // Sync local Core Data with backend
+        // Sync local SwiftData with backend
         await uploadPendingReceipts()
         await downloadLatestPriceData()
         await syncUserPreferences()
@@ -1782,12 +1791,11 @@ class OCRServiceTests: XCTestCase {
     }
 
     func testProductMatching() async {
-        // Create test products in Core Data
-        let context = DataManager.shared.persistentContainer.viewContext
-        let milk = Product(context: context)
-        milk.name = "Milch 1,5%"
-        milk.category = "Dairy"
-
+        // Create test products in SwiftData
+        let context = DataManager.shared.modelContext
+        let milk = Product(name: "Milch 1,5%", category: "Dairy")
+        context.insert(milk)
+        
         try! context.save()
 
         // Test matching
@@ -1836,26 +1844,30 @@ class ReceiptScanningUITests: XCTestCase {
 
 ## 7. Performance & Optimization
 
-### 7.1 Core Data Optimization
+### 7.1 SwiftData Optimization
 
 ```swift
-// Optimized Core Data fetching
+// Optimized SwiftData fetching
 extension DataManager {
     func fetchRecentReceipts(limit: Int = 20) -> [Receipt] {
-        let request: NSFetchRequest<Receipt> = Receipt.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "purchaseDate", ascending: false)]
-        request.fetchLimit = limit
-        request.relationshipKeyPathsForPrefetching = ["items", "items.product"]
+        let descriptor = FetchDescriptor<Receipt>(
+            sortBy: [SortDescriptor(\.purchaseDate, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        descriptor.relationshipKeyPathsForPrefetching = [\.items, \.items?.product]
 
-        return (try? persistentContainer.viewContext.fetch(request)) ?? []
+        return (try? modelContext.fetch(descriptor)) ?? []
     }
 
     func fetchProductsWithPriceHistory() -> [Product] {
-        let request: NSFetchRequest<Product> = Product.fetchRequest()
-        request.relationshipKeyPathsForPrefetching = ["priceRecords"]
-        request.predicate = NSPredicate(format: "priceRecords.@count > 0")
+        let descriptor = FetchDescriptor<Product>(
+            predicate: #Predicate<Product> { product in 
+                !product.priceRecords.isEmpty 
+            }
+        )
+        descriptor.relationshipKeyPathsForPrefetching = [\.priceRecords]
 
-        return (try? persistentContainer.viewContext.fetch(request)) ?? []
+        return (try? modelContext.fetch(descriptor)) ?? []
     }
 }
 ```
@@ -1895,17 +1907,20 @@ class PrivacyManager {
 
     // All data stays on device by default
     func configurePrivacySettings() {
-        // Configure Core Data for local-only storage
+        // Configure SwiftData for local-only storage
         // Set up CloudKit with user consent
         // Implement data export/deletion
     }
 
     func exportUserData() -> Data {
         // Export all user data as JSON
-        let context = DataManager.shared.persistentContainer.viewContext
+        let context = DataManager.shared.modelContext
 
-        let receipts = try! context.fetch(Receipt.fetchRequest())
-        let products = try! context.fetch(Product.fetchRequest())
+        let receiptDescriptor = FetchDescriptor<Receipt>()
+        let productDescriptor = FetchDescriptor<Product>()
+        
+        let receipts = try! context.fetch(receiptDescriptor)
+        let products = try! context.fetch(productDescriptor)
 
         let exportData = ExportData(receipts: receipts, products: products)
         return try! JSONEncoder().encode(exportData)
@@ -1913,7 +1928,7 @@ class PrivacyManager {
 
     func deleteAllUserData() async {
         // Complete data deletion for privacy compliance
-        let context = DataManager.shared.persistentContainer.viewContext
+        let context = DataManager.shared.modelContext
 
         // Delete all entities
         await context.perform {
@@ -1961,7 +1976,7 @@ class PrivacyManager {
 
 This iOS-first implementation plan provides a clear 12-week roadmap to deliver a privacy-focused, locally-intelligent receipt scanning and price tracking app. The architecture is designed to:
 
-- **Start Simple**: iOS-only with local Core Data storage
+- **Start Simple**: iOS-only with local SwiftData storage
 - **Deliver Value**: Core features work without backend dependencies
 - **Scale Smart**: Easy evolution path to multi-platform with cloud services
 - **Maintain Privacy**: All processing happens on-device initially
