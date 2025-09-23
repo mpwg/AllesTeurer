@@ -1795,7 +1795,7 @@ class OCRServiceTests: XCTestCase {
         let context = DataManager.shared.modelContext
         let milk = Product(name: "Milch 1,5%", category: "Dairy")
         context.insert(milk)
-        
+
         try! context.save()
 
         // Test matching
@@ -1854,18 +1854,18 @@ extension DataManager {
             sortBy: [SortDescriptor(\.purchaseDate, order: .reverse)]
         )
         descriptor.fetchLimit = limit
-        descriptor.relationshipKeyPathsForPrefetching = [\.items, \.items?.product]
+        // SwiftData automatically optimizes relationship loading
 
         return (try? modelContext.fetch(descriptor)) ?? []
     }
 
     func fetchProductsWithPriceHistory() -> [Product] {
         let descriptor = FetchDescriptor<Product>(
-            predicate: #Predicate<Product> { product in 
-                !product.priceRecords.isEmpty 
+            predicate: #Predicate<Product> { product in
+                !product.priceRecords.isEmpty
             }
         )
-        descriptor.relationshipKeyPathsForPrefetching = [\.priceRecords]
+        // SwiftData automatically optimizes relationship loading
 
         return (try? modelContext.fetch(descriptor)) ?? []
     }
@@ -1918,7 +1918,7 @@ class PrivacyManager {
 
         let receiptDescriptor = FetchDescriptor<Receipt>()
         let productDescriptor = FetchDescriptor<Product>()
-        
+
         let receipts = try! context.fetch(receiptDescriptor)
         let products = try! context.fetch(productDescriptor)
 
