@@ -56,33 +56,37 @@ struct ContentView: View {
     }
 
     private func addTestKassenbon() {
-        withAnimation {
-            let testKassenbon = Kassenbon(
-                geschaeftsname: "REWE",
-                scanDatum: Date.now,
-                gesamtbetrag: 47.83
-            )
-
-            // Test-Artikel hinzufügen
-            let artikel1 = KassenbonArtikel(
-                name: "Milch 3,5%",
-                menge: 1,
-                einzelpreis: 1.49,
-                gesamtpreis: 1.49
-            )
-
-            let artikel2 = KassenbonArtikel(
-                name: "Brot Vollkorn",
-                menge: 1,
-                einzelpreis: 2.99,
-                gesamtpreis: 2.99
-            )
-
-            testKassenbon.artikel = [artikel1, artikel2]
-            modelContext.insert(testKassenbon)
-
+        // MVVM: Use repository pattern through DataManager
+        Task { @MainActor in
             do {
-                try modelContext.save()
+                let dataManager = DataManager(modelContainer: modelContext.container)
+
+                let testKassenbon = Kassenbon(
+                    geschaeftsname: "REWE",
+                    scanDatum: Date.now,
+                    gesamtbetrag: 47.83
+                )
+
+                // Test-Artikel hinzufügen
+                let artikel1 = KassenbonArtikel(
+                    name: "Milch 3,5%",
+                    menge: 1,
+                    einzelpreis: 1.49,
+                    gesamtpreis: 1.49
+                )
+
+                let artikel2 = KassenbonArtikel(
+                    name: "Brot Vollkorn",
+                    menge: 1,
+                    einzelpreis: 2.99,
+                    gesamtpreis: 2.99
+                )
+
+                testKassenbon.artikel = [artikel1, artikel2]
+
+                // Use DataManager repository pattern instead of direct ModelContext access
+                try await dataManager.speichereKassenbon(testKassenbon)
+
             } catch {
                 print("Fehler beim Speichern: \(error)")
             }
@@ -90,13 +94,15 @@ struct ContentView: View {
     }
 
     private func deleteKassenbons(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(kassenbons[index])
-            }
-
+        // MVVM: Use repository pattern through DataManager
+        Task { @MainActor in
             do {
-                try modelContext.save()
+                let dataManager = DataManager(modelContainer: modelContext.container)
+                let kassenbonsToDelete = offsets.map { kassenbons[$0] }
+
+                for kassenbon in kassenbonsToDelete {
+                    try await dataManager.loescheKassenbon(mitID: kassenbon.persistentModelID)
+                }
             } catch {
                 print("Fehler beim Löschen: \(error)")
             }

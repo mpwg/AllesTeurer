@@ -10,6 +10,24 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+/// DataManager Errors
+enum DataManagerError: Error, LocalizedError {
+    case kassenbonNotFound
+    case produktNotFound
+    case saveError(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .kassenbonNotFound:
+            return "Kassenbon wurde nicht gefunden"
+        case .produktNotFound:
+            return "Produkt wurde nicht gefunden"
+        case .saveError(let details):
+            return "Fehler beim Speichern: \(details)"
+        }
+    }
+}
+
 /// DataManager - Actor für thread-sichere Datenoperationen
 @ModelActor
 actor DataManager {
@@ -27,16 +45,23 @@ actor DataManager {
         }
     }
 
-    /// Löscht einen Kassenbon
-    func loescheKassenbon(_ kassenbon: Kassenbon) throws {
+    /// Löscht einen Kassenbon über seine ID
+    func loescheKassenbon(mitID id: PersistentIdentifier) throws {
+        guard let kassenbon = modelContext.model(for: id) as? Kassenbon else {
+            throw DataManagerError.kassenbonNotFound
+        }
         modelContext.delete(kassenbon)
         try modelContext.save()
     }
 
     /// Lädt alle Kassenbons für ein bestimmtes Geschäft
     func ladeKassenbons(fuerGeschaeft geschaeft: Geschaeft) throws -> [Kassenbon] {
+        // Create local copy for predicate external value access
+        let geschaeftsName = geschaeft.name
         let descriptor = FetchDescriptor<Kassenbon>(
-            predicate: #Predicate { $0.geschaeft?.name == geschaeft.name },
+            predicate: #Predicate<Kassenbon> { kassenbon in
+                kassenbon.geschaeft?.name == geschaeftsName
+            },
             sortBy: [SortDescriptor(\.scanDatum, order: .reverse)]
         )
         return try modelContext.fetch(descriptor)
