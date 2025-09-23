@@ -3,17 +3,39 @@
 //  Alles-Teurer
 //
 //  Created by AI Agent on 22.09.25.
+//  Refactored to use SwiftUI native types and @Observable pattern
 //
 
-import Combine
 import Foundation
 import SwiftUI
 @unsafe @preconcurrency import Vision
 @unsafe @preconcurrency import VisionKit
 
-#if canImport(UIKit)
-    import UIKit
-#endif
+// MARK: - CGImage Extension for SwiftUI Native Types
+
+extension CGImage {
+    static func fromImageData(_ data: Data) -> CGImage? {
+        guard let dataProvider = CGDataProvider(data: data as CFData),
+            let cgImage = CGImage(
+                jpegDataProviderSource: dataProvider,
+                decode: nil,
+                shouldInterpolate: true,
+                intent: .defaultIntent
+            )
+        else {
+            // Try PNG if JPEG fails
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+                let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            else {
+                return nil
+            }
+            return cgImage
+        }
+        return cgImage
+    }
+}
+
+// MARK: - OCR Types
 
 /// OCRFehler - Mögliche Fehler beim OCR-Prozess
 enum OCRFehler: LocalizedError {
@@ -36,19 +58,40 @@ enum OCRFehler: LocalizedError {
     }
 }
 
+/// OCRResult - Intermediate result structure
+struct OCRResult {
+    let geschaeftsname: String
+    let artikel: [ArtikelData]
+    let gesamtbetrag: Decimal
+    let roherText: String
+    let vertrauen: Double
+}
+
+/// ArtikelData - Intermediate article structure
+struct ArtikelData {
+    let name: String
+    let menge: Int
+    let einzelpreis: Decimal
+    let gesamtpreis: Decimal
+}
+
 /// ScanZustand - Aktueller Zustand des Scannvorgangs
 enum ScanZustand {
     case inaktiv
     case verarbeitung
-    case erfolgreich(Kassenbon)
+    case erfolgreich(OCRResult)
     case fehler(String)
 }
 
+// MARK: - OCRService
+
 /// OCRService - Service für Texterkennung mit Vision Framework
+/// Uses SwiftUI native types and @Observable pattern
 @MainActor
-final class OCRService: ObservableObject {
-    @Published var scanZustand: ScanZustand = .inaktiv
-    @Published var erkannterKassenbon: Kassenbon?
+@Observable
+final class OCRService {
+    var scanZustand: ScanZustand = .inaktiv
+    var letzterScan: OCRResult?
 
     // Deutsche Einzelhandelsketten für bessere Erkennung
     private let deutscheEinzelhaendler = [
@@ -62,25 +105,27 @@ final class OCRService: ObservableObject {
         // Service wird ohne DataManager initialisiert
     }
 
-    /// Verarbeitet ein Bild und extrahiert Kassenbondaten
-    func verarbeiteBild(_ bild: UIImage) async throws -> Kassenbon {
+    /// Verarbeitet Bilddaten und extrahiert Kassenbondaten
+    /// - Parameter imageData: Raw image data from camera or photo library
+    /// - Returns: OCRResult with parsed data
+    func verarbeiteImageData(_ imageData: Data) async throws -> OCRResult {
         scanZustand = .verarbeitung
 
         do {
-            guard let cgBild = bild.cgImage else {
+            guard let cgBild = CGImage.fromImageData(imageData) else {
                 throw OCRFehler.ungueltigesBild
             }
 
             // OCR durchführen
             let erkannterText = try await fuehrTexterkennung(cgBild: cgBild)
 
-            // Kassenbon aus Text parsen
-            let kassenbon = try parseKassenbon(aus: erkannterText, originalBild: bild)
+            // OCRResult aus Text parsen
+            let result = try parseOCRResult(aus: erkannterText)
 
-            erkannterKassenbon = kassenbon
-            scanZustand = .erfolgreich(kassenbon)
+            letzterScan = result
+            scanZustand = .erfolgreich(result)
 
-            return kassenbon
+            return result
 
         } catch {
             let fehlerMeldung = error.localizedDescription
@@ -130,8 +175,8 @@ final class OCRService: ObservableObject {
         }
     }
 
-    /// Parst einen Kassenbon aus dem erkannten Text
-    private func parseKassenbon(aus text: String, originalBild: UIImage) throws -> Kassenbon {
+    /// Parst OCRResult aus dem erkannten Text
+    private func parseOCRResult(aus text: String) throws -> OCRResult {
         let zeilen = text.components(separatedBy: .newlines).filter {
             !$0.trimmingCharacters(in: .whitespaces).isEmpty
         }
@@ -149,22 +194,15 @@ final class OCRService: ObservableObject {
             throw OCRFehler.kassenbonFormatNichtErkannt
         }
 
-        // Kassenbon erstellen
-        let kassenbon = Kassenbon(
+        let vertrauen = berechneVertrauensgrad(fuer: artikel, gesamtbetrag: gesamtbetrag)
+
+        return OCRResult(
             geschaeftsname: geschaeftsname,
-            scanDatum: Date.now,
-            gesamtbetrag: gesamtbetrag
+            artikel: artikel,
+            gesamtbetrag: gesamtbetrag,
+            roherText: text,
+            vertrauen: vertrauen
         )
-
-        // OCR-Daten hinzufügen
-        kassenbon.roherOCRText = text
-        kassenbon.bildDaten = originalBild.jpegData(compressionQuality: 0.8)
-        kassenbon.ocrVertrauen = berechneVertrauensgrad(fuer: artikel, gesamtbetrag: gesamtbetrag)
-
-        // Artikel hinzufügen
-        kassenbon.artikel = artikel
-
-        return kassenbon
     }
 
     /// Erkennt den Geschäftsnamen aus den ersten Zeilen
@@ -183,8 +221,8 @@ final class OCRService: ObservableObject {
     }
 
     /// Extrahiert Artikel aus den Kassenbonzeilen
-    private func extrahiereArtikel(aus zeilen: [String]) -> [KassenbonArtikel] {
-        var artikel: [KassenbonArtikel] = []
+    private func extrahiereArtikel(aus zeilen: [String]) -> [ArtikelData] {
+        var artikel: [ArtikelData] = []
 
         for zeile in zeilen {
             // Suche nach Preis-Patterns mit regulären Ausdrücken
@@ -221,7 +259,7 @@ final class OCRService: ObservableObject {
                     in: .whitespaces)
             }
 
-            let neuerArtikel = KassenbonArtikel(
+            let neuerArtikel = ArtikelData(
                 name: bereinigterName,
                 menge: menge,
                 einzelpreis: menge > 1 ? preis / Decimal(menge) : preis,
@@ -266,7 +304,7 @@ final class OCRService: ObservableObject {
     }
 
     /// Berechnet den Vertrauensgrad des OCR-Ergebnisses
-    private func berechneVertrauensgrad(fuer artikel: [KassenbonArtikel], gesamtbetrag: Decimal)
+    private func berechneVertrauensgrad(fuer artikel: [ArtikelData], gesamtbetrag: Decimal)
         -> Double
     {
         guard !artikel.isEmpty else { return 0.0 }
