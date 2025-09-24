@@ -28,7 +28,7 @@ This project leverages cutting-edge iOS 26 features:
 
 **Acceptance Criteria**:
 
-- [ ] Xcode 16+ project configured for iOS 26.0 minimum
+- [ ] Xcode 26+ project configured for iOS 26.0 minimum
 - [ ] Swift 6 language mode enabled with strict concurrency
 - [ ] Universal app supporting iPhone, iPad, and Mac Catalyst
 - [ ] SwiftData 2.0 model container configured
