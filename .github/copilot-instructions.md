@@ -510,6 +510,7 @@ xcodebuild archive -scheme "Alles Teurer" -archivePath "AllesTeurer.xcarchive"
 - `/.github/instructions/conventional-commit.instructions.md` - Conventional commit message standards
 - `/.github/instructions/github-actions-ci-cd-best-practices.instructions.md` - CI/CD pipeline best practices
 - `/.github/instructions/Fastlane.md` - Fastlane automation framework documentation and best practices
+- `/.github/instructions/FastlaneActions.md` - Fastlane Actions documentation and best practices
 
 ### Documentation & Content
 
