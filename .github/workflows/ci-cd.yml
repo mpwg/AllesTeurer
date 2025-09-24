@@ -188,6 +188,8 @@ jobs:
 
   # Create GitHub Release for tag-based builds
   create-release:
+    permissions:
+      contents: write
     needs: [determine-build-type, build]
     if: needs.determine-build-type.outputs.build_type != 'ci'
     runs-on: ubuntu-latest
