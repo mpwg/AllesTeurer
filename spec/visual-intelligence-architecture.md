@@ -7,12 +7,14 @@ AllesTeurer leverages Apple's Visual Intelligence framework to create a universa
 ## Core Architecture Principles
 
 ### 1. Universal Receipt Understanding
+
 - **No Store-Specific Code**: The system adapts to any receipt format automatically
 - **Context-Aware Processing**: Visual Intelligence understands receipt context and structure
 - **Self-Learning**: Improves accuracy over time through on-device learning
 - **Multi-Format Support**: Handles printed, digital, handwritten receipts
 
 ### 2. Privacy-First Design
+
 - **100% On-Device Processing**: No data leaves the device for scanning
 - **Local ML Models**: All Visual Intelligence models run locally
 - **User-Controlled Data**: Complete user ownership of all receipt data
@@ -26,23 +28,23 @@ AllesTeurer leverages Apple's Visual Intelligence framework to create a universa
 actor VisualIntelligenceProcessor {
     private let analyzer = VIDocumentAnalyzer()
     private let contextEngine = VIContextualUnderstanding()
-    
+
     func processReceipt(_ image: UIImage) async throws -> UniversalReceipt {
         // Stage 1: Document Analysis
         let documentType = try await analyzer.detectDocumentType(image)
         guard documentType == .receipt else {
             throw VIError.notAReceipt
         }
-        
+
         // Stage 2: Structural Understanding
         let structure = try await analyzer.analyzeDocumentStructure(image)
-        
+
         // Stage 3: Content Extraction
         let content = try await extractContent(from: image, using: structure)
-        
+
         // Stage 4: Semantic Understanding
         let semantics = try await contextEngine.understand(content)
-        
+
         // Stage 5: Data Structuring
         return UniversalReceipt(from: semantics)
     }
@@ -56,16 +58,16 @@ actor VisualIntelligenceProcessor {
 final class UniversalReceipt {
     let id: UUID
     let scanDate: Date
-    
+
     // Dynamic store information
     var storeInfo: StoreInformation
-    
+
     // Flexible item structure
     var items: [UniversalItem]
-    
+
     // Computed totals
     var totals: ReceiptTotals
-    
+
     // Metadata
     var metadata: ReceiptMetadata
 }
@@ -84,6 +86,7 @@ struct UniversalItem: Codable, Sendable {
 ### Layer 3: Intelligence Services
 
 #### Pattern Recognition Service
+
 ```swift
 actor PatternRecognitionService {
     func identifyReceiptPatterns(_ image: UIImage) async throws -> ReceiptPattern {
@@ -94,6 +97,7 @@ actor PatternRecognitionService {
 ```
 
 #### Product Matching Service
+
 ```swift
 actor ProductMatchingService {
     func matchProducts(from items: [UniversalItem]) async throws -> [MatchedProduct] {
@@ -105,6 +109,7 @@ actor ProductMatchingService {
 ```
 
 #### Price Intelligence Service
+
 ```swift
 actor PriceIntelligenceService {
     func analyzePriceChanges(for product: MatchedProduct) async -> PriceAnalysis {
@@ -127,7 +132,7 @@ graph TD
     D --> E[Text Recognition]
     E --> F[Semantic Understanding]
     F --> G[Structured Data]
-    
+
     H[Context Engine] --> F
     I[Pattern Library] --> D
     J[Product Database] --> F
@@ -151,7 +156,7 @@ class VisionIntelligenceService {
         request.customWords = self.loadCustomVocabulary()
         return request
     }()
-    
+
     // Visual Intelligence Analysis
     private lazy var intelligenceRequest: VNAnalyzeImageRequest = {
         let request = VNAnalyzeImageRequest()
@@ -173,18 +178,18 @@ class VisionIntelligenceService {
 actor LearningEngine {
     private var patterns: [ReceiptPattern] = []
     private var productMappings: [String: ProductIdentity] = []
-    
+
     func learn(from receipt: UniversalReceipt) async {
         // Update pattern recognition
         await updatePatterns(receipt.metadata.layoutPattern)
-        
+
         // Improve product matching
         await updateProductMappings(receipt.items)
-        
+
         // Refine price models
         await updatePriceModels(receipt.items)
     }
-    
+
     private func updatePatterns(_ pattern: LayoutPattern) async {
         // Adaptive pattern learning
     }
@@ -200,7 +205,7 @@ struct RecognitionConfidence {
     let itemRecognition: Double
     let priceExtraction: Double
     let totalValidation: Double
-    
+
     var requiresUserReview: Bool {
         overall < 0.85 || totalValidation < 0.90
     }
@@ -215,7 +220,7 @@ struct RecognitionConfidence {
 struct IntelligentCorrectionView: View {
     @State private var receipt: UniversalReceipt
     @State private var confidence: RecognitionConfidence
-    
+
     var body: some View {
         ScrollView {
             if confidence.requiresUserReview {
@@ -224,7 +229,7 @@ struct IntelligentCorrectionView: View {
                     lowConfidenceItems: receipt.itemsRequiringReview
                 )
             }
-            
+
             ReceiptPreviewView(receipt: receipt)
                 .overlay(ConfidenceIndicator(confidence: confidence))
         }
@@ -237,7 +242,7 @@ struct IntelligentCorrectionView: View {
 ```swift
 struct VisualIntelligenceFeedback: ViewModifier {
     let processingState: ProcessingState
-    
+
     func body(content: Content) -> some View {
         content
             .overlay(
@@ -286,13 +291,13 @@ struct IntelligentExtractor {
     func extract(from image: UIImage) async throws -> RawReceiptData {
         // Multi-pass extraction strategy
         let firstPass = try await quickExtraction(image)
-        
+
         if firstPass.confidence < 0.7 {
             let enhancedImage = await image.enhanceForLowConfidence()
             let secondPass = try await detailedExtraction(enhancedImage)
             return merge(firstPass, secondPass)
         }
-        
+
         return firstPass
     }
 }
@@ -305,13 +310,13 @@ actor SemanticProcessor {
     func process(_ raw: RawReceiptData) async throws -> SemanticReceipt {
         // Understand context
         let context = try await identifyContext(raw)
-        
+
         // Map to semantic model
         let items = try await mapToSemanticItems(raw.lines, context: context)
-        
+
         // Validate relationships
         try await validateSemantics(items)
-        
+
         return SemanticReceipt(
             context: context,
             items: items,
@@ -357,7 +362,7 @@ struct ErrorRecoveryStrategy {
 actor IntelligenceCache {
     private var patternCache: [ImageFingerprint: ReceiptPattern] = [:]
     private var storeCache: [StoreFingerprint: StoreInfo] = [:]
-    
+
     func getCachedPattern(for image: UIImage) async -> ReceiptPattern? {
         let fingerprint = await image.generateFingerprint()
         return patternCache[fingerprint]
@@ -376,7 +381,7 @@ actor BatchProcessor {
                     try? await self.processReceipt(image)
                 }
             }
-            
+
             var receipts: [UniversalReceipt] = []
             for await receipt in group {
                 if let receipt {
@@ -437,7 +442,7 @@ struct MockVisualIntelligence: VisualIntelligenceProtocol {
 func testRecognitionConfidence() async {
     let testImage = TestData.blurryReceipt
     let result = try await processor.processReceipt(testImage)
-    
+
     #expect(result.confidence.overall > 0.5)
     #expect(result.confidence.requiresUserReview == true)
 }
