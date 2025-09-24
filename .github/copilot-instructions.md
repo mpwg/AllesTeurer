@@ -389,10 +389,42 @@ xcodebuild archive -scheme "Alles Teurer" -archivePath "AllesTeurer.xcarchive"
 
 ## References
 
+### Specifications & Architecture
 - `/spec/Anforderungen.md` - Functional requirements in German
 - `/spec/architecture.md` - Technical architecture decisions
-- `/.github/instructions/swift.instructions.md` - Swift coding conventions
-- `/.github/instructions/a11y.instructions.md` - Accessibility requirements
-- `/.github/instructions/swiftui-observation.instructions.md` - SwiftUI Observable patterns
+
+### Core Development Instructions
+- `/.github/instructions/modern-swift.md` - Modern Swift development patterns and SwiftUI best practices
+- `/.github/instructions/swift-concurrency.md` - Swift 6 concurrency, data race safety, and strict concurrency
+- `/.github/instructions/swiftdata.md` - Complete SwiftData framework documentation and patterns
+- `/.github/instructions/swiftui.md` - SwiftUI development guidelines
+- `/.github/instructions/swift-observable.md` - Observable pattern implementation
+- `/.github/instructions/swift-observation.md` - Observation framework usage
+- `/.github/instructions/swift6-migration.md` - Migration to Swift 6 guidelines
+
+### Testing & Quality Assurance
+- `/.github/instructions/swift-testing-playbook.md` - Complete Swift Testing migration guide
+- `/.github/instructions/swift-testing-api.md` - Swift Testing API reference
 - `/.github/instructions/ai-agent-testing.instructions.md` - AI agent test implementation guidelines
+- `/.github/instructions/a11y.instructions.md` - Accessibility requirements (WCAG 2.2 Level AA)
+
+### Specialized Features
+- `/.github/instructions/VisualIntelligence.md` - Apple Visual Intelligence framework integration
+- `/.github/instructions/swift-argument-parser.md` - Command line interface development
+
+### Workflow & Process
+- `/.github/instructions/spec-driven-workflow-v1.instructions.md` - Specification-driven development workflow
+- `/.github/instructions/conventional-commit.instructions.md` - Conventional commit message standards
+- `/.github/instructions/github-actions-ci-cd-best-practices.instructions.md` - CI/CD pipeline best practices
+
+### Documentation & Content
+- `/.github/instructions/markdown.instructions.md` - Documentation and content creation standards
+- `/.github/instructions/localization.instructions.md` - Localization guidelines for markdown documents
+- `/.github/instructions/mermaid.md` - Diagram creation with Mermaid
+
+### Analysis & Maintenance
+- `/.github/instructions/code-analysis.md` - Code analysis and review guidelines
+- `/.github/instructions/bug-fix.md` - Bug fixing methodology
+- `/.github/instructions/analyze-issue.md` - Issue analysis procedures
+- `/.github/instructions/add-to-changelog.md` - Changelog maintenance guidelines
 ```
