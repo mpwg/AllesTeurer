@@ -19,7 +19,6 @@ before_all do
   UI.header("In Before All")
   Dotenv.overload '.env'
   UI.success("Loaded .env file")
-  git_url = ENV['MATCH_GIT_URL']
 
 app_store_connect_api_key(
    key_id: ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"],
@@ -34,6 +33,8 @@ end
 desc "Sync certificates"
  lane :sync_certificates do
    #read-only disables match from overriding the existing certificates.
+    git_url = ENV['MATCH_GIT_URL']
+
    match({readonly: true, type: "appstore"})
  end
 
