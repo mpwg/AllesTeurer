@@ -1,26 +1,20 @@
 name: AllesTeurer CI/CD Pipeline
 
 on:
-  # CI builds on push and PR
   push:
-    branches: [main, develop, 'feature/**']
+    branches: [main, develop, "feature/**"]
+    tags:
+      - "v*.*.*" # Production releases
+      - "V*.*.*" # Alternative casing
+      - "v*.*.*-alpha.*" # Alpha releases
+      - "v*.*.*-beta.*" # Beta releases
+      - "v*.*.*-rc.*" # Release candidates
   pull_request:
     branches: [main, develop]
-  
-  # Tag-based releases
-  push:
-    tags:
-      - 'v*.*.*'           # Production releases
-      - 'V*.*.*'           # Alternative casing
-      - 'v*.*.*-alpha.*'   # Alpha releases  
-      - 'v*.*.*-beta.*'    # Beta releases
-      - 'v*.*.*-rc.*'      # Release candidates
-
-  # Manual trigger
   workflow_dispatch:
     inputs:
       lane:
-        description: 'Fastlane lane to run'
+        description: "Fastlane lane to run"
         required: true
         type: choice
         options:
@@ -31,10 +25,10 @@ on:
         default: ci
 
 env:
-  XCODE_VERSION: '26.0'
-  IOS_DESTINATION: 'platform=iOS Simulator,name=iPhone 15'
-  MACOS_DESTINATION: 'platform=macOS,variant=Mac Catalyst'
-  MATCH_KEYCHAIN_NAME: 'fastlane-ci-keychain'
+  XCODE_VERSION: "26.0"
+  IOS_DESTINATION: "platform=iOS Simulator,name=iPhone 15"
+  MACOS_DESTINATION: "platform=macOS,variant=Mac Catalyst"
+  MATCH_KEYCHAIN_NAME: "fastlane-ci-keychain"
   MATCH_KEYCHAIN_PASSWORD: ${{ secrets.MATCH_KEYCHAIN_PASSWORD }}
 
 jobs:
@@ -71,12 +65,12 @@ jobs:
     env:
       BUILD_TYPE: ${{ needs.determine-build-type.outputs.build_type }}
       VERSION_TAG: ${{ needs.determine-build-type.outputs.version }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history for tags
+          fetch-depth: 0 # Need full history for tags
 
       - name: Select Xcode version
         run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
@@ -84,43 +78,13 @@ jobs:
       - name: Setup Ruby and install dependencies
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2'
-          bundler-cache: true
-
-      - name: Configure Git for Match
+          ruby-version: "3.2"
+      - name: Configure App Store Connect API secrets
+        if: env.BUILD_TYPE == 'beta' || env.BUILD_TYPE == 'release'
         run: |
-          git config --global user.email "ci@github.com"
-          git config --global user.name "GitHub CI"
-
-      - name: Configure environment
-        run: |
-          # Match configuration
-          echo "MATCH_GIT_URL=${{ secrets.MATCH_GIT_URL }}" >> $GITHUB_ENV
-          echo "MATCH_PASSWORD=${{ secrets.MATCH_PASSWORD }}" >> $GITHUB_ENV
-          echo "MATCH_GIT_BASIC_AUTHORIZATION=${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}" >> $GITHUB_ENV
-          echo "MATCH_KEYCHAIN_NAME=${{ env.MATCH_KEYCHAIN_NAME }}" >> $GITHUB_ENV
-          echo "MATCH_KEYCHAIN_PASSWORD=${{ env.MATCH_KEYCHAIN_PASSWORD }}" >> $GITHUB_ENV
-          
-          # Apple Developer configuration
-          echo "APPLE_ID=${{ secrets.APPLE_ID }}" >> $GITHUB_ENV
-          echo "TEAM_ID=${{ secrets.TEAM_ID }}" >> $GITHUB_ENV
-          echo "TEAM_NAME=${{ secrets.TEAM_NAME }}" >> $GITHUB_ENV
-          
-          # Fastlane configuration
-          echo "FASTLANE_USER=${{ secrets.APPLE_ID }}" >> $GITHUB_ENV
-          echo "FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD=${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}" >> $GITHUB_ENV
-          echo "FASTLANE_SESSION=${{ secrets.FASTLANE_SESSION }}" >> $GITHUB_ENV
-          
-          # Build configuration
-          echo "GITHUB_REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
-          echo "CI=true" >> $GITHUB_ENV
-          
-          # App Store Connect API for TestFlight/App Store uploads
-          if [[ "${{ env.BUILD_TYPE }}" == "beta" ]] || [[ "${{ env.BUILD_TYPE }}" == "release" ]]; then
-            echo "APP_STORE_CONNECT_API_KEY_KEY_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}" >> $GITHUB_ENV
-            echo "APP_STORE_CONNECT_API_KEY_ISSUER_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}" >> $GITHUB_ENV
-            echo "APP_STORE_CONNECT_API_KEY_CONTENT=${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}" >> $GITHUB_ENV
-          fi
+          echo "APP_STORE_CONNECT_API_KEY_KEY_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}" >> $GITHUB_ENV
+          echo "APP_STORE_CONNECT_API_KEY_ISSUER_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}" >> $GITHUB_ENV
+          echo "APP_STORE_CONNECT_API_KEY_CONTENT=${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}" >> $GITHUB_ENV
 
       - name: Setup SSH for Match repository
         if: env.BUILD_TYPE != 'ci'
@@ -128,7 +92,6 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.MATCH_DEPLOY_KEY }}" > ~/.ssh/match_deploy_key
           chmod 600 ~/.ssh/match_deploy_key
-          
           # Add SSH configuration
           cat >> ~/.ssh/config <<EOF
           Host github.com
@@ -142,7 +105,7 @@ jobs:
         if: env.BUILD_TYPE == 'ci'
         run: |
           bundle exec fastlane ios ci
-          
+
       - name: Build Alpha release
         if: env.BUILD_TYPE == 'alpha'
         run: |
@@ -196,7 +159,7 @@ jobs:
     env:
       BUILD_TYPE: ${{ needs.determine-build-type.outputs.build_type }}
       VERSION_TAG: ${{ needs.determine-build-type.outputs.version }}
-    
+
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -213,24 +176,24 @@ jobs:
                 format('Alpha Release {0}', env.VERSION_TAG) }}
           body: |
             ## AllesTeurer ${{ env.VERSION_TAG }}
-            
+
             ${{ env.BUILD_TYPE == 'release' && '### 🚀 Production Release
-            
+
             **iOS/iPadOS**: Available on [App Store](https://apps.apple.com/app/allesteurer)
             **macOS**: Download below or from future Mac App Store' ||
                 env.BUILD_TYPE == 'beta' && '### 🧪 Beta Release
-            
+
             **iOS/iPadOS**: Available on [TestFlight](https://testflight.apple.com/join/YOUR_ID)
             **macOS**: Download below' ||
                 '### 🔬 Alpha Release
-            
+
             Internal testing release - not available on stores.
             Download and install manually using Xcode or direct installation.' }}
-            
+
             ### Downloads
             - 📱 iOS: See attached .ipa file
             - 🖥️ macOS: See attached .app bundle
-            
+
             ### Installation
             ${{ env.BUILD_TYPE == 'alpha' && '**iOS**: Install .ipa using Xcode, Apple Configurator, or compatible tools
             **macOS**: Download and open the .app bundle' ||
