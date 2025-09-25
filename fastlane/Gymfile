@@ -1,0 +1,12 @@
+# App scheme name
+scheme("Alles-Teurer")
+#provide provisioning profiles to use
+export_options({    
+   method: "app-store",    
+})
+# Specify the path to store .ipa file
+output_directory("./build")
+# Excludes bitcode from the build
+include_bitcode(false)
+# Excludes symbols from the build.
+include_symbols(false)

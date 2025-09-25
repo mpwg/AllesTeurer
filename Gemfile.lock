@@ -226,6 +226,7 @@ PLATFORMS
 
 DEPENDENCIES
   abbrev
+  dotenv
   fastlane
   ostruct
 

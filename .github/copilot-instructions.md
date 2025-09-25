@@ -35,6 +35,8 @@ AllesTeurer/
 
 ### Native iOS 26 Strategy
 
+- **macOS 26, iOS 26, Xcode 26, Swift 6.2, and all relevant SDKs/packages are available and pre-installed on GitHub Actions runners.**
+- **Never downgrade or target older versions unless explicitly required by the project.**
 - **SwiftUI 6.0**: Enhanced declarative UI with iOS 26 features
 - **SwiftData 2.0**: Advanced type-safe persistence with performance improvements
 - **Visual Intelligence**: Apple's universal document recognition framework

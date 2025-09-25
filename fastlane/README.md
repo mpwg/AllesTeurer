@@ -13,79 +13,29 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 # Available Actions
 
-## iOS
-
-### ios ci
+### sync_certificates
 
 ```sh
-[bundle exec] fastlane ios ci
+[bundle exec] fastlane sync_certificates
 ```
 
-CI build and test (no deployment)
+Sync certificates
 
-### ios test
+### build_ios
 
 ```sh
-[bundle exec] fastlane ios test
+[bundle exec] fastlane build_ios
 ```
 
-Run all tests
+Create ipa
 
-### ios alpha
+### build_mac
 
 ```sh
-[bundle exec] fastlane ios alpha
+[bundle exec] fastlane build_mac
 ```
 
-Alpha release to GitHub (v*.*.*-alpha.*)
-
-### ios beta
-
-```sh
-[bundle exec] fastlane ios beta
-```
-
-Beta release to TestFlight (v*.*.*-beta.*)
-
-### ios release
-
-```sh
-[bundle exec] fastlane ios release
-```
-
-Production release to App Store (v*.*.*)
-
-### ios version
-
-```sh
-[bundle exec] fastlane ios version
-```
-
-Show current version
-
-### ios setup_match
-
-```sh
-[bundle exec] fastlane ios setup_match
-```
-
-Setup certificates for development
-
-### ios update_certificates
-
-```sh
-[bundle exec] fastlane ios update_certificates
-```
-
-Update certificates and profiles
-
-### ios nuke_certificates
-
-```sh
-[bundle exec] fastlane ios nuke_certificates
-```
-
-Nuke all certificates and start fresh (DANGEROUS)
+Create macos app
 
 ----
 
