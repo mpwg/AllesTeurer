@@ -8,6 +8,9 @@
 import Foundation
 import SwiftData
 
+// Ensure model types like `Produkt` are visible in this file's scope
+// (same module, but explicit import not needed; adding comment for clarity)
+
 @ModelActor
 actor DataManager {
     // MARK: - Receipt Operations
