@@ -8,11 +8,7 @@ app_identifier(["eu.mpwg.Alles-Teurer"])
 
 
 # For CI/CD environments: readonly false in CI, true locally
-if ENV["CI"]
-	readonly(false)
-else
-	readonly(true)
-end
+readonly(ENV["CI"] ? false : true)
 
 # Xcode project configuration
 username(ENV["APPLE_ID"]) # Your Apple ID
