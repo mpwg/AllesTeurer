@@ -83,14 +83,14 @@ jobs:
           if [ -n "$MATCH_DEPLOY_KEY" ]; then
             echo "MATCH_DEPLOY_KEY=$MATCH_DEPLOY_KEY" >> $GITHUB_ENV
           fi
-        - name: Create and unlock keychain for Fastlane Match
-          run: |
-            security create-keychain -p "$KEYCHAIN_PASSWORD" "$MATCH_KEYCHAIN_NAME"
-            security set-keychain-settings -lut 21600 "$MATCH_KEYCHAIN_NAME"
-            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$MATCH_KEYCHAIN_NAME"
-            # Add keychain to search list (both .keychain-db and .keychain)
-            security list-keychains -s "$HOME/Library/Keychains/${MATCH_KEYCHAIN_NAME}-db" "$HOME/Library/Keychains/login.keychain-db"
-            security list-keychains -s "$HOME/Library/Keychains/${MATCH_KEYCHAIN_NAME}" "$HOME/Library/Keychains/login.keychain-db"
+      - name: Create and unlock keychain for Fastlane Match
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$MATCH_KEYCHAIN_NAME"
+          security set-keychain-settings -lut 21600 "$MATCH_KEYCHAIN_NAME"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$MATCH_KEYCHAIN_NAME"
+          # Add keychain to search list (both .keychain-db and .keychain)
+          security list-keychains -s "$HOME/Library/Keychains/${MATCH_KEYCHAIN_NAME}-db" "$HOME/Library/Keychains/login.keychain-db"
+          security list-keychains -s "$HOME/Library/Keychains/${MATCH_KEYCHAIN_NAME}" "$HOME/Library/Keychains/login.keychain-db"
       - name: Checkout code
         uses: actions/checkout@v4
         with:
