@@ -1,10 +1,35 @@
-git_url(ENV["MATCH_GIT_URL"]) # The git URL where the certificates and profiles will be stored
+git_url(ENV["MATCH_GIT_URL"])
 
 storage_mode("git")
 
-type("development") # The default type, can be: appstore, adhoc, enterprise or development
+type("development") # Default type, can be overridden
 
-app_identifier(["eu.mpwg.Alles-Teurer"]) # The bundle identifier of your app
+app_identifier(["eu.mpwg.Alles-Teurer"])
+
+# For CI/CD environments
+readonly(true) # Only use in CI, set to false for local development
+
+# Xcode project configuration
+username(ENV["APPLE_ID"]) # Your Apple ID
+
+team_id(ENV["TEAM_ID"]) # Developer Portal Team ID
+team_name(ENV["TEAM_NAME"]) # Optional: Team name for clarity
+
+# Additional security
+git_basic_authorization(ENV["MATCH_GIT_BASIC_AUTHORIZATION"]) if ENV["MATCH_GIT_BASIC_AUTHORIZATION"]
+
+# Platform support
+platform("ios") # Default platform
+
+# Enable Mac Catalyst support
+additional_cert_types(["mac_installer_distribution"]) # For Mac Catalyst signing
+
+# Keychain configuration (for CI)
+keychain_name(ENV["MATCH_KEYCHAIN_NAME"] || "fastlane-alles-teurer")
+keychain_password(ENV["MATCH_PASSWORD"] || ENV["KEYCHAIN_PASSWORD"])
+
+# Verbose output for debugging
+verbose(true) if ENV["CI"]
 
 # For all available options run `fastlane match --help`
 # Remove the # in the beginning of the line to enable the other options

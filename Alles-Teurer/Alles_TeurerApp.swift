@@ -5,16 +5,28 @@
 //  Created by Matthias Wallner-Géhri on 22.09.25.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct Alles_TeurerApp: App {
     var sharedModelContainer: ModelContainer = {
+        // Use an in-memory store when running under tests to improve reliability and speed
+        let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let schema = Schema([
-            Item.self,
+            Rechnung.self,
+            RechnungsArtikel.self,
+            Produkt.self,
+            PreisEintrag.self,
+            Geschaeft.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        // For development, use default container location
+        // App Groups will be enabled later for production with proper provisioning
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: isTesting
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
@@ -28,5 +40,14 @@ struct Alles_TeurerApp: App {
             ContentView()
         }
         .modelContainer(sharedModelContainer)
+        .commands {
+            // Mac Catalyst Menu-Befehle
+            CommandGroup(replacing: .newItem) {
+                Button("Rechnung scannen") {
+                    // TODO: Scan-Aktion implementieren
+                }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
     }
 }

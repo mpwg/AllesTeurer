@@ -15,37 +15,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
-### ios dev
+### ios ci
 
 ```sh
-[bundle exec] fastlane ios dev
+[bundle exec] fastlane ios ci
 ```
 
-Build development version for testing
-
-### ios beta
-
-```sh
-[bundle exec] fastlane ios beta
-```
-
-Build and upload to TestFlight
-
-### ios alpha
-
-```sh
-[bundle exec] fastlane ios alpha
-```
-
-Build alpha versions for GitHub Releases (no store upload)
-
-### ios release
-
-```sh
-[bundle exec] fastlane ios release
-```
-
-Build and upload to App Store
+CI build and test (no deployment)
 
 ### ios test
 
@@ -53,55 +29,31 @@ Build and upload to App Store
 [bundle exec] fastlane ios test
 ```
 
-Run unit tests and build for CI validation
+Run all tests
 
-### ios test_ios
-
-```sh
-[bundle exec] fastlane ios test_ios
-```
-
-Run tests on iOS Simulator (manual use for iOS-specific testing)
-
-### ios build
+### ios alpha
 
 ```sh
-[bundle exec] fastlane ios build
+[bundle exec] fastlane ios alpha
 ```
 
-Build app without distribution (for CI validation)
+Alpha release to GitHub (v*.*.*-alpha.*)
 
-### ios build_ios
+### ios beta
 
 ```sh
-[bundle exec] fastlane ios build_ios
+[bundle exec] fastlane ios beta
 ```
 
-Build app for iOS distribution
+Beta release to TestFlight (v*.*.*-beta.*)
 
-### ios clean_build
+### ios release
 
 ```sh
-[bundle exec] fastlane ios clean_build
+[bundle exec] fastlane ios release
 ```
 
-Clean build when incremental builds are causing issues
-
-### ios certificates
-
-```sh
-[bundle exec] fastlane ios certificates
-```
-
-Sync development certificates and provisioning profiles
-
-### ios update_certificates
-
-```sh
-[bundle exec] fastlane ios update_certificates
-```
-
-Update certificates and push to git
+Production release to App Store (v*.*.*)
 
 ### ios version
 
@@ -109,23 +61,31 @@ Update certificates and push to git
 [bundle exec] fastlane ios version
 ```
 
-Show current version and build number
+Show current version
 
-### ios show_help
-
-```sh
-[bundle exec] fastlane ios show_help
-```
-
-Show available lanes
-
-### ios benchmark
+### ios setup_match
 
 ```sh
-[bundle exec] fastlane ios benchmark
+[bundle exec] fastlane ios setup_match
 ```
 
-Run build performance benchmark
+Setup certificates for development
+
+### ios update_certificates
+
+```sh
+[bundle exec] fastlane ios update_certificates
+```
+
+Update certificates and profiles
+
+### ios nuke_certificates
+
+```sh
+[bundle exec] fastlane ios nuke_certificates
+```
+
+Nuke all certificates and start fresh (DANGEROUS)
 
 ----
 
