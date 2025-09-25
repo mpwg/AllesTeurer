@@ -17,8 +17,9 @@ default_platform(:ios)
 
 before_all do
   UI.header("In Before All")
-  Dotenv.overload '.env'
+  Dotenv.load '.env'
   UI.success("Loaded .env file")
+  git_url = ENV['MATCH_GIT_URL']
 
 app_store_connect_api_key(
    key_id: ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"],
@@ -32,8 +33,8 @@ end
 
 desc "Sync certificates"
  lane :sync_certificates do
-   UI.important("Using git_url: #{ENV['MATCH_GIT_URL']}")
-  # sync_code_signing({readonly: true, type: "appstore", git_url: ENV["MATCH_GIT_URL"]})
+
+  sync_code_signing({readonly: true, type: "appstore")
  end
 
 desc "Create ipa"
