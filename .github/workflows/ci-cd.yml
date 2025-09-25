@@ -75,7 +75,7 @@ jobs:
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
     steps:
       - name: Export MATCH_PASSWORD for Fastlane Match
-        run: echo "MATCH_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
+        run: echo "MATCH_PASSWORD=${{ secrets.MATCH_PASSWORD }}" >> $GITHUB_ENV
         env:
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       - name: Export MATCH_DEPLOY_KEY if present
