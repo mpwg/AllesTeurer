@@ -58,7 +58,7 @@ lane :build_mac do
 
    build_mac_app(scheme: "Alles-Teurer", export_method: "app-store",
    destination: 'platform=macOS,variant=Mac Catalyst',
-   installer_cert_name: ENV("MAC_INSTALLER_CERT_NAME"),
+   installer_cert_name: ENV["MAC_INSTALLER_CERT_NAME"],
    export_options: {
     provisioningProfiles: {
       "eu.mpwg.Alles-Teurer" => "match AppStore eu.mpwg.Alles-Teurer catalyst"
