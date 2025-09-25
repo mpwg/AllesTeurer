@@ -29,7 +29,7 @@ env:
   IOS_DESTINATION: "platform=iOS Simulator,name=iPhone 15"
   MACOS_DESTINATION: "platform=macOS,variant=Mac Catalyst"
   MATCH_KEYCHAIN_NAME: "fastlane-ci-keychain"
-  MATCH_KEYCHAIN_PASSWORD: ${{ secrets.MATCH_KEYCHAIN_PASSWORD }}
+  # Removed MATCH_KEYCHAIN_PASSWORD from global env block; now set only in build job env block.
 
 jobs:
   # Determine what type of build to run
@@ -39,6 +39,7 @@ jobs:
       build_type: ${{ steps.determine.outputs.build_type }}
       version: ${{ steps.determine.outputs.version }}
     steps:
+      # Removed export step for MATCH_DEPLOY_KEY; will handle in SSH setup step below.
       - name: Determine build type
         id: determine
         run: |
@@ -62,11 +63,22 @@ jobs:
   build:
     needs: determine-build-type
     runs-on: macos-26
+    # All secrets are now only in the env block. MATCH_DEPLOY_KEY will be set conditionally in the first step below.
     env:
       BUILD_TYPE: ${{ needs.determine-build-type.outputs.build_type }}
       VERSION_TAG: ${{ needs.determine-build-type.outputs.version }}
-
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
+      APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
+      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
     steps:
+      - name: Export MATCH_DEPLOY_KEY if present
+        run: |
+          if [ -n "$MATCH_DEPLOY_KEY" ]; then
+            echo "MATCH_DEPLOY_KEY=$MATCH_DEPLOY_KEY" >> $GITHUB_ENV
+          fi
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -91,18 +103,24 @@ jobs:
 
       - name: Setup SSH for Match repository
         if: env.BUILD_TYPE != 'ci'
+        env:
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.MATCH_DEPLOY_KEY }}" > ~/.ssh/match_deploy_key
-          chmod 600 ~/.ssh/match_deploy_key
-          # Add SSH configuration
-          cat >> ~/.ssh/config <<EOF
-          Host github.com
-            HostName github.com
-            User git
-            IdentityFile ~/.ssh/match_deploy_key
-            StrictHostKeyChecking no
-          EOF
+          if [ -n "$MATCH_DEPLOY_KEY" ]; then
+            mkdir -p ~/.ssh
+            echo "$MATCH_DEPLOY_KEY" > ~/.ssh/match_deploy_key
+            chmod 600 ~/.ssh/match_deploy_key
+            # Add SSH configuration
+            cat >> ~/.ssh/config <<EOF
+            Host github.com
+              HostName github.com
+              User git
+              IdentityFile ~/.ssh/match_deploy_key
+              StrictHostKeyChecking no
+            EOF
+          else
+            echo "MATCH_DEPLOY_KEY not set, skipping SSH setup."
+          fi
 
       - name: Run CI build and test
         if: env.BUILD_TYPE == 'ci'
