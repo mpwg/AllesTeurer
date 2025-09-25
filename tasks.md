@@ -3,7 +3,7 @@
 ## Implementation Status: iOS-Native with Swift 6
 
 **Generated**: 2025-09-22  
-**Updated**: 2025-09-22  
+**Updated**: 2025-09-25  
 **Platform**: iOS 26.0+ (iPhone, iPad, Mac Catalyst)
 **Language**: Swift 6 with strict concurrency
 
@@ -20,7 +20,7 @@ This project leverages cutting-edge iOS 26 features:
 
 ## Phase 1: Core Foundation (iOS 26)
 
-### Task 1.1: Project Setup with Swift 6 ✅ READY
+### Task 1.1: Project Setup with Swift 6 ✅ PARTIAL
 
 **Priority**: CRITICAL | **Effort**: 1 day | **Dependencies**: None
 
@@ -29,19 +29,27 @@ This project leverages cutting-edge iOS 26 features:
 **Acceptance Criteria**:
 
 - [ ] Xcode 26+ project configured for iOS 26.0 minimum
-- [ ] Swift 6 language mode enabled with strict concurrency
+- [ ] Swift 6 language mode enabled with strict concurrency (project setting)
 - [ ] Universal app supporting iPhone, iPad, and Mac Catalyst
-- [ ] SwiftData 2.0 model container configured
+- [x] SwiftData 2.0 model container configured
 - [ ] App Groups for data sharing between main app and widgets
 - [ ] Privacy manifest configured for OCR and camera access
+
+Status notes:
+
+- SwiftData ModelContainer configured in `Alles_TeurerApp.swift` and used by views.
+- Code follows Swift 6 strict concurrency patterns (actors, @MainActor), but project language mode verification is pending.
+- App Groups and privacy manifest not yet configured.
 
 **Implementation Details**:
 
 1. **Project Configuration**:
+
    ```swift
    // Swift 6 strict concurrency in Package.swift
    swiftLanguageVersions: [.version("6")]
    ```
+
 2. **Platform Support**:
 
    - iPhone: Dynamic Type and compact layouts
@@ -54,7 +62,7 @@ This project leverages cutting-edge iOS 26 features:
    - CloudKit for optional sync
    - Siri and Shortcuts
 
-### Task 1.2: SwiftData 2.0 Models with Actors ✅ READY
+### Task 1.2: SwiftData 2.0 Models with Actors ✅ PARTIAL
 
 **Priority**: CRITICAL | **Effort**: 2 days | **Dependencies**: Task 1.1
 
@@ -62,8 +70,8 @@ This project leverages cutting-edge iOS 26 features:
 
 **Acceptance Criteria**:
 
-- [ ] All models use `@Model` with proper relationships
-- [ ] Actor isolation for data access with `@ModelActor`
+- [x] All models use `@Model` with proper relationships
+- [x] Actor isolation for data access with `@ModelActor`
 - [ ] Migration support for future schema changes
 - [ ] Efficient indexing for analytics queries
 - [ ] Full-text search for products
@@ -76,7 +84,7 @@ import Foundation
 
 @Model
 @available(iOS 26.0, *)
-final class Receipt: Sendable {
+final class Receipt {
     @Attribute(.unique) let id: UUID
     var storeName: String
     var storeLocation: String?
@@ -105,7 +113,7 @@ final class Receipt: Sendable {
 
 @Model
 @available(iOS 26.0, *)
-final class Product: Sendable {
+final class Product {
     @Attribute(.unique) let id: UUID
     var name: String
     var category: ProductCategory
@@ -140,7 +148,14 @@ actor DataManager {
 }
 ```
 
-### Task 1.3: Vision Framework 4.0 OCR Service ✅ READY
+Status notes:
+
+- Implemented domain models (`Rechnung`, `RechnungsArtikel`, `Produkt`, `PreisEintrag`, `Geschaeft`) with relationships in `Alles-Teurer/Models/DomainModels.swift`.
+- Implemented `DataManager` as `@ModelActor` with async insert/fetch/delete and basic analytics in `Alles-Teurer/Repositories/DataManager.swift`.
+- Strict concurrency: Avoided passing non-Sendable models across actor boundaries; delete by `PersistentIdentifier`; scalars returned where appropriate.
+- Indexing, full-text search, and migration plan to be added in Phase 1 hardening.
+
+### Task 1.3: Vision Framework 4.0 OCR Service ⏳ IN PROGRESS
 
 **Priority**: CRITICAL | **Effort**: 3 days | **Dependencies**: Task 1.2
 
@@ -216,6 +231,29 @@ struct DocumentScannerView: UIViewControllerRepresentable {
     // Implementation continues...
 }
 ```
+
+Status notes:
+
+- Implemented an async/await `OCRService` skeleton with observable state in `Alles-Teurer/Services/OCRService.swift` (placeholder output for now). No completion handlers used.
+- Next: Replace placeholder with real Vision/Visual Intelligence requests, German-first language configuration, and field extraction.
+
+---
+
+## Phase 1 – Work Completed (Summary)
+
+- Domain models with SwiftData 2.0 created: `Rechnung`, `RechnungsArtikel`, `Produkt`, `PreisEintrag`, `Geschaeft`.
+- Repository (`DataManager` @ModelActor) implemented: save, fetch (sorted), delete by `PersistentIdentifier`, inflation calculation stub, safe scalar helpers.
+- Basic SwiftUI integration in `ContentView`: list, detail, add test data, delete via repository.
+- Async `OCRService` skeleton using @Observable and @MainActor.
+- Minimal tests added with Swift Testing; green test run via Fastlane.
+
+## Phase 1 – Next Steps
+
+1. Configure project settings for Swift 6 language mode (strict) and verify minimum iOS 26 deployment in Xcode project.
+2. Add privacy manifest entries (camera, photo library, visual intelligence usage) and enable App Groups (production).
+3. Implement real Vision/VisionKit OCR with German-first configuration and structured extraction; add unit tests with sample receipts.
+4. Add SwiftData indexes and search (e.g., `@Attribute(.indexed)` on product name/barcode) and design migration notes.
+5. Expand test coverage (repositories, predicates, UI smoke) and add accessibility checks.
 
 ## Phase 2: User Interface (iOS 26 SwiftUI)
 
