@@ -24,9 +24,9 @@ team_name(ENV["APPSTORE_TEAM_ID"]) # App Store Connect Team ID from .env
 git_basic_authorization(ENV["MATCH_GIT_BASIC_AUTHORIZATION"]) if ENV["MATCH_GIT_BASIC_AUTHORIZATION"]
 
 # Platform support
-platform("ios") # Default platform
 
-# Enable Mac Catalyst support
+# Platform is set dynamically by Fastlane lane (ios, catalyst, etc.)
+# Enable Mac Catalyst support for all platforms
 additional_cert_types(["mac_installer_distribution"]) # For Mac Catalyst signing
 
 
