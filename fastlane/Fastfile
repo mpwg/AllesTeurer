@@ -34,7 +34,8 @@ end
 desc "Sync certificates"
  lane :sync_certificates do
 
-  sync_code_signing({readonly: true, type: "appstore")
+  sync_code_signing({readonly: true, type: "appstore"})
+
  end
 
 desc "Create ipa"
