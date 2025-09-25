@@ -1,240 +1,210 @@
-name: AllesTeurer CI/CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, "feature/**"]
-    tags:
-      - "v*.*.*" # Production releases
-      - "V*.*.*" # Alternative casing
-      - "v*.*.*-alpha.*" # Alpha releases
-      - "v*.*.*-beta.*" # Beta releases
-      - "v*.*.*-rc.*" # Release candidates
-  pull_request:
     branches: [main, develop]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
     inputs:
-      lane:
-        description: "Fastlane lane to run"
+      build_target:
+        description: "Target to build"
         required: true
+        default: "ios"
         type: choice
         options:
-          - ci
-          - alpha
-          - beta
-          - release
-        default: ci
+          - ios
+          - mac
+          - both
 
-env:
-  XCODE_VERSION: "26.0"
-  IOS_DESTINATION: "platform=iOS Simulator,name=iPhone 15"
-  MACOS_DESTINATION: "platform=macOS,variant=Mac Catalyst"
-  MATCH_KEYCHAIN_NAME: "fastlane-ci-keychain"
-  # Removed MATCH_KEYCHAIN_PASSWORD from global env block; now set only in build job env block.
+# Prevent concurrent runs on the same PR or branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Set permissions for GITHUB_TOKEN following principle of least privilege
+permissions:
+  contents: read
+  actions: read
+  security-events: write
 
 jobs:
-  # Determine what type of build to run
-  determine-build-type:
-    runs-on: ubuntu-latest
-    outputs:
-      build_type: ${{ steps.determine.outputs.build_type }}
-      version: ${{ steps.determine.outputs.version }}
-    steps:
-      # Removed export step for MATCH_DEPLOY_KEY; will handle in SSH setup step below.
-      - name: Determine build type
-        id: determine
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "build_type=${{ github.event.inputs.lane }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == refs/tags/v*.*.* ]] || [[ "${{ github.ref }}" == refs/tags/V*.*.* ]]; then
-            TAG="${{ github.ref_name }}"
-            if [[ "$TAG" =~ -alpha\. ]]; then
-              echo "build_type=alpha" >> $GITHUB_OUTPUT
-            elif [[ "$TAG" =~ -beta\. ]] || [[ "$TAG" =~ -rc\. ]]; then
-              echo "build_type=beta" >> $GITHUB_OUTPUT
-            else
-              echo "build_type=release" >> $GITHUB_OUTPUT
-            fi
-            echo "version=$TAG" >> $GITHUB_OUTPUT
-          else
-            echo "build_type=ci" >> $GITHUB_OUTPUT
-          fi
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-26 # Use macOS 26 as specified in project requirements
+    if: ${{ github.event.inputs.build_target == 'ios' || github.event.inputs.build_target == 'both' || github.event.inputs.build_target == '' }}
 
-  # Main build job
-  build:
-    needs: determine-build-type
-    runs-on: macos-26
-    # All secrets are now only in the env block. MATCH_DEPLOY_KEY will be set conditionally in the first step below.
-    env:
-      BUILD_TYPE: ${{ needs.determine-build-type.outputs.build_type }}
-      VERSION_TAG: ${{ needs.determine-build-type.outputs.version }}
-      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      DEVELOPMENT_TEAM: ${{ secrets.DEVELOPMENT_TEAM }}
-      APPSTORE_TEAM_ID: ${{ secrets.APPSTORE_TEAM_ID }}
-      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+
     steps:
-      - name: Export MATCH_PASSWORD for Fastlane Match
-        run: echo "MATCH_PASSWORD=${{ secrets.MATCH_PASSWORD }}" >> $GITHUB_ENV
-        env:
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-      - name: Export MATCH_DEPLOY_KEY if present
-        run: |
-          if [ -n "$MATCH_DEPLOY_KEY" ]; then
-            echo "MATCH_DEPLOY_KEY=$MATCH_DEPLOY_KEY" >> $GITHUB_ENV
-          fi
-      - name: Create and unlock keychain for Fastlane Match
-        run: |
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$MATCH_KEYCHAIN_NAME"
-          security set-keychain-settings -lut 21600 "$MATCH_KEYCHAIN_NAME"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$MATCH_KEYCHAIN_NAME"
-          # Add keychain to search list (both .keychain-db and .keychain)
-          security list-keychains -s "$HOME/Library/Keychains/${MATCH_KEYCHAIN_NAME}-db" "$HOME/Library/Keychains/login.keychain-db"
-          security list-keychains -s "$HOME/Library/Keychains/${MATCH_KEYCHAIN_NAME}" "$HOME/Library/Keychains/login.keychain-db"
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Need full history for tags
+          fetch-depth: 0 # Full history for proper versioning
 
-      - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
-
-      - name: Setup Ruby and install dependencies
+      - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4"
+          bundler-cache: true # Automatically runs bundle install and caches gems
 
-      - name: Install Ruby gems
-        run: bundle install
-      - name: Configure App Store Connect API secrets
-        if: env.BUILD_TYPE == 'beta' || env.BUILD_TYPE == 'release'
-        run: |
-          echo "APP_STORE_CONNECT_API_KEY_KEY_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}" >> $GITHUB_ENV
-          echo "APP_STORE_CONNECT_API_KEY_ISSUER_ID=${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}" >> $GITHUB_ENV
-          echo "APP_STORE_CONNECT_API_KEY_CONTENT=${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}" >> $GITHUB_ENV
-
-      - name: Setup SSH for Match repository
-        if: env.BUILD_TYPE != 'ci'
-        run: |
-          if [ -n "$MATCH_DEPLOY_KEY" ]; then
-            mkdir -p ~/.ssh
-            echo "$MATCH_DEPLOY_KEY" > ~/.ssh/match_deploy_key
-            chmod 600 ~/.ssh/match_deploy_key
-            # Add SSH configuration
-            cat >> ~/.ssh/config <<EOF
-            Host github.com
-              HostName github.com
-              User git
-              IdentityFile ~/.ssh/match_deploy_key
-              StrictHostKeyChecking no
-            EOF
-          else
-            echo "MATCH_DEPLOY_KEY not set, skipping SSH setup."
-          fi
-
-      - name: Run CI build and test
-        if: env.BUILD_TYPE == 'ci'
-        run: |
-          bundle exec fastlane ios ci
-
-      - name: Build Alpha release
-        if: env.BUILD_TYPE == 'alpha'
-        run: |
-          bundle exec fastlane ios alpha
-
-      - name: Build and deploy Beta to TestFlight
-        if: env.BUILD_TYPE == 'beta'
-        run: |
-          bundle exec fastlane ios beta
-
-      - name: Build and deploy to App Store
-        if: env.BUILD_TYPE == 'release'
-        run: |
-          bundle exec fastlane ios release
-
-      # Upload artifacts for all non-CI builds
-      - name: Upload iOS build
-        if: env.BUILD_TYPE != 'ci'
-        uses: actions/upload-artifact@v4
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
         with:
-          name: ios-build-${{ env.VERSION_TAG || github.sha }}
-          path: fastlane/build/${{ env.BUILD_TYPE }}/*iOS*.ipa
-          retention-days: 30
+          xcode-version: "26.0" # Use Xcode 26 as specified in project requirements
 
-      - name: Upload macOS build
-        if: env.BUILD_TYPE != 'ci'
-        uses: actions/upload-artifact@v4
+      - name: Cache derived data
+        uses: actions/cache@v4
         with:
-          name: macos-build-${{ env.VERSION_TAG || github.sha }}
-          path: fastlane/build/${{ env.BUILD_TYPE }}/*macOS*
-          retention-days: 30
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-xcode-derived-data-${{ hashFiles('**/*.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-derived-data-
 
-      # Upload test results for CI builds
-      - name: Upload test results
-        if: env.BUILD_TYPE == 'ci' && always()
+      - name: Install iOS dependencies
+        run: |
+          # Install any additional iOS dependencies if needed
+          echo "Installing iOS dependencies..."
+
+      - name: Import Code Signing Certificates
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
+        run: |
+          echo "Setting up code signing certificates..."
+          bundle exec fastlane sync_certificates
+
+      - name: Build iOS App
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
+        run: |
+          echo "Building iOS app with Fastlane..."
+          bundle exec fastlane build_ios
+
+      - name: Upload iOS Build Artifacts
         uses: actions/upload-artifact@v4
+        if: success()
         with:
-          name: test-results-${{ github.sha }}
+          name: ios-build-${{ github.run_number }}
           path: |
-            fastlane/test_output/
-            build/test-results/
+            *.ipa
+            build/
+          retention-days: 30
+
+      - name: Upload Build Logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-build-logs-${{ github.run_number }}
+          path: |
+            ~/Library/Logs/gym/
+            fastlane/builds/
+            *.log
           retention-days: 7
 
-  # Create GitHub Release for tag-based builds
-  create-release:
-    permissions:
-      contents: write
-    needs: [determine-build-type, build]
-    if: needs.determine-build-type.outputs.build_type != 'ci'
-    runs-on: ubuntu-latest
-    env:
-      BUILD_TYPE: ${{ needs.determine-build-type.outputs.build_type }}
-      VERSION_TAG: ${{ needs.determine-build-type.outputs.version }}
+  build-mac:
+    name: Build macOS App
+    runs-on: macos-26 # Use macOS 26 as specified in project requirements
+    if: ${{ github.event.inputs.build_target == 'mac' || github.event.inputs.build_target == 'both' }}
+
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          path: artifacts
+          fetch-depth: 0 # Full history for proper versioning
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          tag_name: ${{ env.VERSION_TAG }}
-          name: |
-            ${{ env.BUILD_TYPE == 'release' && format('Release {0}', env.VERSION_TAG) ||
-                env.BUILD_TYPE == 'beta' && format('Beta Release {0}', env.VERSION_TAG) ||
-                format('Alpha Release {0}', env.VERSION_TAG) }}
-          body: |
-            ## AllesTeurer ${{ env.VERSION_TAG }}
+          ruby-version: "3.4"
+          bundler-cache: true # Automatically runs bundle install and caches gems
 
-            ${{ env.BUILD_TYPE == 'release' && '### 🚀 Production Release
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.0" # Use Xcode 26 as specified in project requirements
 
-            **iOS/iPadOS**: Available on [App Store](https://apps.apple.com/app/allesteurer)
-            **macOS**: Download below or from future Mac App Store' ||
-                env.BUILD_TYPE == 'beta' && '### 🧪 Beta Release
+      - name: Cache derived data
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-xcode-derived-data-${{ hashFiles('**/*.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-derived-data-
 
-            **iOS/iPadOS**: Available on [TestFlight](https://testflight.apple.com/join/YOUR_ID)
-            **macOS**: Download below' ||
-                '### 🔬 Alpha Release
+      - name: Import Code Signing Certificates
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
+          MAC_INSTALLER_CERT_NAME: ${{ secrets.MAC_INSTALLER_CERT_NAME }}
+        run: |
+          echo "Setting up code signing certificates for macOS..."
+          bundle exec fastlane sync_certificates
 
-            Internal testing release - not available on stores.
-            Download and install manually using Xcode or direct installation.' }}
+      - name: Build macOS App
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
+          MAC_INSTALLER_CERT_NAME: ${{ secrets.MAC_INSTALLER_CERT_NAME }}
+        run: |
+          echo "Building macOS app with Fastlane..."
+          bundle exec fastlane build_mac
 
-            ### Downloads
-            - 📱 iOS: See attached .ipa file
-            - 🖥️ macOS: See attached .app bundle
+      - name: Upload macOS Build Artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: macos-build-${{ github.run_number }}
+          path: |
+            *.app
+            *.pkg
+            build/
+          retention-days: 30
 
-            ### Installation
-            ${{ env.BUILD_TYPE == 'alpha' && '**iOS**: Install .ipa using Xcode, Apple Configurator, or compatible tools
-            **macOS**: Download and open the .app bundle' ||
-                env.BUILD_TYPE == 'beta' && '**iOS**: Join TestFlight for automatic updates
-            **macOS**: Download and open the .app bundle' ||
-                '**iOS**: Update through App Store
-            **macOS**: Download and open the .app bundle' }}
-          files: |
-            artifacts/**/*.ipa
-            artifacts/**/*.app
-            artifacts/**/*.pkg
-          prerelease: ${{ env.BUILD_TYPE != 'release' }}
-          draft: false
+      - name: Upload Build Logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: macos-build-logs-${{ github.run_number }}
+          path: |
+            ~/Library/Logs/gym/
+            fastlane/builds/
+            *.log
+          retention-days: 7
+
+  notification:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [build-ios, build-mac]
+    if: always() && (needs.build-ios.result != 'skipped' || needs.build-mac.result != 'skipped')
+
+    steps:
+      - name: Notify Build Status
+        run: |
+          echo "Build Summary:"
+          echo "iOS Build: ${{ needs.build-ios.result || 'skipped' }}"
+          echo "macOS Build: ${{ needs.build-mac.result || 'skipped' }}"
+
+          if [[ "${{ needs.build-ios.result }}" == "failure" || "${{ needs.build-mac.result }}" == "failure" ]]; then
+            echo "❌ One or more builds failed"
+            exit 1
+          elif [[ "${{ needs.build-ios.result }}" == "success" || "${{ needs.build-mac.result }}" == "success" ]]; then
+            echo "✅ All builds completed successfully"
+          fi
