@@ -11,6 +11,8 @@ import SwiftUI
 @main
 struct Alles_TeurerApp: App {
     var sharedModelContainer: ModelContainer = {
+        // Use an in-memory store when running under tests to improve reliability and speed
+        let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let schema = Schema([
             Rechnung.self,
             RechnungsArtikel.self,
@@ -23,7 +25,7 @@ struct Alles_TeurerApp: App {
         // App Groups will be enabled later for production with proper provisioning
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: false
+            isStoredInMemoryOnly: isTesting
         )
 
         do {

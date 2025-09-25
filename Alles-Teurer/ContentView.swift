@@ -8,6 +8,9 @@
 import SwiftData
 import SwiftUI
 
+// Services & ViewModels
+// OCRService and ScannerViewModel are defined in the same target
+
 // MARK: - Decimal Currency Formatting Extension
 
 extension Decimal {
@@ -20,6 +23,10 @@ extension Decimal {
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var rechnungen: [Rechnung]
+    @State private var ocrService = OCRService()
+    @State private var scannerVM: ScannerViewModel?
+    @State private var showingSaveAlert = false
+    @State private var lastSaveCount = 0
 
     var body: some View {
         NavigationSplitView {
@@ -48,6 +55,12 @@ struct ContentView: View {
                         Label("Test Rechnung hinzufügen", systemImage: "plus")
                     }
                 }
+                ToolbarItem {
+                    Button(action: runScanDemo) {
+                        Label("Scan Demo", systemImage: "camera.viewfinder")
+                    }
+                    .accessibilityLabel("Scan Demo")
+                }
             }
         } detail: {
             if rechnungen.isEmpty {
@@ -62,6 +75,18 @@ struct ContentView: View {
                 Text("Wählen Sie eine Rechnung aus")
             }
         }
+        .task {
+            // Initialize scanner view model with current ModelContainer
+            scannerVM = ScannerViewModel(modelContainer: modelContext.container)
+        }
+        .alert(
+            "Scan gespeichert", isPresented: $showingSaveAlert,
+            actions: {
+                Button("OK", role: .cancel) {}
+            },
+            message: {
+                Text("\(lastSaveCount) Artikel hinzugefügt")
+            })
     }
 
     private func addTestRechnung() {
@@ -114,6 +139,41 @@ struct ContentView: View {
                 }
             } catch {
                 print("Fehler beim Löschen: \(error)")
+            }
+        }
+    }
+}
+
+extension ContentView {
+    private func runScanDemo() {
+        Task { @MainActor in
+            // Ensure ViewModel is initialized even if .task hasn't run yet (avoids race in UI tests)
+            if scannerVM == nil {
+                scannerVM = ScannerViewModel(modelContainer: modelContext.container)
+            }
+            await ocrService.verarbeiteBildDaten(Data())
+            guard case .success(let recognized) = ocrService.zustand, let vm = scannerVM else {
+                return
+            }
+            // Map OCR DTO to ScannerViewModel DTO
+            let items = recognized.items.map { item in
+                ScannerViewModel.RecognizedItemDTO(
+                    name: item.name,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    totalPrice: item.totalPrice
+                )
+            }
+            let dto = ScannerViewModel.RecognizedReceiptDTO(
+                store: recognized.store,
+                total: recognized.total,
+                items: items,
+                rawText: recognized.rawText
+            )
+            await vm.saveRecognized(dto)
+            if case .saved(let count) = vm.saveState {
+                lastSaveCount = count
+                showingSaveAlert = true
             }
         }
     }
