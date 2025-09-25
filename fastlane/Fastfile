@@ -32,8 +32,8 @@ end
 
 desc "Sync certificates"
  lane :sync_certificates do
-   UI.message("Using git_url: #{ENV["MATCH_GIT_URL"]}")
-   sync_code_signing({readonly: true, type: "appstore", git_url: ENV["MATCH_GIT_URL"]})
+   UI.important("Using git_url: #{ENV['MATCH_GIT_URL']}")
+  # sync_code_signing({readonly: true, type: "appstore", git_url: ENV["MATCH_GIT_URL"]})
  end
 
 desc "Create ipa"
