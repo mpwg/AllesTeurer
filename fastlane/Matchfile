@@ -6,8 +6,13 @@ type("development") # Default type, can be overridden
 
 app_identifier(["eu.mpwg.Alles-Teurer"])
 
-# For CI/CD environments
-readonly(true) # Only use in CI, set to false for local development
+
+# For CI/CD environments: readonly true in CI, false locally
+if ENV["CI"]
+	readonly(true)
+else
+	readonly(false)
+end
 
 # Xcode project configuration
 username(ENV["APPLE_ID"]) # Your Apple ID
@@ -24,9 +29,12 @@ platform("ios") # Default platform
 # Enable Mac Catalyst support
 additional_cert_types(["mac_installer_distribution"]) # For Mac Catalyst signing
 
-# Keychain configuration (for CI)
-keychain_name(ENV["MATCH_KEYCHAIN_NAME"] || "fastlane-alles-teurer")
-keychain_password(ENV["KEYCHAIN_PASSWORD"]) # Keychain password from .env
+
+# Keychain configuration: use custom keychain only in CI
+if ENV["CI"]
+	keychain_name(ENV["MATCH_KEYCHAIN_NAME"] || "fastlane-alles-teurer")
+	keychain_password(ENV["KEYCHAIN_PASSWORD"])
+end
 
 # Verbose output for debugging
 verbose(true) if ENV["CI"]
