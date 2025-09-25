@@ -77,6 +77,110 @@ actor DataManager {
         return ratio.doubleValue * 100.0
     }
 
+    // MARK: - Search Operations
+
+    /// Search receipts by store name or OCR text content
+    func sucheRechnungen(query: String? = nil, limit: Int = 100) async throws -> [Rechnung] {
+        var descriptor = FetchDescriptor<Rechnung>(
+            sortBy: [SortDescriptor(\.scanDatum, order: .reverse)]
+        )
+
+        if let query = query, !query.isEmpty {
+            let searchQuery = query.lowercased()
+            descriptor.predicate = #Predicate<Rechnung> { receipt in
+                receipt.geschaeftsname.localizedStandardContains(searchQuery)
+                    || (receipt.rawOCRText?.localizedStandardContains(searchQuery) ?? false)
+            }
+        }
+
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor)
+    }
+
+    /// Search receipts by date range
+    func sucheRechnungenNachDatum(
+        von startDate: Date,
+        bis endDate: Date,
+        limit: Int = 100
+    ) async throws -> [Rechnung] {
+        var descriptor = FetchDescriptor<Rechnung>(
+            predicate: #Predicate<Rechnung> { receipt in
+                receipt.scanDatum >= startDate && receipt.scanDatum <= endDate
+            },
+            sortBy: [SortDescriptor(\.scanDatum, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor)
+    }
+
+    /// Search receipts by amount range
+    func sucheRechnungenNachBetrag(
+        mindestens minAmount: Decimal,
+        hoechstens maxAmount: Decimal,
+        limit: Int = 100
+    ) async throws -> [Rechnung] {
+        var descriptor = FetchDescriptor<Rechnung>(
+            predicate: #Predicate<Rechnung> { receipt in
+                receipt.gesamtbetrag >= minAmount && receipt.gesamtbetrag <= maxAmount
+            },
+            sortBy: [SortDescriptor(\.gesamtbetrag, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor)
+    }
+
+    /// Search products by name
+    func sucheProdukte(query: String? = nil, limit: Int = 100) async throws -> [Produkt] {
+        var descriptor = FetchDescriptor<Produkt>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+
+        if let query = query, !query.isEmpty {
+            let searchQuery = query.lowercased()
+            descriptor.predicate = #Predicate<Produkt> { product in
+                product.name.localizedStandardContains(searchQuery)
+            }
+        }
+
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor)
+    }
+
+    /// Search products by category
+    func sucheProduktNachKategorie(
+        _ category: ProduktKategorie,
+        limit: Int = 100
+    ) async throws -> [Produkt] {
+        var descriptor = FetchDescriptor<Produkt>(
+            predicate: #Predicate<Produkt> { product in
+                product.kategorie == category
+            },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor)
+    }
+
+    /// Get spending summary by store for date range
+    func ausgabenZusammenfassungNachGeschaeft(
+        von startDate: Date,
+        bis endDate: Date
+    ) async throws -> [(geschaeft: String, gesamtbetrag: Decimal, anzahlRechnungen: Int)] {
+        let receipts = try await sucheRechnungenNachDatum(
+            von: startDate,
+            bis: endDate,
+            limit: 1000
+        )
+
+        // Group by store and calculate totals
+        let grouped = Dictionary(grouping: receipts, by: { $0.geschaeftsname })
+
+        return grouped.map { (store, receipts) in
+            let totalAmount = receipts.reduce(Decimal.zero) { $0 + $1.gesamtbetrag }
+            return (geschaeft: store, gesamtbetrag: totalAmount, anzahlRechnungen: receipts.count)
+        }.sorted { $0.gesamtbetrag > $1.gesamtbetrag }
+    }
+
     // MARK: - Safe value-returning helpers
     func anzahlRechnungen() async throws -> Int {
         let descriptor = FetchDescriptor<Rechnung>()

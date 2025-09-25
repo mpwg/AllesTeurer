@@ -13,10 +13,17 @@ import SwiftData
 @Model
 final class Rechnung {
     @Attribute(.unique) var id: UUID
+
+    // TODO: Add indexing when SwiftData supports .indexed attribute
+    // These fields will benefit from indexing for search performance:
+    // - geschaeftsname (store name search)
+    // - scanDatum (date range queries)
+    // - gesamtbetrag (amount range queries)
     var geschaeftsname: String
-    var ort: String?
     var scanDatum: Date
     var gesamtbetrag: Decimal
+
+    var ort: String?
 
     @Relationship(deleteRule: .cascade)
     var artikel: [RechnungsArtikel]
@@ -25,6 +32,9 @@ final class Rechnung {
     var geschaeft: Geschaeft?
 
     var ocrConfidence: Double
+
+    // TODO: Add full-text search when SwiftData supports .fullTextSearchable
+    // This field will enable OCR content search
     var rawOCRText: String?
     var bildDaten: Data?
 
@@ -41,6 +51,11 @@ final class Rechnung {
 @Model
 final class RechnungsArtikel {
     @Attribute(.unique) var id: UUID
+
+    // TODO: Add indexing for search performance
+    // These fields should be indexed:
+    // - name (product name search)
+    // - einzelpreis (price range queries)
     var name: String
     var beschreibung: String?
     var menge: Int
@@ -65,6 +80,13 @@ final class RechnungsArtikel {
 @Model
 final class Produkt {
     @Attribute(.unique) var id: UUID
+
+    // TODO: Add indexing for search performance
+    // These fields should be indexed:
+    // - name (product name search)
+    // - kategorie (category filtering)
+    // - marke (brand filtering)
+    // - strichcode (barcode lookup)
     var name: String
     var kategorie: ProduktKategorie
     var marke: String?
