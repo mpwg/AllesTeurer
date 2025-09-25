@@ -7,11 +7,11 @@ type("development") # Default type, can be overridden
 app_identifier(["eu.mpwg.Alles-Teurer"])
 
 
-# For CI/CD environments: readonly true in CI, false locally
+# For CI/CD environments: readonly false in CI, true locally
 if ENV["CI"]
-	readonly(true)
-else
 	readonly(false)
+else
+	readonly(true)
 end
 
 # Xcode project configuration
