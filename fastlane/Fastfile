@@ -43,15 +43,26 @@ desc "Create ipa"
    # Increases the build number by 1
    increment_build_number
    # Creates a signed file
+#   clear_derived_data
    build_app(scheme: "Alles-Teurer", export_method: "app-store")
  end
 
- desc "Create ipa"
- lane :build_mac do
+desc "Create macos app"
+lane :build_mac do
    #update profiles
    sync_certificates
    # Increases the build number by 1
    increment_build_number
    # Creates a signed file
-   build_mac_app(scheme: "Alles-Teurer", export_method: "app-store")
- end
+#   clear_derived_data
+
+   build_mac_app(scheme: "Alles-Teurer", export_method: "app-store",
+   destination: 'platform=macOS,variant=Mac Catalyst',
+   installer_cert_name: ENV("MAC_INSTALLER_CERT_NAME"),
+   export_options: {
+    provisioningProfiles: {
+      "eu.mpwg.Alles-Teurer" => "match AppStore eu.mpwg.Alles-Teurer catalyst"
+    }
+  }
+   )
+end

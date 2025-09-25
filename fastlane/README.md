@@ -35,7 +35,7 @@ Create ipa
 [bundle exec] fastlane build_mac
 ```
 
-Create ipa
+Create macos app
 
 ----
 
