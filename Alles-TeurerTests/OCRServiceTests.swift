@@ -13,7 +13,7 @@ import Testing
 @Suite("OCR Service")
 struct OCRServiceTests {
 
-    @Test("Placeholder processing returns a receipt")
+    @Test("Placeholder processing returns a recognized receipt DTO")
     @MainActor
     func placeholderProcessing() async {
         let service = OCRService()
@@ -22,8 +22,8 @@ struct OCRServiceTests {
 
         switch service.zustand {
         case .success(let r):
-            #expect(r.artikel.count == 2)
-            #expect(r.gesamtbetrag > 0)
+            #expect(r.items.count == 2)
+            #expect(r.total > 0)
         default:
             Issue.record("Expected success state with a receipt")
         }

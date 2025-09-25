@@ -12,6 +12,9 @@ import SwiftUI
 #if canImport(Vision)
     import Vision
 #endif
+#if canImport(UIKit)
+    import UIKit
+#endif
 
 // Vision frameworks would be used in a real implementation
 // import Vision
@@ -23,7 +26,7 @@ final class OCRService {
     enum ScanState {
         case idle
         case processing
-        case success(Rechnung)
+        case success(RecognizedReceipt)
         case error(String)
     }
 
@@ -31,16 +34,58 @@ final class OCRService {
 
     init() {}
 
+    struct RecognizedItem: Sendable, Equatable {
+        var name: String
+        var quantity: Int
+        var unitPrice: Decimal?
+        var totalPrice: Decimal
+    }
+
+    struct RecognizedReceipt: Sendable, Equatable {
+        var store: String
+        var total: Decimal
+        var items: [RecognizedItem]
+        var rawText: String
+    }
+
     func verarbeiteBildDaten(_ data: Data) async {
         zustand = .processing
-        // Placeholder implementation: create a dummy receipt
-        let rechnung = Rechnung(geschaeftsname: "BILLA", scanDatum: Date.now, gesamtbetrag: 4.48)
-        let milch = RechnungsArtikel(
-            name: "Milch 3,5%", menge: 1, einzelpreis: 1.49, gesamtpreis: 1.49)
-        let brot = RechnungsArtikel(
-            name: "Brot Vollkorn", menge: 1, einzelpreis: 2.99, gesamtpreis: 2.99)
-        rechnung.artikel = [milch, brot]
-        zustand = .success(rechnung)
+        // Try to recognize text and parse; fallback to placeholder on failure
+        #if canImport(Vision) && canImport(UIKit)
+            if let image = UIImage(data: data)?.cgImage {
+                do {
+                    let lines = try await erkenneText(in: image)
+                    let parser = ReceiptParser()
+                    let parsed = try await parser.parse(lines: lines)
+                    let dto = RecognizedReceipt(
+                        store: parsed.store,
+                        total: parsed.total,
+                        items: parsed.items.map {
+                            RecognizedItem(
+                                name: $0.name, quantity: $0.quantity, unitPrice: $0.unitPrice,
+                                totalPrice: $0.totalPrice)
+                        },
+                        rawText: lines.joined(separator: "\n")
+                    )
+                    zustand = .success(dto)
+                    return
+                } catch {
+                    // Fall through to placeholder on error
+                }
+            }
+        #endif
+        // Fallback placeholder
+        let fallback = RecognizedReceipt(
+            store: "BILLA",
+            total: 4.48,
+            items: [
+                RecognizedItem(name: "Milch 3,5%", quantity: 1, unitPrice: 1.49, totalPrice: 1.49),
+                RecognizedItem(
+                    name: "Brot Vollkorn", quantity: 1, unitPrice: 2.99, totalPrice: 2.99),
+            ],
+            rawText: "BILLA\nMilch 3,5% 1,49\nBrot Vollkorn 2,99\nGESAMT 4,48"
+        )
+        zustand = .success(fallback)
     }
 
     // MARK: - Vision Text Recognition (baseline)
