@@ -78,13 +78,13 @@ final class Produkt {
 
     var zuletztAktualisiert: Date
 
-    init(name: String, kategorie: ProduktKategorie) {
+    init(name: String, kategorie: ProduktKategorie, zuletztAktualisiert: Date = .now) {
         self.id = UUID()
         self.name = name
         self.kategorie = kategorie
         self.preisHistorie = []
         self.kaufHistorie = []
-        self.zuletztAktualisiert = .now
+        self.zuletztAktualisiert = zuletztAktualisiert
     }
 }
 

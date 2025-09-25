@@ -26,9 +26,18 @@ actor ReceiptParser {
         var rawLines: [String]
     }
 
-    private let decimalFormatter: NumberFormatter = {
+    private let decimalFormatterAT: NumberFormatter = {
         let f = NumberFormatter()
         f.locale = Locale(identifier: "de_AT")
+        f.numberStyle = .decimal
+        f.decimalSeparator = ","
+        f.groupingSeparator = "."
+        return f
+    }()
+
+    private let decimalFormatterDE: NumberFormatter = {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "de_DE")
         f.numberStyle = .decimal
         f.decimalSeparator = ","
         f.groupingSeparator = "."
@@ -66,33 +75,16 @@ actor ReceiptParser {
             }
         }
 
-        // Items detection: find trailing price like 1.234,56 and use preceding text as name
-        let priceRegex = try NSRegularExpression(pattern: #"([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})"#)
-        var items: [ParsedItem] = []
-        for line in trimmed {
-            guard
-                let match = priceRegex.firstMatch(
-                    in: line, range: NSRange(line.startIndex..<line.endIndex, in: line))
-            else { continue }
-            let priceRange = match.range(at: 1)
-            if let swiftRange = Range(priceRange, in: line) {
-                let priceText = String(line[swiftRange])
-                let name = line.replacingCharacters(in: swiftRange, with: "").trimmingCharacters(
-                    in: .whitespacesAndNewlines)
-                let price = parseAmountText(priceText) ?? 0
-                items.append(
-                    ParsedItem(
-                        name: name.isEmpty ? "Artikel" : name, quantity: 1, unitPrice: nil,
-                        totalPrice: price))
-            }
-        }
+        let items = parseLineItems(from: trimmed)
 
         return ParsedReceipt(
             store: storeLine, total: totalAmount ?? 0, items: items, rawLines: trimmed)
     }
 
     private func parseAmount(in line: String) -> Decimal? {
-        let regex = try? NSRegularExpression(pattern: #"([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})"#)
+        // Matches patterns like "EUR 1.234,56", "1.234,56 €", "1,49" etc.
+        let pattern = #"(?:€\s*)?([0-9]{1,3}(?:[\.\s][0-9]{3})*,[0-9]{2})(?:\s*€)?"#
+        let regex = try? NSRegularExpression(pattern: pattern)
         if let match = regex?.firstMatch(
             in: line, range: NSRange(line.startIndex..<line.endIndex, in: line)),
             let range = Range(match.range(at: 1), in: line)
@@ -103,9 +95,32 @@ actor ReceiptParser {
     }
 
     private func parseAmountText(_ text: String) -> Decimal? {
-        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(
-            of: "€", with: "")
-        if let n = decimalFormatter.number(from: normalized) { return n.decimalValue }
-        return nil
+        let normalized = text
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "€", with: "")
+            .replacingOccurrences(of: " ", with: "")
+        if let n = decimalFormatterAT.number(from: normalized) { return n.decimalValue }
+        if let n = decimalFormatterDE.number(from: normalized) { return n.decimalValue }
+        return Decimal(string: normalized.replacingOccurrences(of: ",", with: "."))
+    }
+
+    /// Extract line items by detecting trailing price tokens and using the preceding text as the item name.
+    private func parseLineItems(from lines: [String]) -> [ParsedItem] {
+        var items: [ParsedItem] = []
+        // Detect a price token at end or within the line
+        let pattern = #"([0-9]{1,3}(?:[\.\s][0-9]{3})*,[0-9]{2})(?:\s*€)?$"#
+        let regex = try? NSRegularExpression(pattern: pattern)
+        for line in lines {
+            guard let regex else { continue }
+            let nsRange = NSRange(line.startIndex..<line.endIndex, in: line)
+            guard let match = regex.firstMatch(in: line, range: nsRange) else { continue }
+            let priceRange = match.range(at: 1)
+            guard let swiftRange = Range(priceRange, in: line) else { continue }
+            let priceText = String(line[swiftRange])
+            let name = line.replacingCharacters(in: swiftRange, with: "").replacingOccurrences(of: "€", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let price = parseAmountText(priceText) ?? 0
+            items.append(ParsedItem(name: name.isEmpty ? "Artikel" : name, quantity: 1, unitPrice: nil, totalPrice: price))
+        }
+        return items
     }
 }

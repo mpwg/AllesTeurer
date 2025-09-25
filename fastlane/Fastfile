@@ -428,11 +428,14 @@ platform :ios do
   private_lane :get_codesigning_identity do |match_type, is_catalyst = false|
     case match_type
     when MATCH_TYPE_APPSTORE
-      is_catalyst ? "Apple Distribution" : "iPhone Distribution"
+      # Modern certificate naming: always use "Apple Distribution" for App Store
+      "Apple Distribution"
     when MATCH_TYPE_ADHOC
-      "iPhone Distribution"
+      # Ad Hoc also uses Distribution certificates → "Apple Distribution"
+      "Apple Distribution"
     else # development
-      is_catalyst ? "Apple Development" : "iPhone Developer"
+      # Modern certificate naming: always use "Apple Development" for Development
+      "Apple Development"
     end
   end
 

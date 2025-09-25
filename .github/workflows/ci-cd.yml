@@ -1,20 +1,20 @@
 name: AllesTeurer CI/CD Pipeline
 
+permissions:
+  contents: read
+
 on:
   # CI builds on push and PR
   push:
     branches: [main, develop, 'feature/**']
-  pull_request:
-    branches: [main, develop]
-  
-  # Tag-based releases
-  push:
     tags:
       - 'v*.*.*'           # Production releases
       - 'V*.*.*'           # Alternative casing
       - 'v*.*.*-alpha.*'   # Alpha releases  
       - 'v*.*.*-beta.*'    # Beta releases
       - 'v*.*.*-rc.*'      # Release candidates
+  pull_request:
+    branches: [main, develop]
 
   # Manual trigger
   workflow_dispatch:
@@ -164,7 +164,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-build-${{ env.VERSION_TAG || github.sha }}
-          path: fastlane/build/${{ env.BUILD_TYPE }}/*iOS*.ipa
+          path: build/${{ env.BUILD_TYPE }}/*iOS*.ipa
           retention-days: 30
 
       - name: Upload macOS build
@@ -172,7 +172,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-build-${{ env.VERSION_TAG || github.sha }}
-          path: fastlane/build/${{ env.BUILD_TYPE }}/*macOS*
+          path: build/${{ env.BUILD_TYPE }}/*macOS*
           retention-days: 30
 
       # Upload test results for CI builds
