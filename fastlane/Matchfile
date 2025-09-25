@@ -1,39 +1,11 @@
-git_url(ENV["MATCH_GIT_URL"])
+git_url("https://github.com/mpwg/fastlane-private")
 
 storage_mode("git")
 
-type("development") # Default type, can be overridden
+type("development") # The default type, can be: appstore, adhoc, enterprise or development
 
-app_identifier(["eu.mpwg.Alles-Teurer"])
-
-
-# For CI/CD environments: readonly false in CI, true locally
-readonly(ENV["CI"] ? false : true)
-
-# Xcode project configuration
-username(ENV["APPLE_ID"]) # Your Apple ID
-
-team_id(ENV["DEVELOPMENT_TEAM"]) # Developer Portal Team ID from .env
-team_name(ENV["APPSTORE_TEAM_ID"]) # App Store Connect Team ID from .env
-
-# Additional security
-git_basic_authorization(ENV["MATCH_GIT_BASIC_AUTHORIZATION"]) if ENV["MATCH_GIT_BASIC_AUTHORIZATION"]
-
-# Platform support
-
-# Platform is set dynamically by Fastlane lane (ios, catalyst, etc.)
-# Enable Mac Catalyst support for all platforms
-additional_cert_types(["mac_installer_distribution"]) # For Mac Catalyst signing
-
-
-# Keychain configuration: use custom keychain only in CI
-if ENV["CI"]
-	keychain_name(ENV["MATCH_KEYCHAIN_NAME"] || "fastlane-alles-teurer")
-	keychain_password(ENV["KEYCHAIN_PASSWORD"])
-end
-
-# Verbose output for debugging
-verbose(true) if ENV["CI"]
+# app_identifier(["tools.fastlane.app", "tools.fastlane.app2"])
+# username("user@fastlane.tools") # Your Apple Developer Portal username
 
 # For all available options run `fastlane match --help`
 # Remove the # in the beginning of the line to enable the other options
