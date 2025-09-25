@@ -32,7 +32,7 @@ on:
 
 env:
   XCODE_VERSION: "26.0"
-  IOS_DESTINATION: "platform=iOS Simulator,name=iPhone 15"
+  IOS_DESTINATION: "platform=iOS Simulator,name=iPhone 17"
   MACOS_DESTINATION: "platform=macOS,variant=Mac Catalyst"
   MATCH_KEYCHAIN_NAME: "fastlane-ci-keychain"
   MATCH_KEYCHAIN_PASSWORD: ${{ secrets.MATCH_KEYCHAIN_PASSWORD }}
