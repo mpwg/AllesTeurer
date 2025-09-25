@@ -1,4 +1,4 @@
-git_url("https://github.com/mpwg/fastlane-private")
+git_url(ENV['MATCH_GIT_URL'])
 
 readonly(false)
 
