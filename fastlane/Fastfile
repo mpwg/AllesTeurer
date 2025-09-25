@@ -32,8 +32,8 @@ end
 
 desc "Sync certificates"
  lane :sync_certificates do
-   git_url = ENV['MATCH_GIT_URL']
-   UI.message("Using git_url: #{git_url}")
+   git_url = ENV["MATCH_GIT_URL"]
+   UI.message("Using git_url: #{ENV['MATCH_GIT_URL']}")
    match({readonly: true, type: "appstore"})
  end
 
