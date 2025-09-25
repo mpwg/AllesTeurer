@@ -12,8 +12,8 @@ readonly(true) # Only use in CI, set to false for local development
 # Xcode project configuration
 username(ENV["APPLE_ID"]) # Your Apple ID
 
-team_id(ENV["TEAM_ID"]) # Developer Portal Team ID
-team_name(ENV["TEAM_NAME"]) # Optional: Team name for clarity
+team_id(ENV["DEVELOPMENT_TEAM"]) # Developer Portal Team ID from .env
+team_name(ENV["APPSTORE_TEAM_ID"]) # App Store Connect Team ID from .env
 
 # Additional security
 git_basic_authorization(ENV["MATCH_GIT_BASIC_AUTHORIZATION"]) if ENV["MATCH_GIT_BASIC_AUTHORIZATION"]
@@ -26,7 +26,7 @@ additional_cert_types(["mac_installer_distribution"]) # For Mac Catalyst signing
 
 # Keychain configuration (for CI)
 keychain_name(ENV["MATCH_KEYCHAIN_NAME"] || "fastlane-alles-teurer")
-keychain_password(ENV["MATCH_PASSWORD"] || ENV["KEYCHAIN_PASSWORD"])
+keychain_password(ENV["KEYCHAIN_PASSWORD"]) # Keychain password from .env
 
 # Verbose output for debugging
 verbose(true) if ENV["CI"]
