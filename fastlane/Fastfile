@@ -17,7 +17,7 @@ default_platform(:ios)
 
 before_all do
   UI.header("In Before All")
-  Dotenv.load '.env'
+  #Dotenv.load '.env'
   UI.success("Loaded .env file")
   git_url = ENV['MATCH_GIT_URL']
 
