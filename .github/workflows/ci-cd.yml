@@ -74,6 +74,7 @@ jobs:
           APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           CI: true
         run: |
           echo "Setting up code signing certificates..."
@@ -91,7 +92,6 @@ jobs:
 
         run: |
           echo "Building iOS app with Fastlane..."
-          echo $MATCH_GIT_URL
           bundle exec fastlane build_ios
 
       - name: Upload iOS Build Artifacts
