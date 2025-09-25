@@ -8,6 +8,8 @@
 import Foundation
 import SwiftData
 
+// Models are defined in the same module under Models/
+
 // Ensure model types like `Produkt` are visible in this file's scope
 // (same module, but explicit import not needed; adding comment for clarity)
 
@@ -16,6 +18,30 @@ actor DataManager {
     // MARK: - Receipt Operations
     func speichereRechnung(_ rechnung: Rechnung) async throws {
         modelContext.insert(rechnung)
+        try modelContext.save()
+    }
+
+    /// Create a receipt inside the actor to avoid crossing actor boundaries with @Model types
+    func erzeugeRechnung(
+        geschaeftsname: String, scanDatum: Date, gesamtbetrag: Decimal, rawText: String?
+    ) async throws -> PersistentIdentifier {
+        let r = Rechnung(
+            geschaeftsname: geschaeftsname, scanDatum: scanDatum, gesamtbetrag: gesamtbetrag)
+        r.rawOCRText = rawText
+        modelContext.insert(r)
+        try modelContext.save()
+        return r.persistentModelID
+    }
+
+    /// Append an item to a receipt identified by its PersistentIdentifier
+    func fuegeArtikelHinzu(
+        zu receiptID: PersistentIdentifier, name: String, menge: Int, einzelpreis: Decimal,
+        gesamtpreis: Decimal
+    ) async throws {
+        guard let r = modelContext.model(for: receiptID) as? Rechnung else { return }
+        let item = RechnungsArtikel(
+            name: name, menge: menge, einzelpreis: einzelpreis, gesamtpreis: gesamtpreis)
+        r.artikel.append(item)
         try modelContext.save()
     }
 
