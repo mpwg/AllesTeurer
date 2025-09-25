@@ -240,7 +240,15 @@ Status notes:
 - Basic SwiftUI integration in `ContentView`: list, detail, add test data, delete via repository.
 - Async `OCRService` using @Observable and @MainActor emitting DTOs.
 - Parser actor (`ReceiptParser`) for de_AT numbers and basic heuristics.
-- Tests extended (OCR DTO path + parser). Fastlane test lane green.
+- Scan Demo UI path: wired in `ContentView` with a toolbar button that triggers OCR → DTO mapping → save via `ScannerViewModel` → confirmation alert.
+- UI smoke test added: `Alles-TeurerUITests/ScannerSmokeTests.swift` taps Scan Demo and verifies the confirmation (robust on Mac Catalyst with alert/sheet checks). Class marked `@MainActor`.
+- Tests: Unit + UI tests run green via Fastlane on Mac Catalyst.
+
+Fastlane summary (latest):
+
+- Tests: 9
+- Failures: 0
+- Platform: Mac Catalyst (fastest)
 
 ## Phase 1 – Next Steps
 
