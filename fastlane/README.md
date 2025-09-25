@@ -21,10 +21,18 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Sync certificates
 
-### build
+### build_ios
 
 ```sh
-[bundle exec] fastlane build
+[bundle exec] fastlane build_ios
+```
+
+Create ipa
+
+### build_mac
+
+```sh
+[bundle exec] fastlane build_mac
 ```
 
 Create ipa

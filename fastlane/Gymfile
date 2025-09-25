@@ -3,9 +3,6 @@ scheme("Alles-Teurer")
 #provide provisioning profiles to use
 export_options({    
    method: "app-store",    
-   provisioningProfiles: {
-     "eu.mpwg.Alles-Teurer" => "match AppStore eu.mpwg.Alles-Teurer",
-        }
 })
 # Specify the path to store .ipa file
 output_directory("./fastlane/builds")
