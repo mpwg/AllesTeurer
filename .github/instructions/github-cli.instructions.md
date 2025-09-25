@@ -54,21 +54,25 @@ gh pr view --json title,body | jq -C '.'
 ## General Guidelines
 
 ### Authentication
+
 - Always ensure `gh auth status` passes before running commands
 - Use `gh auth login` if authentication is needed
 - For CI/CD, use `GITHUB_TOKEN` environment variable
 
 ### Error Handling
+
 - Always check exit codes when using gh commands in scripts
 - Use `--json` output for consistent error parsing
 - Handle rate limiting gracefully
 
 ### Performance
+
 - Use specific field selection with `--json` to reduce payload size
 - Cache results when making multiple calls for the same data
 - Use pagination parameters for large datasets
 
 ### Security
+
 - Never log sensitive information from gh command outputs
 - Use secure token handling in automated environments
 - Validate permissions before performing destructive operations
@@ -83,12 +87,14 @@ gh pr view --json title,body | jq -C '.'
 ## Integration with Other Tools
 
 ### With fastlane
+
 ```ruby
 # In Fastlane, capture gh output as JSON
 result = sh("gh pr view --json title,number | jq -r '.title'", capture: true)
 ```
 
 ### With CI/CD
+
 ```yaml
 - name: Get PR info
   run: |
@@ -99,12 +105,14 @@ result = sh("gh pr view --json title,number | jq -r '.title'", capture: true)
 ## Troubleshooting
 
 ### Common Issues
+
 1. **No output visible**: Always pipe through `jq` to see JSON structure
 2. **Authentication failures**: Check `gh auth status` first
 3. **Permission errors**: Verify repository access and token scopes
 4. **Rate limiting**: Implement retry logic with exponential backoff
 
 ### Debug Commands
+
 ```bash
 # Check authentication status
 gh auth status
