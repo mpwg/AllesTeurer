@@ -78,7 +78,10 @@ jobs:
       - name: Setup Ruby and install dependencies
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2"
+          ruby-version: "3.4"
+
+      - name: Install Ruby gems
+        run: bundle install
       - name: Configure App Store Connect API secrets
         if: env.BUILD_TYPE == 'beta' || env.BUILD_TYPE == 'release'
         run: |
