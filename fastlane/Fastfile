@@ -198,7 +198,7 @@ platform :ios do
   # MARK: - Private Helper Lanes
 
   private_lane :configure_app_store_connect_if_needed do
-  return unless ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"]
+  next unless ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"]
     
     app_store_connect_api_key(
       key_id: ENV["APP_STORE_CONNECT_API_KEY_KEY_ID"],
