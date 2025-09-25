@@ -74,6 +74,10 @@ jobs:
       MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
     steps:
+      - name: Export MATCH_PASSWORD for Fastlane Match
+        run: echo "MATCH_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       - name: Export MATCH_DEPLOY_KEY if present
         run: |
           if [ -n "$MATCH_DEPLOY_KEY" ]; then
@@ -103,8 +107,6 @@ jobs:
 
       - name: Setup SSH for Match repository
         if: env.BUILD_TYPE != 'ci'
-        env:
-          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
         run: |
           if [ -n "$MATCH_DEPLOY_KEY" ]; then
             mkdir -p ~/.ssh
