@@ -95,7 +95,8 @@ actor ReceiptParser {
     }
 
     private func parseAmountText(_ text: String) -> Decimal? {
-        let normalized = text
+        let normalized =
+            text
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "€", with: "")
             .replacingOccurrences(of: " ", with: "")
@@ -117,9 +118,14 @@ actor ReceiptParser {
             let priceRange = match.range(at: 1)
             guard let swiftRange = Range(priceRange, in: line) else { continue }
             let priceText = String(line[swiftRange])
-            let name = line.replacingCharacters(in: swiftRange, with: "").replacingOccurrences(of: "€", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = line.replacingCharacters(in: swiftRange, with: "").replacingOccurrences(
+                of: "€", with: ""
+            ).trimmingCharacters(in: .whitespacesAndNewlines)
             let price = parseAmountText(priceText) ?? 0
-            items.append(ParsedItem(name: name.isEmpty ? "Artikel" : name, quantity: 1, unitPrice: nil, totalPrice: price))
+            items.append(
+                ParsedItem(
+                    name: name.isEmpty ? "Artikel" : name, quantity: 1, unitPrice: nil,
+                    totalPrice: price))
         }
         return items
     }

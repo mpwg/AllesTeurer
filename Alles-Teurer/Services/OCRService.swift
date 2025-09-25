@@ -95,22 +95,22 @@ final class OCRService {
 }
 
 #if canImport(Vision)
-/// Background actor for Vision text recognition
-fileprivate actor TextRecognizerActor {
-    /// Recognize text lines from a CGImage with German priority (off main thread)
-    func recognizeLines(in cgImage: CGImage) async throws -> [String] {
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.recognitionLanguages = ["de-DE", "en-US"]
+    /// Background actor for Vision text recognition
+    fileprivate actor TextRecognizerActor {
+        /// Recognize text lines from a CGImage with German priority (off main thread)
+        func recognizeLines(in cgImage: CGImage) async throws -> [String] {
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+            request.recognitionLanguages = ["de-DE", "en-US"]
 
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        try handler.perform([request])
-        let observations: [VNRecognizedTextObservation] = request.results ?? []
-        return observations.compactMap { $0.topCandidates(1).first?.string }
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            try handler.perform([request])
+            let observations: [VNRecognizedTextObservation] = request.results ?? []
+            return observations.compactMap { $0.topCandidates(1).first?.string }
+        }
     }
-}
 
-/// Shared instance used within OCRService to offload recognition
-fileprivate let textRecognizer = TextRecognizerActor()
+    /// Shared instance used within OCRService to offload recognition
+    private let textRecognizer = TextRecognizerActor()
 #endif
