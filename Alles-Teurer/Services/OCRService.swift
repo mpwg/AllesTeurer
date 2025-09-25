@@ -8,8 +8,9 @@
 import Foundation
 import Observation
 import SwiftUI
+
 #if canImport(Vision)
-import Vision
+    import Vision
 #endif
 
 // Vision frameworks would be used in a real implementation
@@ -44,17 +45,17 @@ final class OCRService {
 
     // MARK: - Vision Text Recognition (baseline)
     #if canImport(Vision)
-    /// Recognize text lines from a CGImage with German priority
-    func erkenneText(in cgImage: CGImage) async throws -> [String] {
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.recognitionLanguages = ["de-DE", "en-US"]
+        /// Recognize text lines from a CGImage with German priority
+        func erkenneText(in cgImage: CGImage) async throws -> [String] {
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+            request.recognitionLanguages = ["de-DE", "en-US"]
 
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        try handler.perform([request])
-        let observations: [VNRecognizedTextObservation] = request.results ?? []
-        return observations.compactMap { $0.topCandidates(1).first?.string }
-    }
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            try handler.perform([request])
+            let observations: [VNRecognizedTextObservation] = request.results ?? []
+            return observations.compactMap { $0.topCandidates(1).first?.string }
+        }
     #endif
 }
