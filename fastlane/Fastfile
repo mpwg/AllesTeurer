@@ -65,18 +65,25 @@ platform :ios do
   desc "CI build and test (no deployment)"
   lane :ci do
     UI.header("🔨 CI Build and Test")
-    
+    # Ensure Mac Catalyst development certs are available in CI
+    sync_code_signing(
+      type: MATCH_TYPE_DEVELOPMENT,
+      additional_platforms: ["catalyst"]
+    )
     # Run tests first
     test_all_platforms
-    
     # Build for validation (both iOS and Mac Catalyst)
     validate_builds
-    
     UI.success("✅ CI validation completed successfully!")
   end
 
   desc "Run all tests"
   lane :test do
+    # Ensure Mac Catalyst development certs are available in CI
+    sync_code_signing(
+      type: MATCH_TYPE_DEVELOPMENT,
+      additional_platforms: ["catalyst"]
+    )
     test_all_platforms
   end
 
