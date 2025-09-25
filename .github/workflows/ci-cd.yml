@@ -91,6 +91,7 @@ jobs:
 
         run: |
           echo "Building iOS app with Fastlane..."
+          echo $MATCH_GIT_URL
           bundle exec fastlane build_ios
 
       - name: Upload iOS Build Artifacts
